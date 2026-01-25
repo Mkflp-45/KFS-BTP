@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test EmailJS - KFS BTP</title>
+    <style>
+        body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #2563eb; color: white; padding: 15px 30px; border: none; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background: #1d4ed8; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .loading { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test EmailJS</h1>
+    <p>Cette page teste l'envoi d'email directement.</p>
+    
+    <form id="test-form">
+        <input type="text" id="name" placeholder="Votre nom" value="Test KFS" required>
+        <input type="email" id="email" placeholder="Votre email" value="test@test.com" required>
+        <input type="tel" id="phone" placeholder="Téléphone" value="77 123 45 67">
+        <textarea id="message" placeholder="Message" required>Ceci est un test EmailJS pour KFS BTP</textarea>
+        <button type="submit">📧 Envoyer le test</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script>
+        // Configuration
+        const CONFIG = {
+            PUBLIC_KEY: 'yxVQCoozjUaXnBalb',
+            SERVICE_ID: 'service_i1w406r',
+            TEMPLATE_ID: 'template_6mxlab7'
+        };
+
+        // Initialiser EmailJS
+        emailjs.init(CONFIG.PUBLIC_KEY);
+        console.log('✅ EmailJS initialisé avec clé:', CONFIG.PUBLIC_KEY);
+
+        document.getElementById('test-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const result = document.getElementById('result');
+            result.className = 'loading';
+            result.innerHTML = '⏳ Envoi en cours...';
+
+            const templateParams = {
+                from_name: document.getElementById('name').value,
+                from_email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                subject: 'Test EmailJS',
+                message: document.getElementById('message').value,
+                to_name: 'KFS BTP',
+                reply_to: document.getElementById('email').value
+            };
+
+            console.log('📤 Envoi avec paramètres:', templateParams);
+            console.log('📋 Service:', CONFIG.SERVICE_ID);
+            console.log('📋 Template:', CONFIG.TEMPLATE_ID);
+
+            try {
+                const response = await emailjs.send(
+                    CONFIG.SERVICE_ID,
+                    CONFIG.TEMPLATE_ID,
+                    templateParams
+                );
+                
+                console.log('✅ Réponse EmailJS:', response);
+                result.className = 'success';
+                result.innerHTML = '✅ EMAIL ENVOYÉ AVEC SUCCÈS !<br>Status: ' + response.status + '<br>Vérifiez votre boîte mail !';
+                
+            } catch (error) {
+                console.error('❌ Erreur complète:', error);
+                result.className = 'error';
+                result.innerHTML = '❌ ERREUR: ' + (error.text || error.message || JSON.stringify(error));
+            }
+        });
+    </script>
+</body>
+</html>

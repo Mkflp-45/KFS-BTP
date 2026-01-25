@@ -1,0 +1,10 @@
+{
+    "status": "online",
+    "version": "1.0.0",
+    "lastUpdate": "2026-01-23T20:00:00Z",
+    "services": {
+        "website": "operational",
+        "admin": "operational",
+        "forms": "operational"
+    }
+}

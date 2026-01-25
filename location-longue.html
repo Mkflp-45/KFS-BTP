@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+                <link rel="icon" type="image/jpeg" href="assets/logo-kfs-btp.jpeg">
+            <!-- Google Analytics (remplacez G-F0SXNRNGS1 par votre ID) -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-F0SXNRNGS1"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-F0SXNRNGS1');
+            </script>
+            <!-- Google Search Console (remplacez le code par le vôtre) -->
+            <meta name="google-site-verification" content="VOTRE_CODE_VERIFICATION" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Longue Durée - BTP Sénégal</title>
+    <meta name="description" content="Location longue durée au Sénégal : maisons et appartements pour installations durables.">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900" style="font-family: 'Roboto', Arial, sans-serif; background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%); min-height: 100vh;">
+    <header></header>
+
+    <main id="main-content">
+    <section class="hero bg-cover bg-center h-96 flex items-center justify-center text-white relative" style="background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75');">
+        <div class="bg-black/40 absolute inset-0"></div>
+        <div class="text-center relative z-10">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4">Location Longue Durée</h1>
+            <p class="text-xl mb-6">Maisons et appartements pour vos installations durables au Sénégal.</p>
+            <a href="#details" class="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold">En Savoir Plus</a>
+        </div>
+    </section>
+
+    <section id="details" class="details py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-3xl font-bold mb-8">Photos de Nos Propriétés</h2>
+                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75" alt="Villa familiale à Dakar" class="w-full rounded-lg mb-4" loading="lazy">
+                    <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=75" alt="Appartement spacieux Sénégal" class="w-full rounded-lg" loading="lazy">
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold mb-8">Avantages</h2>
+                    <ul class="list-disc list-inside space-y-4 text-lg">
+                        <li>Espaces adaptés aux familles et professionnels</li>
+                        <li>Contrats de 6 mois à plusieurs années</li>
+                        <li>Entretien et maintenance inclus</li>
+                        <li>Quartiers sécurisés et bien desservis</li>
+                        <li>Possibilité de personnalisation</li>
+                    </ul>
+                    <h3 class="text-2xl font-semibold mt-8 mb-4">Conditions</h3>
+                    <p>Caution de 2 mois de loyer. Contrats standard avec renouvellement automatique.</p>
+                    <a href="#contact" class="inline-block mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">Demander un Devis</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Catalogue Location Longue Durée -->
+    <section id="catalogue" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8 text-blue-900" style="font-family: 'Montserrat', Arial, sans-serif;">Nos Biens Disponibles</h2>
+            
+            <!-- Barre de filtres -->
+            <div class="bg-white rounded-2xl p-4 mb-8 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rechercher</label>
+                        <input type="text" id="filter-search" placeholder="Quartier, type..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                        <select id="filter-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">Tous les types</option>
+                            <option value="maison">Maison</option>
+                            <option value="appartement">Appartement</option>
+                            <option value="villa">Villa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loyer max/mois</label>
+                        <select id="filter-budget" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">Tous les prix</option>
+                            <option value="200000">< 200 000 FCFA</option>
+                            <option value="500000">< 500 000 FCFA</option>
+                            <option value="1000000">< 1 000 000 FCFA</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="resetFilters()" class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            Réinitialiser
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <p id="results-count" class="text-gray-600 mb-4 text-center"></p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Les annonces seront chargées dynamiquement depuis localStorage -->
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact py-16 bg-gray-200">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Réservez Votre Location</h2>
+            <form class="max-w-lg mx-auto bg-white p-8 rounded-lg shadow-lg">
+                <div class="mb-4">
+                    <label class="block text-gray-700">Nom</label>
+                    <input type="text" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Téléphone</label>
+                    <input type="tel" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Email</label>
+                    <input type="email" class="w-full px-3 py-2 border rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Type de Propriété</label>
+                    <select class="w-full px-3 py-2 border rounded-lg" required>
+                        <option>Maison</option>
+                        <option>Appartement</option>
+                        <option>Villa</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700">Message</label>
+                    <textarea class="w-full px-3 py-2 border rounded-lg" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Envoyer</button>
+            </form>
+        </div>
+    </section>
+    </main>
+
+    <a href="https://wa.me/221785842871" aria-label="Nous contacter sur WhatsApp" class="fixed bottom-4 right-4 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 z-50">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
+        </svg>
+    </a>
+
+    <footer id="main-footer"></footer>
+    <script src="utils.js"></script>
+    <script src="fragments.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

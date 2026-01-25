@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+                <link rel="icon" type="image/jpeg" href="assets/logo-kfs-btp.jpeg">
+            <!-- Google Analytics (remplacez G-F0SXNRNGS1 par votre ID) -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-F0SXNRNGS1"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-F0SXNRNGS1');
+            </script>
+            <!-- Google Search Console (remplacez le code par le vôtre) -->
+            <meta name="google-site-verification" content="VOTRE_CODE_VERIFICATION" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Locative - KFS BTP</title>
+    <meta name="description" content="Services de gestion locative au Sénégal : location courte et longue durée.">
+    <meta property="og:title" content="Gestion Locative - KFS BTP">
+    <meta property="og:description" content="Experts en construction et immobilier au Sénégal.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-900" style="font-family: 'Roboto', Arial, sans-serif; background: linear-gradient(135deg, #f0f4f8 0%, #e0e7ef 100%); min-height: 100vh;">
+    <header></header>
+
+    <main id="main-content">
+    <section class="hero bg-cover bg-center h-96 flex items-center justify-center text-white relative" style="background-image: url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=75');">
+        <div class="bg-black/40 absolute inset-0"></div>
+        <div class="text-center animate__animated animate__fadeInUp relative z-10">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4">Gestion Locative</h1>
+            <p class="text-xl mb-6">Solutions de location adaptées à vos besoins au Sénégal.</p>
+            <a href="#services" class="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold">Découvrir</a>
+        </div>
+    </section>
+
+    <section id="services" class="services py-16 bg-white animate__animated animate__fadeIn">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Nos Services de Location</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="text-center bg-gray-100 p-8 rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=75" alt="Location courte durée Dakar" class="w-full h-48 object-cover rounded-lg mb-4" loading="lazy">
+                    <h3 class="text-2xl font-semibold mb-4">Location Courte Durée</h3>
+                    <p class="mb-6">Idéal pour séjours temporaires, vacances ou affaires. Flexibilité et confort garantis.</p>
+                    <a href="location-courte.html" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">En Savoir Plus</a>
+                </div>
+                <div class="text-center bg-gray-100 p-8 rounded-lg">
+                    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=75" alt="Location longue durée Sénégal" class="w-full h-48 object-cover rounded-lg mb-4" loading="lazy">
+                    <h3 class="text-2xl font-semibold mb-4">Location Longue Durée</h3>
+                    <p class="mb-6">Pour installations durables, familles ou professionnels. Sécurité et stabilité.</p>
+                    <a href="location-longue.html" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">En Savoir Plus</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact py-16 bg-gray-200 animate__animated animate__fadeIn">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8">Besoin d'une Location ?</h2>
+            <form class="max-w-lg mx-auto bg-white p-8 rounded-lg shadow-lg">
+                <div class="mb-5">
+                    <label class="block text-gray-700 font-medium mb-2">Nom</label>
+                    <input type="text" class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" placeholder="Votre nom" required>
+                </div>
+                <div class="mb-5">
+                    <label class="block text-gray-700 font-medium mb-2">Téléphone</label>
+                    <input type="tel" class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" placeholder="Votre téléphone" required>
+                </div>
+                <div class="mb-5">
+                    <label class="block text-gray-700 font-medium mb-2">Email</label>
+                    <input type="email" class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" placeholder="Votre email" required>
+                </div>
+                <div class="mb-5">
+                    <label class="block text-gray-700 font-medium mb-2">Type de Location</label>
+                    <select class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" required>
+                        <option>Courte Durée</option>
+                        <option>Longue Durée</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Message</label>
+                    <textarea class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/70 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" rows="4" placeholder="Votre message..." required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-700 to-blue-500 text-white py-3 rounded-xl font-semibold shadow-lg hover:from-blue-800 hover:to-blue-600 transition duration-200">Envoyer</button>
+            </form>
+        </div>
+    </section>
+    </main>
+
+    <footer id="main-footer"></footer>
+    <script src="utils.js"></script>
+    <script src="fragments.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

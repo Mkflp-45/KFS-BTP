@@ -1,0 +1,65 @@
+{
+    "name": "KFS BTP - Construction et Immobilier au Sénégal",
+    "short_name": "KFS BTP",
+    "description": "Entreprise de BTP et immobilier au Sénégal. Vente, location, rénovation à Dakar.",
+    "start_url": "/index.html",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#1e3a8a",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "72x72",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "96x96",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "128x128",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "144x144",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "152x152",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "192x192",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "384x384",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/logo-kfs-btp.jpeg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["business", "productivity", "real-estate"],
+    "lang": "fr",
+    "dir": "ltr",
+    "prefer_related_applications": false
+}
