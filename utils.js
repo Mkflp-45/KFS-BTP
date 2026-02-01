@@ -278,18 +278,30 @@
             <div class="bg-white p-6 rounded-2xl shadow-2xl border border-blue-100 flex flex-col items-center animate__animated animate__fadeInUp">
                 <div class="relative w-full mb-4">
                     ${mainImage ? `
-                        <div class="relative overflow-hidden rounded-lg">
-                            <img id="${uniqueId}-img" src="${mainImage}" alt="${a.title || 'Annonce KFS BTP'}" class="w-full h-48 object-cover shadow-md transition-transform duration-300" loading="lazy">
+                        <div class="relative overflow-hidden rounded-lg group">
+                            <img id="${uniqueId}-img" src="${mainImage}" alt="${a.title || 'Annonce KFS BTP'}" 
+                                class="w-full h-48 object-cover shadow-md transition-transform duration-300 cursor-pointer hover:scale-105" 
+                                loading="lazy"
+                                onclick="openPublicLightbox(${JSON.stringify(images).replace(/"/g, '&quot;')}, 0, '${(a.title || 'Annonce').replace(/'/g, "\\'")}')"
+                                title="Cliquez pour agrandir">
+                            <!-- Icône zoom au survol -->
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center pointer-events-none">
+                                <span class="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-2 rounded-full shadow-lg">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                                    </svg>
+                                </span>
+                            </div>
                             ${imageCount > 1 ? `
-                                <div class="absolute bottom-2 right-2 flex gap-1">
-                                    <button onclick="changeAnnonceImage('${uniqueId}', ${JSON.stringify(images).replace(/"/g, '&quot;')}, -1)" class="bg-black/60 text-white p-1 rounded-full hover:bg-black/80 transition">
+                                <div class="absolute bottom-2 right-2 flex gap-1 z-10">
+                                    <button onclick="event.stopPropagation(); changeAnnonceImage('${uniqueId}', ${JSON.stringify(images).replace(/"/g, '&quot;')}, -1)" class="bg-black/60 text-white p-1 rounded-full hover:bg-black/80 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                     </button>
-                                    <button onclick="changeAnnonceImage('${uniqueId}', ${JSON.stringify(images).replace(/"/g, '&quot;')}, 1)" class="bg-black/60 text-white p-1 rounded-full hover:bg-black/80 transition">
+                                    <button onclick="event.stopPropagation(); changeAnnonceImage('${uniqueId}', ${JSON.stringify(images).replace(/"/g, '&quot;')}, 1)" class="bg-black/60 text-white p-1 rounded-full hover:bg-black/80 transition">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     </button>
                                 </div>
-                                <span class="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">${imageCount} photos</span>
+                                <span class="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full z-10">${imageCount} photos</span>
                             ` : ''}
                         </div>
                     ` : `<div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center"><span class="text-gray-400 text-4xl">🏠</span></div>`}
@@ -320,6 +332,182 @@
         imgEl.style.transform = 'scale(1.02)';
         setTimeout(() => imgEl.style.transform = 'scale(1)', 200);
     };
+    
+    // ===================================================
+    // LIGHTBOX PUBLIQUE POUR VOIR LES IMAGES EN GRAND
+    // ===================================================
+    let currentLightboxImages = [];
+    let currentLightboxIndex = 0;
+    
+    window.openPublicLightbox = function(images, startIndex = 0, title = '') {
+        if (!images || images.length === 0) return;
+        
+        currentLightboxImages = images;
+        currentLightboxIndex = startIndex;
+        
+        // Créer la lightbox si elle n'existe pas
+        let lightbox = document.getElementById('public-lightbox');
+        if (!lightbox) {
+            lightbox = document.createElement('div');
+            lightbox.id = 'public-lightbox';
+            lightbox.className = 'fixed inset-0 z-[9999] bg-black/95 hidden';
+            lightbox.innerHTML = `
+                <div class="absolute inset-0 flex flex-col">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center p-4 text-white">
+                        <div>
+                            <h3 id="lightbox-title" class="text-lg font-semibold"></h3>
+                            <span id="lightbox-counter" class="text-sm text-gray-300"></span>
+                        </div>
+                        <button onclick="closePublicLightbox()" class="p-2 hover:bg-white/10 rounded-full transition" title="Fermer (Échap)">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Image principale -->
+                    <div class="flex-1 flex items-center justify-center p-4 relative">
+                        <!-- Bouton précédent -->
+                        <button id="lightbox-prev" onclick="lightboxNavigate(-1)" 
+                            class="absolute left-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition z-10" title="Image précédente">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        
+                        <!-- Image -->
+                        <img id="lightbox-main-image" src="" alt="" 
+                            class="max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-opacity duration-300">
+                        
+                        <!-- Bouton suivant -->
+                        <button id="lightbox-next" onclick="lightboxNavigate(1)" 
+                            class="absolute right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition z-10" title="Image suivante">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Vignettes -->
+                    <div id="lightbox-thumbnails" class="flex justify-center gap-2 p-4 overflow-x-auto"></div>
+                    
+                    <!-- Instructions -->
+                    <div class="text-center text-gray-400 text-sm pb-4">
+                        <span class="hidden md:inline">← → pour naviguer • Échap pour fermer</span>
+                        <span class="md:hidden">Glissez pour naviguer</span>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+            
+            // Fermer en cliquant sur le fond
+            lightbox.addEventListener('click', function(e) {
+                if (e.target === lightbox || e.target.classList.contains('flex-1')) {
+                    closePublicLightbox();
+                }
+            });
+        }
+        
+        // Mettre à jour le titre
+        document.getElementById('lightbox-title').textContent = title;
+        
+        // Afficher la lightbox
+        lightbox.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Afficher l'image
+        updateLightboxImage();
+        
+        // Générer les vignettes
+        renderLightboxThumbnails();
+        
+        // Écouter les touches clavier
+        document.addEventListener('keydown', handleLightboxKeydown);
+    };
+    
+    window.closePublicLightbox = function() {
+        const lightbox = document.getElementById('public-lightbox');
+        if (lightbox) {
+            lightbox.classList.add('hidden');
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleLightboxKeydown);
+        }
+    };
+    
+    window.lightboxNavigate = function(direction) {
+        if (currentLightboxImages.length <= 1) return;
+        currentLightboxIndex = (currentLightboxIndex + direction + currentLightboxImages.length) % currentLightboxImages.length;
+        updateLightboxImage();
+        updateLightboxThumbnailsActive();
+    };
+    
+    function updateLightboxImage() {
+        const img = document.getElementById('lightbox-main-image');
+        const counter = document.getElementById('lightbox-counter');
+        const prevBtn = document.getElementById('lightbox-prev');
+        const nextBtn = document.getElementById('lightbox-next');
+        
+        if (img) {
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.src = currentLightboxImages[currentLightboxIndex];
+                img.style.opacity = '1';
+            }, 150);
+        }
+        
+        if (counter) {
+            counter.textContent = `${currentLightboxIndex + 1} / ${currentLightboxImages.length}`;
+        }
+        
+        // Masquer les boutons si une seule image
+        const showNav = currentLightboxImages.length > 1;
+        if (prevBtn) prevBtn.style.display = showNav ? '' : 'none';
+        if (nextBtn) nextBtn.style.display = showNav ? '' : 'none';
+    }
+    
+    function renderLightboxThumbnails() {
+        const container = document.getElementById('lightbox-thumbnails');
+        if (!container || currentLightboxImages.length <= 1) {
+            if (container) container.innerHTML = '';
+            return;
+        }
+        
+        container.innerHTML = currentLightboxImages.map((img, i) => `
+            <img src="${img}" alt="Vignette ${i + 1}" 
+                class="w-16 h-16 object-cover rounded-lg cursor-pointer transition-all border-2 ${i === currentLightboxIndex ? 'border-yellow-400 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'}"
+                onclick="lightboxGoTo(${i})">
+        `).join('');
+    }
+    
+    function updateLightboxThumbnailsActive() {
+        const thumbnails = document.querySelectorAll('#lightbox-thumbnails img');
+        thumbnails.forEach((thumb, i) => {
+            if (i === currentLightboxIndex) {
+                thumb.classList.add('border-yellow-400', 'opacity-100');
+                thumb.classList.remove('border-transparent', 'opacity-50');
+            } else {
+                thumb.classList.remove('border-yellow-400', 'opacity-100');
+                thumb.classList.add('border-transparent', 'opacity-50');
+            }
+        });
+    }
+    
+    window.lightboxGoTo = function(index) {
+        currentLightboxIndex = index;
+        updateLightboxImage();
+        updateLightboxThumbnailsActive();
+    };
+    
+    function handleLightboxKeydown(e) {
+        if (e.key === 'Escape') {
+            closePublicLightbox();
+        } else if (e.key === 'ArrowLeft') {
+            lightboxNavigate(-1);
+        } else if (e.key === 'ArrowRight') {
+            lightboxNavigate(1);
+        }
+    }
     window.resetFilters = function() {
         const searchInput = document.getElementById('filter-search');
         const typeSelect = document.getElementById('filter-type');

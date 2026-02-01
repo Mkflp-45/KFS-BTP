@@ -39,9 +39,9 @@ Remplacez `G-XXXXXXXXXX` par votre vrai ID Google Analytics dans tous les fichie
 ```
 
 ### Google Search Console
-Remplacez `VOTRE_CODE_VERIFICATION` par votre code de vérification :
+✅ **DÉJÀ CONFIGURÉ** - Code de vérification: `oy3NvVwRaOri6w8iCcRwmjWWKlH3Y70VtY6vdrThE04`
 ```html
-<meta name="google-site-verification" content="VOTRE_VRAI_CODE" />
+<meta name="google-site-verification" content="oy3NvVwRaOri6w8iCcRwmjWWKlH3Y70VtY6vdrThE04" />
 ```
 
 ### Numéros de téléphone

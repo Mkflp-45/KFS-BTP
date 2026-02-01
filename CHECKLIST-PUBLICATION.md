@@ -60,7 +60,7 @@ vercel --prod
 1. Allez sur https://search.google.com/search-console
 2. Ajoutez votre propriété (domaine)
 3. Vérifiez avec la balise HTML
-4. Remplacez `VOTRE_CODE_VERIFICATION` dans les fichiers HTML
+4. ✅ **DÉJÀ FAIT** - Code de vérification: `oy3NvVwRaOri6w8iCcRwmjWWKlH3Y70VtY6vdrThE04`
 5. Soumettez votre sitemap: `https://kfs-btp.sn/sitemap.xml`
 
 ### 5. Configurer EmailJS (pour les formulaires)
@@ -70,11 +70,11 @@ vercel --prod
 4. Mettez à jour `emailjs-config.js` avec vos identifiants
 
 ### 6. Compléter les informations légales
-Dans `mentions-legales.html`, remplacez :
-- [ ] `[À COMPLÉTER]` par le NINEA de l'entreprise
-- [ ] `[À COMPLÉTER]` par le numéro RC
-- [ ] `[Adresse complète à compléter]` par l'adresse réelle
-- [ ] `[Nom du responsable à compléter]` par le nom du directeur
+Dans `mentions-legales.html` et `site-config.js` :
+- [x] NINEA de l'entreprise: `009468499` ✅
+- [x] Numéro RCCM: `SN TBC 2025 M 1361` ✅
+- [x] Adresse: Villa 123 MC, Quartier Medinacoura, Tambacounda ✅
+- [x] Nom du responsable: Directeur Général ✅
 - [ ] Informations de l'hébergeur (après déploiement)
 
 ### 7. Réseaux sociaux

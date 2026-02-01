@@ -483,3 +483,169 @@ a, button {
 .stagger-item:nth-child(4) { animation-delay: 0.4s; }
 .stagger-item:nth-child(5) { animation-delay: 0.5s; }
 .stagger-item:nth-child(6) { animation-delay: 0.6s; }
+
+/* ========================================
+   MODULE FINANCES - Onglets & Styles
+   ======================================== */
+.finance-tab {
+    color: #374151;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    font-weight: 600;
+}
+
+.finance-tab:hover {
+    color: #1d4ed8;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.finance-tab.active {
+    color: #1e40af;
+    background: white;
+    border-bottom-color: #2563eb;
+    font-weight: 700;
+}
+
+.finance-tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Barres de progression catégories */
+.finance-progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.finance-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+/* Transaction items */
+.transaction-item {
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.transaction-item:hover {
+    transform: translateX(4px);
+    background: #f9fafb;
+}
+
+.transaction-item.recette {
+    border-left-color: #22c55e;
+}
+
+.transaction-item.depense {
+    border-left-color: #ef4444;
+}
+
+/* Indicateurs santé financière */
+.health-indicator {
+    transition: transform 0.3s ease;
+}
+
+.health-indicator:hover {
+    transform: scale(1.05);
+}
+
+/* ========================================
+   MODULE SÉCURITÉ - Onglets & Styles
+   ======================================== */
+.security-tab {
+    color: #374151;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    font-weight: 600;
+}
+
+.security-tab:hover {
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.05);
+}
+
+.security-tab.active {
+    color: #b91c1c;
+    background: white;
+    border-bottom-color: #dc2626;
+    font-weight: 700;
+}
+
+.security-tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ========================================
+   MODULE PARAMÈTRES - Onglets & Styles
+   ======================================== */
+.settings-tab {
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.settings-tab:hover {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.settings-tab.active {
+    background: #eff6ff;
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 600;
+}
+
+.settings-tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Aperçu du footer */
+#settings-footer-preview {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    font-size: 0.875rem;
+    min-height: 150px;
+}
+
+/* Champs couleur */
+input[type="color"] {
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 0.5rem;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 0.375rem;
+}
+
+/* Log items */
+.log-item {
+    transition: all 0.2s ease;
+}
+
+.log-item:hover {
+    background: #f9fafb;
+}
+
+.log-item.login {
+    border-left: 3px solid #22c55e;
+}
+
+.log-item.logout {
+    border-left: 3px solid #3b82f6;
+}
+
+.log-item.failed {
+    border-left: 3px solid #ef4444;
+}
+
+.log-item.action {
+    border-left: 3px solid #f59e0b;
+}

@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- jsPDF pour génération PDF fiche de paie -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3a8a">
@@ -89,6 +91,9 @@
                     Connexion
                 </button>
                 <p id="login-error" class="text-red-500 text-center hidden">Mot de passe incorrect</p>
+                <button type="button" id="reset-password-btn" class="w-full mt-2 bg-yellow-100 text-yellow-800 py-2 rounded-xl font-semibold shadow hover:bg-yellow-200 transition duration-200">
+                    Réinitialiser mot de passe (admin123)
+                </button>
             </form>
             <p class="text-center text-gray-400 mt-6 text-sm">Mot de passe par défaut : <code class="bg-gray-100 px-2 py-1 rounded text-gray-700">admin123</code></p>
         </div>
@@ -188,15 +193,9 @@
                             <p class="px-4 text-xs font-semibold text-blue-200 uppercase tracking-wider">Gestion Entreprise</p>
                         </li>
                         <li>
-                            <a href="#" data-module="comptabilite" class="nav-link flex items-center px-4 py-3 rounded-xl text-white/90 hover:text-white">
+                            <a href="#" data-module="finances" class="nav-link flex items-center px-4 py-3 rounded-xl text-white/90 hover:text-white">
                                 <span class="material-icons mr-3">account_balance</span>
-                                <span class="font-medium">Comptabilité</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" data-module="bilans" class="nav-link flex items-center px-4 py-3 rounded-xl text-white/90 hover:text-white">
-                                <span class="material-icons mr-3">assessment</span>
-                                <span class="font-medium">Bilans</span>
+                                <span class="font-medium">Finances</span>
                             </a>
                         </li>
                         <li>
@@ -421,6 +420,8 @@
                                     <p class="text-gray-400 col-span-3 text-center py-8">Aucune annonce</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- MODULE: Carrousel -->
@@ -441,6 +442,8 @@
                                     <p class="text-gray-400 text-center py-8">Aucun slide configuré</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- MODULE: Témoignages -->
@@ -463,7 +466,7 @@
                             <div class="glass-card rounded-2xl p-6 shadow-xl">
                                 <div class="flex items-center justify-between mb-6">
                                     <h3 class="text-xl font-bold text-gray-800">Questions fréquentes</h3>
-                                    <button onclick="openFaqModal()" class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 transition shadow-lg">
+                                    <button onclick="openFaqModal()" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-orange-800 transition shadow-lg">
                                         <span class="material-icons align-middle mr-1 text-sm">add</span>Nouvelle question
                                     </button>
                                 </div>
@@ -490,60 +493,311 @@
 
                 <!-- MODULE: Paramètres -->
                 <section id="module-settings" class="module-section">
-                    <div class="glass-card rounded-2xl p-8 shadow-xl max-w-3xl">
-                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                            <span class="material-icons mr-2 text-blue-600">settings</span>Paramètres du site
-                        </h3>
-                        <form id="settings-form" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-6">
+                        <!-- En-tête -->
+                        <div class="bg-gradient-to-r from-slate-700 to-slate-900 rounded-2xl shadow-lg p-6 text-white">
+                            <div class="flex items-center justify-between">
                                 <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Nom de l'entreprise</label>
-                                    <input type="text" id="settings-company" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="KFS BTP">
+                                    <h3 class="text-2xl font-bold flex items-center">
+                                        <span class="material-icons mr-3 text-3xl">settings</span>
+                                        Paramètres du Site
+                                    </h3>
+                                    <p class="text-slate-300 mt-1">Configurez les informations affichées sur le site public</p>
                                 </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Slogan</label>
-                                    <input type="text" id="settings-slogan" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="Bâtir l'avenir au Sénégal">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Email</label>
-                                    <input type="email" id="settings-email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="contact@btpsenegal.sn">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Téléphone</label>
-                                    <input type="tel" id="settings-phone" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="+221 77 123 45 67">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">WhatsApp</label>
-                                    <input type="tel" id="settings-whatsapp" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="221785842871">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Adresse</label>
-                                    <input type="text" id="settings-address" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="Dakar, Sénégal">
+                                <div class="flex gap-2">
+                                    <button onclick="previewSettingsChanges()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition flex items-center gap-2">
+                                        <span class="material-icons">visibility</span>
+                                        Prévisualiser
+                                    </button>
+                                    <button onclick="resetSettingsToDefault()" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition flex items-center gap-2">
+                                        <span class="material-icons">restart_alt</span>
+                                        Réinitialiser
+                                    </button>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-gray-700 font-medium mb-2">Horaires d'ouverture</label>
-                                <input type="text" id="settings-hours" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="Lun-Ven: 8h-18h, Sam: 9h-13h">
+                        </div>
+
+                        <!-- Onglets des paramètres -->
+                        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                            <div class="flex border-b overflow-x-auto">
+                                <button onclick="switchSettingsTab('general')" class="settings-tab active flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2 whitespace-nowrap" data-tab="general">
+                                    <span class="material-icons text-lg">business</span>
+                                    Entreprise
+                                </button>
+                                <button onclick="switchSettingsTab('contact')" class="settings-tab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2 whitespace-nowrap" data-tab="contact">
+                                    <span class="material-icons text-lg">contact_phone</span>
+                                    Contact
+                                </button>
+                                <button onclick="switchSettingsTab('social')" class="settings-tab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2 whitespace-nowrap" data-tab="social">
+                                    <span class="material-icons text-lg">share</span>
+                                    Réseaux sociaux
+                                </button>
+                                <button onclick="switchSettingsTab('appearance')" class="settings-tab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2 whitespace-nowrap" data-tab="appearance">
+                                    <span class="material-icons text-lg">palette</span>
+                                    Apparence
+                                </button>
+                                <button onclick="switchSettingsTab('legal')" class="settings-tab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition flex items-center justify-center gap-2 whitespace-nowrap" data-tab="legal">
+                                    <span class="material-icons text-lg">gavel</span>
+                                    Légal
+                                </button>
                             </div>
-                            <h4 class="text-lg font-semibold text-gray-800 pt-4 border-t">Réseaux sociaux</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Facebook</label>
-                                    <input type="url" id="settings-facebook" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="https://facebook.com/...">
+
+                            <form id="settings-form" class="p-6">
+                                <!-- Tab: Entreprise -->
+                                <div id="settings-tab-general" class="settings-tab-content">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-blue-600">badge</span>
+                                                Identité de l'entreprise
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Nom de l'entreprise *</label>
+                                                <input type="text" id="settings-company" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition" placeholder="KFS BTP IMMO" required>
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Slogan / Description courte</label>
+                                                <input type="text" id="settings-slogan" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="Bâtir l'avenir au Sénégal">
+                                                <p class="text-xs text-gray-500 mt-1">Affiché dans le footer et les meta descriptions</p>
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Description complète</label>
+                                                <textarea id="settings-description" rows="3" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="Entreprise de BTP et immobilier au Sénégal..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-green-600">schedule</span>
+                                                Horaires & Disponibilité
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Horaires d'ouverture</label>
+                                                <input type="text" id="settings-hours" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="Lun-Ven: 8h-18h, Sam: 9h-13h">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Jours de fermeture</label>
+                                                <input type="text" id="settings-closed" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="Dimanche, jours fériés">
+                                            </div>
+                                            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                                <input type="checkbox" id="settings-available" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                                                <label for="settings-available" class="text-gray-700 font-medium">Actuellement disponible pour de nouveaux projets</label>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">Instagram</label>
-                                    <input type="url" id="settings-instagram" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="https://instagram.com/...">
+
+                                <!-- Tab: Contact -->
+                                <div id="settings-tab-contact" class="settings-tab-content hidden">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-purple-600">phone</span>
+                                                Téléphones
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Téléphone principal (Sénégal)</label>
+                                                <div class="flex">
+                                                    <span class="inline-flex items-center px-4 bg-gray-100 border-2 border-r-0 border-gray-200 rounded-l-xl text-gray-600">🇸🇳</span>
+                                                    <input type="tel" id="settings-phone" class="w-full px-4 py-3 border-2 border-gray-200 rounded-r-xl text-gray-800 focus:border-blue-500 transition" placeholder="+221 78 584 28 71">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Téléphone France</label>
+                                                <div class="flex">
+                                                    <span class="inline-flex items-center px-4 bg-gray-100 border-2 border-r-0 border-gray-200 rounded-l-xl text-gray-600">🇫🇷</span>
+                                                    <input type="tel" id="settings-phone-france" class="w-full px-4 py-3 border-2 border-gray-200 rounded-r-xl text-gray-800 focus:border-blue-500 transition" placeholder="+33 6 05 84 68 07">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">WhatsApp (numéro sans espaces ni +)</label>
+                                                <div class="flex">
+                                                    <span class="inline-flex items-center px-4 bg-green-100 border-2 border-r-0 border-gray-200 rounded-l-xl text-green-600">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                                                    </span>
+                                                    <input type="text" id="settings-whatsapp" class="w-full px-4 py-3 border-2 border-gray-200 rounded-r-xl text-gray-800 focus:border-blue-500 transition" placeholder="221785842871">
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-1">Format: 221XXXXXXXXX (code pays + numéro)</p>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-orange-600">location_on</span>
+                                                Adresse & Email
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Email professionnel</label>
+                                                <input type="email" id="settings-email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="kfsbtpproimmo@gmail.com">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Adresse complète</label>
+                                                <textarea id="settings-address" rows="2" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="Villa 123 MC, Quartier Medinacoura, Tambacounda"></textarea>
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Ville</label>
+                                                <input type="text" id="settings-city" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="Tambacounda, Sénégal">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Lien Google Maps (embed URL)</label>
+                                                <input type="url" id="settings-maps" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://maps.google.com/...">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-gray-700 font-medium mb-2">LinkedIn</label>
-                                    <input type="url" id="settings-linkedin" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="https://linkedin.com/...">
+
+                                <!-- Tab: Réseaux sociaux -->
+                                <div id="settings-tab-social" class="settings-tab-content hidden">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                                                <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.522-4.477-10-10-10S2 6.478 2 12c0 5 3.657 9.127 8.438 9.877v-6.987h-2.54v-2.89h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.632.771-1.632 1.562v1.875h2.773l-.443 2.89h-2.33v6.987C18.343 21.127 22 17 22 12z"/></svg>
+                                                Facebook
+                                            </label>
+                                            <input type="url" id="settings-facebook" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://facebook.com/kfsbtp">
+                                        </div>
+                                        <div>
+                                            <label class="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                                                <svg class="w-5 h-5 text-pink-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                                                Instagram
+                                            </label>
+                                            <input type="url" id="settings-instagram" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://instagram.com/kfsbtp">
+                                        </div>
+                                        <div>
+                                            <label class="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                                                <svg class="w-5 h-5 text-blue-700" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.97 0-1.75-.79-1.75-1.75s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.75-1.75 1.75zm13.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.39v4.58h-3v-9h2.88v1.23h.04c.4-.75 1.38-1.54 2.84-1.54 3.04 0 3.6 2 3.6 4.59v4.72z"/></svg>
+                                                LinkedIn
+                                            </label>
+                                            <input type="url" id="settings-linkedin" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://linkedin.com/company/kfsbtp">
+                                        </div>
+                                        <div>
+                                            <label class="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                                                <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                                YouTube
+                                            </label>
+                                            <input type="url" id="settings-youtube" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://youtube.com/@kfsbtp">
+                                        </div>
+                                        <div>
+                                            <label class="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                                X (Twitter)
+                                            </label>
+                                            <input type="url" id="settings-twitter" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://x.com/kfsbtp">
+                                        </div>
+                                        <div>
+                                            <label class="flex items-center gap-2 text-gray-700 font-medium mb-2">
+                                                <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+                                                TikTok
+                                            </label>
+                                            <input type="url" id="settings-tiktok" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="https://tiktok.com/@kfsbtp">
+                                        </div>
+                                    </div>
                                 </div>
+
+                                <!-- Tab: Apparence -->
+                                <div id="settings-tab-appearance" class="settings-tab-content hidden">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-indigo-600">color_lens</span>
+                                                Couleurs du site
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Couleur principale</label>
+                                                <div class="flex gap-2">
+                                                    <input type="color" id="settings-color-primary" class="w-16 h-12 rounded-lg cursor-pointer border-2 border-gray-200" value="#1e3a8a">
+                                                    <input type="text" id="settings-color-primary-hex" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 font-mono" value="#1e3a8a" readonly>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Couleur secondaire</label>
+                                                <div class="flex gap-2">
+                                                    <input type="color" id="settings-color-secondary" class="w-16 h-12 rounded-lg cursor-pointer border-2 border-gray-200" value="#facc15">
+                                                    <input type="text" id="settings-color-secondary-hex" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 font-mono" value="#facc15" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-cyan-600">image</span>
+                                                Logo & Images
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">URL du logo</label>
+                                                <input type="url" id="settings-logo" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="assets/logo-kfs-btp.jpeg">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">URL du favicon</label>
+                                                <input type="url" id="settings-favicon" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="assets/logo-kfs-btp.jpeg">
+                                            </div>
+                                            <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                                                <input type="checkbox" id="settings-show-whatsapp-btn" class="w-5 h-5 text-green-600 rounded focus:ring-green-500" checked>
+                                                <label for="settings-show-whatsapp-btn" class="text-gray-700 font-medium">Afficher le bouton WhatsApp flottant</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab: Légal -->
+                                <div id="settings-tab-legal" class="settings-tab-content hidden">
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-amber-600">account_balance</span>
+                                                Informations légales
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">NINEA</label>
+                                                <input type="text" id="settings-ninea" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="009468499">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">RCCM</label>
+                                                <input type="text" id="settings-rccm" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="SN TBC 2025 M 1361">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Capital social</label>
+                                                <input type="text" id="settings-capital" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="1 000 000 FCFA">
+                                            </div>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                                <span class="material-icons text-teal-600">verified_user</span>
+                                                Propriétaire / Gérant
+                                            </h4>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Nom du gérant</label>
+                                                <input type="text" id="settings-owner" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="M. / Mme ...">
+                                            </div>
+                                            <div>
+                                                <label class="block text-gray-700 font-medium mb-2">Hébergeur du site</label>
+                                                <input type="text" id="settings-host" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition" placeholder="GitHub Pages / Netlify...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Boutons de sauvegarde -->
+                                <div class="flex flex-col sm:flex-row gap-4 mt-8 pt-6 border-t">
+                                    <button type="submit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-800 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-900 transition flex items-center justify-center gap-2">
+                                        <span class="material-icons">save</span>
+                                        Sauvegarder tous les paramètres
+                                    </button>
+                                    <button type="button" onclick="testSettingsOnPublic()" class="px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold hover:from-green-700 hover:to-green-800 transition flex items-center justify-center gap-2">
+                                        <span class="material-icons">open_in_new</span>
+                                        Voir le site public
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Aperçu en temps réel -->
+                        <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <span class="material-icons text-purple-600">preview</span>
+                                Aperçu du footer (site public)
+                            </h4>
+                            <div id="settings-footer-preview" class="bg-gradient-to-r from-blue-900 to-blue-600 rounded-xl p-6 text-white text-sm">
+                                <!-- Prévisualisation dynamique -->
                             </div>
-                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-blue-900 transition">
-                                <span class="material-icons align-middle mr-2">save</span>Sauvegarder les paramètres
-                            </button>
-                        </form>
+                        </div>
                     </div>
                 </section>
 
@@ -830,7 +1084,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Durée estimée (heures)</label>
                                     <input type="number" id="maintenance-duration" class="w-full px-4 py-2 border border-gray-200 rounded-xl" value="2" min="1" max="48">
                                 </div>
-                                <button onclick="activateMaintenance()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-xl transition">
+                                <button onclick="activateMaintenance()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-xl transition shadow-lg">
                                     Appliquer le mode maintenance
                                 </button>
                             </div>
@@ -888,8 +1142,8 @@
                                         <p class="text-sm text-gray-500">Vérifier la connexion</p>
                                     </div>
                                 </button>
-                                <button onclick="runDiagnostics()" class="flex items-center justify-center gap-3 p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl transition">
-                                    <span class="material-icons text-yellow-600">troubleshoot</span>
+                                <button onclick="runDiagnostics()" class="flex items-center justify-center gap-3 p-4 bg-amber-50 hover:bg-amber-100 rounded-xl transition">
+                                    <span class="material-icons text-amber-600">troubleshoot</span>
                                     <div class="text-left">
                                         <p class="font-semibold text-gray-800">Diagnostic complet</p>
                                         <p class="text-sm text-gray-500">Analyser tout le système</p>
@@ -899,13 +1153,13 @@
                         </div>
                         
                         <!-- Lien vers la page de maintenance -->
-                        <div class="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl shadow-lg p-6 text-white">
+                        <div class="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white">
                             <h3 class="text-xl font-bold mb-2 flex items-center">
                                 <span class="material-icons mr-2">preview</span>
                                 Prévisualiser la page de maintenance
                             </h3>
-                            <p class="text-yellow-100 mb-4">Voir ce que les visiteurs verront pendant la maintenance</p>
-                            <a href="maintenance.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-white text-yellow-600 font-semibold rounded-xl hover:bg-yellow-50 transition">
+                            <p class="text-amber-100 mb-4">Voir ce que les visiteurs verront pendant la maintenance</p>
+                            <a href="maintenance.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-white text-amber-700 font-semibold rounded-xl hover:bg-amber-50 transition">
                                 <span class="material-icons mr-2">open_in_new</span>
                                 Ouvrir maintenance.html
                             </a>
@@ -946,28 +1200,397 @@
 
                 <!-- MODULE: Sécurité -->
                 <section id="module-security" class="module-section">
-                    <div class="glass-card rounded-2xl p-8 shadow-xl max-w-xl">
-                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                            <span class="material-icons mr-2 text-red-600">security</span>Sécurité
-                        </h3>
-                        <form id="security-form" class="space-y-6">
-                            <div>
-                                <label class="block text-gray-700 font-medium mb-2">Nouveau mot de passe</label>
-                                <input type="password" id="security-password" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" minlength="6" required>
+                    
+                    <!-- En-tête -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div class="flex items-center">
+                            <div class="w-14 h-14 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                                <span class="material-icons text-white text-2xl">shield</span>
                             </div>
                             <div>
-                                <label class="block text-gray-700 font-medium mb-2">Confirmer le mot de passe</label>
-                                <input type="password" id="security-password-confirm" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" minlength="6" required>
+                                <h2 class="text-2xl font-bold text-gray-800">Centre de Sécurité</h2>
+                                <p class="text-gray-500">Protection & Gestion des accès - KFS BTP IMMO</p>
                             </div>
-                            <p id="security-message" class="text-sm"></p>
-                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-4 rounded-xl font-bold hover:from-blue-700 hover:to-blue-900 transition">
-                                <span class="material-icons align-middle mr-2">lock</span>Changer le mot de passe
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="runSecurityAudit()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition shadow-lg flex items-center gap-2">
+                                <span class="material-icons">fact_check</span> Audit sécurité
                             </button>
-                        </form>
-                        <div class="mt-6 pt-6 border-t">
-                            <button id="security-reset" class="w-full bg-red-100 text-red-700 py-3 rounded-xl font-semibold hover:bg-red-200 transition">
-                                Réinitialiser à "admin123"
+                            <button onclick="openEmployeeAccessModal()" class="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition shadow-lg flex items-center gap-2">
+                                <span class="material-icons">person_add</span> Nouvel accès
                             </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tableau de bord sécurité -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-green-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm font-medium">Statut sécurité</p>
+                                    <p class="text-xl font-bold text-green-600" id="sec-status">Sécurisé</p>
+                                    <p class="text-xs text-green-500 mt-1">Dernière vérif: Aujourd'hui</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-green-600">verified_user</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm font-medium">Utilisateurs actifs</p>
+                                    <p class="text-xl font-bold text-blue-600" id="sec-users-count">1</p>
+                                    <p class="text-xs text-gray-500 mt-1" id="sec-users-detail">1 admin, 0 employés</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-blue-600">group</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-yellow-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm font-medium">Connexions (7j)</p>
+                                    <p class="text-xl font-bold text-yellow-600" id="sec-logins">0</p>
+                                    <p class="text-xs text-gray-500 mt-1" id="sec-last-login">-</p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-yellow-600">login</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-red-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm font-medium">Alertes</p>
+                                    <p class="text-xl font-bold text-red-600" id="sec-alerts">0</p>
+                                    <p class="text-xs text-red-500 mt-1">Tentatives échouées</p>
+                                </div>
+                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-red-600">warning</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglets de sécurité -->
+                    <div class="glass-card rounded-2xl shadow-lg overflow-hidden mb-6">
+                        <div class="flex border-b border-gray-200 bg-gray-50">
+                            <button onclick="showSecurityTab('users')" class="security-tab active flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="users">
+                                <span class="material-icons text-lg">manage_accounts</span> Gestion des accès
+                            </button>
+                            <button onclick="showSecurityTab('password')" class="security-tab flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="password">
+                                <span class="material-icons text-lg">lock</span> Mot de passe admin
+                            </button>
+                            <button onclick="showSecurityTab('logs')" class="security-tab flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="logs">
+                                <span class="material-icons text-lg">history</span> Journal d'activité
+                            </button>
+                            <button onclick="showSecurityTab('settings')" class="security-tab flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="settings">
+                                <span class="material-icons text-lg">tune</span> Paramètres
+                            </button>
+                        </div>
+                        
+                        <!-- TAB: Gestion des accès employés -->
+                        <div id="security-tab-users" class="security-tab-content p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <span class="material-icons text-blue-600">badge</span>
+                                    Comptes utilisateurs
+                                </h3>
+                                <div class="flex gap-2">
+                                    <input type="text" id="sec-search-user" placeholder="Rechercher..." class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800 text-sm">
+                                    <button onclick="openEmployeeAccessModal()" class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition flex items-center gap-2">
+                                        <span class="material-icons text-sm">add</span> Ajouter
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Liste des utilisateurs -->
+                            <div id="sec-users-list" class="space-y-3">
+                                <!-- Rempli dynamiquement -->
+                            </div>
+                            
+                            <!-- Légende des permissions -->
+                            <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                                <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <span class="material-icons text-sm">info</span> Légende des modules
+                                </h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
+                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded">📊 Dashboard</span>
+                                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded">💰 Finances</span>
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded">👥 Clients</span>
+                                    <span class="px-2 py-1 bg-orange-100 text-orange-800 rounded">🏗️ Projets</span>
+                                    <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">👔 Employés</span>
+                                    <span class="px-2 py-1 bg-red-100 text-red-800 rounded">📦 Stocks</span>
+                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded">📄 Documents</span>
+                                    <span class="px-2 py-1 bg-pink-100 text-pink-800 rounded">📅 RDV</span>
+                                    <span class="px-2 py-1 bg-cyan-100 text-cyan-800 rounded">📧 Messages</span>
+                                    <span class="px-2 py-1 bg-gray-200 text-gray-800 rounded">🏠 Catalogue</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- TAB: Mot de passe admin -->
+                        <div id="security-tab-password" class="security-tab-content hidden p-6">
+                            <div class="max-w-xl mx-auto">
+                                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 mb-6">
+                                    <h3 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                                        <span class="material-icons text-blue-600">admin_panel_settings</span>
+                                        Compte Administrateur Principal
+                                    </h3>
+                                    <p class="text-gray-600 text-sm">Le compte administrateur a un accès complet à tous les modules. Utilisez un mot de passe fort et unique.</p>
+                                </div>
+                                
+                                <form id="security-form" class="space-y-5">
+                                    <div>
+                                        <label class="block text-gray-700 font-medium mb-2">Mot de passe actuel</label>
+                                        <div class="relative">
+                                            <input type="password" id="security-current-password" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 pr-12" required>
+                                            <button type="button" onclick="togglePasswordVisibility('security-current-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                                <span class="material-icons">visibility</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-medium mb-2">Nouveau mot de passe</label>
+                                        <div class="relative">
+                                            <input type="password" id="security-password" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 pr-12" minlength="8" required>
+                                            <button type="button" onclick="togglePasswordVisibility('security-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                                <span class="material-icons">visibility</span>
+                                            </button>
+                                        </div>
+                                        <div id="password-strength" class="mt-2">
+                                            <div class="flex gap-1 mb-1">
+                                                <div class="h-1 flex-1 bg-gray-200 rounded" id="strength-1"></div>
+                                                <div class="h-1 flex-1 bg-gray-200 rounded" id="strength-2"></div>
+                                                <div class="h-1 flex-1 bg-gray-200 rounded" id="strength-3"></div>
+                                                <div class="h-1 flex-1 bg-gray-200 rounded" id="strength-4"></div>
+                                            </div>
+                                            <p class="text-xs text-gray-500" id="strength-text">Min. 8 caractères, majuscule, chiffre, caractère spécial</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-medium mb-2">Confirmer le nouveau mot de passe</label>
+                                        <div class="relative">
+                                            <input type="password" id="security-password-confirm" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 pr-12" minlength="8" required>
+                                            <button type="button" onclick="togglePasswordVisibility('security-password-confirm')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                                                <span class="material-icons">visibility</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p id="security-message" class="text-sm"></p>
+                                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-4 rounded-xl font-bold hover:from-blue-700 hover:to-blue-900 transition flex items-center justify-center gap-2">
+                                        <span class="material-icons">lock</span>Mettre à jour le mot de passe
+                                    </button>
+                                </form>
+                                
+                                <div class="mt-6 pt-6 border-t">
+                                    <div class="bg-red-50 rounded-xl p-4 border border-red-200">
+                                        <h4 class="font-semibold text-red-800 mb-2 flex items-center gap-2">
+                                            <span class="material-icons text-sm">warning</span> Zone dangereuse
+                                        </h4>
+                                        <p class="text-sm text-red-700 mb-3">Réinitialiser le mot de passe au défaut. À utiliser uniquement en cas d'urgence.</p>
+                                        <button id="security-reset" class="w-full bg-red-100 text-red-700 py-3 rounded-xl font-semibold hover:bg-red-200 transition">
+                                            Réinitialiser à "admin123"
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- TAB: Journal d'activité -->
+                        <div id="security-tab-logs" class="security-tab-content hidden p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <span class="material-icons text-purple-600">timeline</span>
+                                    Historique des connexions et actions
+                                </h3>
+                                <div class="flex gap-2">
+                                    <select id="sec-log-filter" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800 text-sm">
+                                        <option value="all">Tous les événements</option>
+                                        <option value="login">Connexions</option>
+                                        <option value="logout">Déconnexions</option>
+                                        <option value="failed">Échecs</option>
+                                        <option value="action">Actions</option>
+                                    </select>
+                                    <button onclick="clearSecurityLogs()" class="px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition text-sm">
+                                        Effacer les logs
+                                    </button>
+                                    <button onclick="exportSecurityLogs()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition text-sm">
+                                        Exporter
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="sec-logs-list" class="space-y-2 max-h-[500px] overflow-y-auto">
+                                <!-- Rempli dynamiquement -->
+                            </div>
+                        </div>
+                        
+                        <!-- TAB: Paramètres de sécurité -->
+                        <div id="security-tab-settings" class="security-tab-content hidden p-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Paramètres de session -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-blue-600">timer</span>
+                                        Sessions & Timeout
+                                    </h4>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-gray-700 text-sm font-medium mb-2">Durée de session (minutes)</label>
+                                            <select id="sec-session-timeout" class="w-full px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                                <option value="15">15 minutes</option>
+                                                <option value="30" selected>30 minutes</option>
+                                                <option value="60">1 heure</option>
+                                                <option value="120">2 heures</option>
+                                                <option value="480">8 heures</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Déconnexion automatique</p>
+                                                <p class="text-xs text-gray-500">Se déconnecter après inactivité</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-auto-logout" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Paramètres de connexion -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-red-600">gpp_maybe</span>
+                                        Protection contre les attaques
+                                    </h4>
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-gray-700 text-sm font-medium mb-2">Tentatives avant blocage</label>
+                                            <select id="sec-max-attempts" class="w-full px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                                <option value="3">3 tentatives</option>
+                                                <option value="5" selected>5 tentatives</option>
+                                                <option value="10">10 tentatives</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-gray-700 text-sm font-medium mb-2">Durée de blocage (minutes)</label>
+                                            <select id="sec-lockout-duration" class="w-full px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                                <option value="5">5 minutes</option>
+                                                <option value="15" selected>15 minutes</option>
+                                                <option value="30">30 minutes</option>
+                                                <option value="60">1 heure</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Notifications de sécurité -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-yellow-600">notifications_active</span>
+                                        Alertes de sécurité
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Connexions échouées</p>
+                                                <p class="text-xs text-gray-500">Alerter après 3 échecs</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-alert-failed" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Nouvelle connexion</p>
+                                                <p class="text-xs text-gray-500">Notifier à chaque connexion</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-alert-login" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Modification de données</p>
+                                                <p class="text-xs text-gray-500">Alerter sur suppressions</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-alert-delete" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Politique de mot de passe -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-green-600">password</span>
+                                        Politique de mot de passe
+                                    </h4>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Longueur minimale: 8</p>
+                                            </div>
+                                            <span class="material-icons text-green-600">check_circle</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Majuscule requise</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-require-uppercase" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Chiffre requis</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-require-number" class="sr-only peer" checked>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                            </label>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p class="font-medium text-gray-800">Caractère spécial requis</p>
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="sec-require-special" class="sr-only peer">
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-end">
+                                <button onclick="saveSecuritySettings()" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition shadow-lg flex items-center gap-2">
+                                    <span class="material-icons">save</span> Enregistrer les paramètres
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Résumé audit sécurité -->
+                    <div class="glass-card rounded-2xl p-6 shadow-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span class="material-icons text-green-600">verified</span>
+                                Audit de sécurité
+                            </h3>
+                            <span class="text-sm text-gray-500" id="sec-audit-date">Dernière vérification: -</span>
+                        </div>
+                        <div id="sec-audit-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Rempli dynamiquement -->
                         </div>
                     </div>
                 </section>
@@ -1115,158 +1738,366 @@
                     </div>
                 </section>
 
-                <!-- MODULE: Comptabilité -->
-                <section id="module-comptabilite" class="module-section">
-                    <!-- Résumé financier -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                        <div class="glass-card rounded-2xl p-6 shadow-xl border-l-4 border-green-500">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-500 text-sm">Revenus (mois)</p>
-                                    <p class="text-3xl font-bold text-green-600" id="compta-revenus-mois">0 FCFA</p>
-                                </div>
-                                <span class="material-icons text-green-500 text-4xl">trending_up</span>
+                <!-- MODULE: FINANCES (Comptabilité + Bilans unifiés) -->
+                <section id="module-finances" class="module-section">
+                    
+                    <!-- En-tête avec titre et actions -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                        <div class="flex items-center">
+                            <div class="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                                <span class="material-icons text-white text-2xl">account_balance</span>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Gestion Financière</h2>
+                                <p class="text-gray-500">Comptabilité, Bilans & Analyses - KFS BTP IMMO</p>
                             </div>
                         </div>
-                        <div class="glass-card rounded-2xl p-6 shadow-xl border-l-4 border-red-500">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="openTransactionModal()" class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition shadow-lg flex items-center gap-2">
+                                <span class="material-icons">add</span> Transaction
+                            </button>
+                            <button onclick="exportFinancesPDF()" class="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition shadow-lg flex items-center gap-2">
+                                <span class="material-icons">picture_as_pdf</span> Export PDF
+                            </button>
+                            <button onclick="exportFinancesExcel()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition shadow-lg flex items-center gap-2">
+                                <span class="material-icons">table_chart</span> Excel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtres de période -->
+                    <div class="glass-card rounded-2xl p-4 mb-6 shadow-lg">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <span class="material-icons text-gray-500">calendar_today</span>
+                                <span class="text-gray-700 font-medium">Période :</span>
+                            </div>
+                            <select id="finance-periode" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition">
+                                <option value="mois">Ce mois</option>
+                                <option value="trimestre">Ce trimestre</option>
+                                <option value="semestre">Ce semestre</option>
+                                <option value="annee" selected>Cette année</option>
+                                <option value="tout">Tout l'historique</option>
+                                <option value="custom">Période personnalisée</option>
+                            </select>
+                            <select id="finance-annee" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500 transition">
+                                <option value="2026">2026</option>
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                            </select>
+                            <div id="finance-custom-dates" class="hidden flex items-center gap-2">
+                                <input type="date" id="finance-date-debut" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-gray-800">
+                                <span class="text-gray-500">à</span>
+                                <input type="date" id="finance-date-fin" class="px-3 py-2 border-2 border-gray-200 rounded-xl text-gray-800">
+                            </div>
+                            <button onclick="refreshFinances()" class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition flex items-center gap-2">
+                                <span class="material-icons">refresh</span> Actualiser
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- TABLEAU DE BORD EXÉCUTIF -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <!-- Total Recettes -->
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-green-500 hover:shadow-xl transition">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-500 text-sm">Dépenses (mois)</p>
-                                    <p class="text-3xl font-bold text-red-600" id="compta-depenses-mois">0 FCFA</p>
+                                    <p class="text-gray-500 text-sm font-medium">Total Recettes</p>
+                                    <p class="text-2xl font-bold text-green-600" id="fin-total-recettes">0 FCFA</p>
+                                    <p class="text-xs text-green-500 mt-1" id="fin-recettes-evolution">
+                                        <span class="material-icons text-sm align-middle">trending_up</span> +0% vs période préc.
+                                    </p>
                                 </div>
-                                <span class="material-icons text-red-500 text-4xl">trending_down</span>
+                                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-green-600">arrow_downward</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="glass-card rounded-2xl p-6 shadow-xl border-l-4 border-blue-500">
+                        
+                        <!-- Total Dépenses -->
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-red-500 hover:shadow-xl transition">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-500 text-sm">Bénéfice net</p>
-                                    <p class="text-3xl font-bold text-blue-600" id="compta-benefice">0 FCFA</p>
+                                    <p class="text-gray-500 text-sm font-medium">Total Dépenses</p>
+                                    <p class="text-2xl font-bold text-red-600" id="fin-total-depenses">0 FCFA</p>
+                                    <p class="text-xs text-red-500 mt-1" id="fin-depenses-evolution">
+                                        <span class="material-icons text-sm align-middle">trending_down</span> +0% vs période préc.
+                                    </p>
                                 </div>
-                                <span class="material-icons text-blue-500 text-4xl">account_balance_wallet</span>
+                                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-red-600">arrow_upward</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="glass-card rounded-2xl p-6 shadow-xl border-l-4 border-yellow-500">
+                        
+                        <!-- Résultat Net -->
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-500 text-sm">Transactions ce mois</p>
-                                    <p class="text-3xl font-bold text-yellow-600" id="compta-transactions">0</p>
+                                    <p class="text-gray-500 text-sm font-medium">Résultat Net</p>
+                                    <p class="text-2xl font-bold" id="fin-resultat-net">0 FCFA</p>
+                                    <p class="text-xs mt-1" id="fin-marge-label">
+                                        Marge : <span id="fin-marge">0%</span>
+                                    </p>
                                 </div>
-                                <span class="material-icons text-yellow-500 text-4xl">receipt</span>
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-blue-600">account_balance_wallet</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Nombre de transactions -->
+                        <div class="glass-card rounded-2xl p-5 shadow-lg border-l-4 border-yellow-500 hover:shadow-xl transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-sm font-medium">Transactions</p>
+                                    <p class="text-2xl font-bold text-yellow-600" id="fin-nb-transactions">0</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <span id="fin-nb-recettes">0</span> entrées / <span id="fin-nb-depenses">0</span> sorties
+                                    </p>
+                                </div>
+                                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <span class="material-icons text-yellow-600">receipt_long</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Revenus -->
-                        <div class="glass-card rounded-2xl p-6 shadow-xl">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                                    <span class="material-icons mr-2 text-green-600">arrow_upward</span>Revenus
-                                </h3>
-                                <button onclick="openTransactionModal('revenu')" class="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition">
-                                    <span class="material-icons align-middle text-sm">add</span> Ajouter
-                                </button>
+                    
+                    <!-- ONGLETS DE NAVIGATION -->
+                    <div class="glass-card rounded-2xl shadow-lg overflow-hidden mb-6">
+                        <div class="flex border-b border-gray-200 bg-gray-50">
+                            <button onclick="showFinanceTab('overview')" class="finance-tab active flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="overview">
+                                <span class="material-icons text-lg">dashboard</span> Vue d'ensemble
+                            </button>
+                            <button onclick="showFinanceTab('transactions')" class="finance-tab flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="transactions">
+                                <span class="material-icons text-lg">swap_horiz</span> Transactions
+                            </button>
+                            <button onclick="showFinanceTab('analyse')" class="finance-tab flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="analyse">
+                                <span class="material-icons text-lg">analytics</span> Analyses
+                            </button>
+                            <button onclick="showFinanceTab('bilan')" class="finance-tab flex-1 px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2" data-tab="bilan">
+                                <span class="material-icons text-lg">assessment</span> Bilan détaillé
+                            </button>
+                        </div>
+                        
+                        <!-- TAB: Vue d'ensemble -->
+                        <div id="finance-tab-overview" class="finance-tab-content p-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Graphique évolution mensuelle -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-blue-600">show_chart</span>
+                                        Évolution mensuelle
+                                    </h4>
+                                    <div style="height: 280px;">
+                                        <canvas id="fin-chart-evolution"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Répartition des dépenses -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-red-600">pie_chart</span>
+                                        Répartition des dépenses
+                                    </h4>
+                                    <div style="height: 280px;">
+                                        <canvas id="fin-chart-depenses"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Top 5 dépenses -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-orange-600">trending_up</span>
+                                        Top 5 Catégories de dépenses
+                                    </h4>
+                                    <div id="fin-top-depenses" class="space-y-3"></div>
+                                </div>
+                                
+                                <!-- Top 5 recettes -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-green-600">trending_down</span>
+                                        Top 5 Sources de revenus
+                                    </h4>
+                                    <div id="fin-top-recettes" class="space-y-3"></div>
+                                </div>
                             </div>
-                            <div id="revenus-list" class="space-y-3 max-h-80 overflow-y-auto">
-                                <p class="text-gray-400 text-center py-8">Aucun revenu enregistré</p>
+                            
+                            <!-- Indicateurs de santé financière -->
+                            <div class="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                                <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span class="material-icons text-indigo-600">health_and_safety</span>
+                                    Indicateurs de santé financière
+                                </h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 mb-1">Ratio de rentabilité</p>
+                                        <p class="text-2xl font-bold" id="fin-ratio-rentabilite">0%</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 mb-1">Taux de croissance</p>
+                                        <p class="text-2xl font-bold" id="fin-taux-croissance">0%</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 mb-1">Moyenne mensuelle</p>
+                                        <p class="text-lg font-bold" id="fin-moyenne-mensuelle">0 FCFA</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-xs text-gray-500 mb-1">Prévision fin d'année</p>
+                                        <p class="text-lg font-bold" id="fin-prevision">0 FCFA</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <!-- Dépenses -->
-                        <div class="glass-card rounded-2xl p-6 shadow-xl">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                                    <span class="material-icons mr-2 text-red-600">arrow_downward</span>Dépenses
-                                </h3>
-                                <button onclick="openTransactionModal('depense')" class="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition">
-                                    <span class="material-icons align-middle text-sm">add</span> Ajouter
-                                </button>
-                            </div>
-                            <div id="depenses-list" class="space-y-3 max-h-80 overflow-y-auto">
-                                <p class="text-gray-400 text-center py-8">Aucune dépense enregistrée</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Graphique -->
-                    <div class="glass-card rounded-2xl p-6 shadow-xl mt-8">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Évolution financière</h3>
-                        <div class="chart-container" style="height: 300px;">
-                            <canvas id="chart-finances"></canvas>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- MODULE: Bilans -->
-                <section id="module-bilans" class="module-section">
-                    <div class="glass-card rounded-2xl p-6 shadow-xl mb-8">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-gray-800">Bilans financiers</h3>
-                            <div class="flex space-x-2">
-                                <select id="bilan-periode" class="px-4 py-2 border-2 border-gray-200 rounded-xl text-gray-800">
-                                    <option value="mois">Ce mois</option>
-                                    <option value="trimestre">Ce trimestre</option>
-                                    <option value="annee">Cette année</option>
-                                    <option value="custom">Personnalisé</option>
+                        
+                        <!-- TAB: Transactions -->
+                        <div id="finance-tab-transactions" class="finance-tab-content hidden p-6">
+                            <!-- Filtres transactions -->
+                            <div class="flex flex-wrap gap-3 mb-4">
+                                <select id="fin-filter-type" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                    <option value="all">Toutes les transactions</option>
+                                    <option value="recette">Recettes uniquement</option>
+                                    <option value="depense">Dépenses uniquement</option>
                                 </select>
-                                <button id="generate-bilan-pdf" class="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition">
-                                    <span class="material-icons align-middle text-sm">picture_as_pdf</span> PDF
-                                </button>
-                                <button id="print-bilan" class="px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition">
-                                    <span class="material-icons align-middle text-sm">print</span> Imprimer
-                                </button>
+                                <select id="fin-filter-categorie" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                    <option value="all">Toutes catégories</option>
+                                    <option value="ventes">Ventes</option>
+                                    <option value="acomptes">Acomptes</option>
+                                    <option value="location">Location</option>
+                                    <option value="service">Service/Prestation</option>
+                                    <option value="achats">Achats/Approvisionnement</option>
+                                    <option value="chantier">Chantier/Travaux</option>
+                                    <option value="salaires">Salaires</option>
+                                    <option value="charges_sociales">Charges sociales</option>
+                                    <option value="materiel">Matériel/Fournitures</option>
+                                    <option value="transport">Transport</option>
+                                    <option value="charges">Charges fixes</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                                <select id="fin-filter-source" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                    <option value="all">Toutes sources</option>
+                                    <option value="manual">Manuelles uniquement</option>
+                                    <option value="auto">Automatiques uniquement</option>
+                                    <option value="factures">📄 Factures/Devis</option>
+                                    <option value="stocks">📦 Stocks</option>
+                                    <option value="projets">🏗️ Projets</option>
+                                    <option value="paie">💵 Fiche de paie</option>
+                                    <option value="employes">👷 Employés</option>
+                                </select>
+                                <input type="text" id="fin-search" placeholder="Rechercher..." class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800 flex-1 min-w-48">
+                            </div>
+                            
+                            <!-- Liste des transactions -->
+                            <div id="fin-transactions-list" class="space-y-3 max-h-[500px] overflow-y-auto"></div>
+                            
+                            <!-- Pagination -->
+                            <div id="fin-pagination" class="flex justify-center items-center gap-2 mt-4"></div>
+                        </div>
+                        
+                        <!-- TAB: Analyses -->
+                        <div id="finance-tab-analyse" class="finance-tab-content hidden p-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <!-- Comparaison mensuelle -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-purple-600">compare</span>
+                                        Comparaison mensuelle
+                                    </h4>
+                                    <div style="height: 300px;">
+                                        <canvas id="fin-chart-comparaison"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tendance -->
+                                <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-cyan-600">timeline</span>
+                                        Tendance du résultat net
+                                    </h4>
+                                    <div style="height: 300px;">
+                                        <canvas id="fin-chart-tendance"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <!-- Analyse IA -->
+                                <div class="lg:col-span-2 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border border-indigo-100">
+                                    <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <span class="material-icons text-indigo-600">psychology</span>
+                                        Analyse intelligente & Recommandations
+                                    </h4>
+                                    <div id="fin-ia-analyse" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                                </div>
                             </div>
                         </div>
-
-                        <!-- Période personnalisée -->
-                        <div id="bilan-custom-dates" class="hidden mb-6 flex space-x-4">
-                            <input type="date" id="bilan-date-debut" class="px-4 py-2 border-2 border-gray-200 rounded-xl text-gray-800">
-                            <input type="date" id="bilan-date-fin" class="px-4 py-2 border-2 border-gray-200 rounded-xl text-gray-800">
-                            <button onclick="generateBilan()" class="px-4 py-2 bg-blue-500 text-white rounded-xl">Générer</button>
-                        </div>
-
-                        <!-- Résumé du bilan -->
-                        <div id="bilan-content">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                <div class="bg-green-50 rounded-xl p-6 border border-green-200">
-                                    <h4 class="text-green-800 font-semibold mb-2">Total Revenus</h4>
-                                    <p class="text-3xl font-bold text-green-600" id="bilan-total-revenus">0 FCFA</p>
-                                    <p class="text-sm text-green-600 mt-2" id="bilan-nb-revenus">0 transactions</p>
+                        
+                        <!-- TAB: Bilan détaillé -->
+                        <div id="finance-tab-bilan" class="finance-tab-content hidden p-6">
+                            <!-- Compte de résultat -->
+                            <div class="bg-white rounded-xl p-5 border border-gray-100 mb-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                                        <span class="material-icons text-blue-600">receipt</span>
+                                        Compte de Résultat
+                                    </h4>
+                                    <span class="text-sm text-gray-500" id="fin-bilan-periode-label">Année 2026</span>
                                 </div>
-                                <div class="bg-red-50 rounded-xl p-6 border border-red-200">
-                                    <h4 class="text-red-800 font-semibold mb-2">Total Dépenses</h4>
-                                    <p class="text-3xl font-bold text-red-600" id="bilan-total-depenses">0 FCFA</p>
-                                    <p class="text-sm text-red-600 mt-2" id="bilan-nb-depenses">0 transactions</p>
-                                </div>
-                                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                                    <h4 class="text-blue-800 font-semibold mb-2">Résultat Net</h4>
-                                    <p class="text-3xl font-bold" id="bilan-resultat">0 FCFA</p>
-                                    <p class="text-sm text-blue-600 mt-2" id="bilan-marge">Marge: 0%</p>
-                                </div>
-                            </div>
-
-                            <!-- Détails par catégorie -->
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <div>
-                                    <h4 class="font-bold text-gray-800 mb-4">Revenus par catégorie</h4>
-                                    <div id="bilan-revenus-categories" class="space-y-3"></div>
-                                </div>
-                                <div>
-                                    <h4 class="font-bold text-gray-800 mb-4">Dépenses par catégorie</h4>
-                                    <div id="bilan-depenses-categories" class="space-y-3"></div>
+                                
+                                <!-- Tableau compte de résultat -->
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="text-left p-3 font-semibold">Libellé</th>
+                                                <th class="text-right p-3 font-semibold">Montant (FCFA)</th>
+                                                <th class="text-right p-3 font-semibold">% du total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fin-compte-resultat">
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-
-                            <!-- Graphique du bilan -->
-                            <div class="mt-8">
-                                <h4 class="font-bold text-gray-800 mb-4">Évolution sur la période</h4>
-                                <div class="chart-container" style="height: 300px;">
-                                    <canvas id="chart-bilan"></canvas>
+                            
+                            <!-- Tableau récapitulatif mensuel -->
+                            <div class="bg-white rounded-xl p-5 border border-gray-100">
+                                <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span class="material-icons text-green-600">table_chart</span>
+                                    Récapitulatif mensuel détaillé
+                                </h4>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm" id="fin-tableau-mensuel">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="text-left p-3">Mois</th>
+                                                <th class="text-right p-3">Recettes</th>
+                                                <th class="text-right p-3">Dépenses</th>
+                                                <th class="text-right p-3">Résultat</th>
+                                                <th class="text-right p-3">Cumul</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fin-bilan-mensuel"></tbody>
+                                        <tfoot class="bg-blue-50 font-bold" id="fin-bilan-total"></tfoot>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Dernières transactions rapides -->
+                    <div class="glass-card rounded-2xl p-6 shadow-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-gray-800 flex items-center gap-2">
+                                <span class="material-icons text-gray-600">history</span>
+                                Dernières transactions
+                            </h4>
+                            <button onclick="showFinanceTab('transactions')" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Voir tout →
+                            </button>
+                        </div>
+                        <div id="fin-recent-transactions" class="space-y-2"></div>
+                    </div>
+                    
                 </section>
 
                 <!-- MODULE: CRM Clients -->
@@ -1533,7 +2364,7 @@
                         <!-- Modèles par défaut -->
                         <div class="mb-6">
                             <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Modèles par défaut</h4>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 <button onclick="generateDocTemplate('contrat')" class="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition group">
                                     <span class="material-icons text-blue-600 text-2xl mb-2">description</span>
                                     <span class="text-blue-800 text-sm font-medium">Contrat</span>
@@ -1543,6 +2374,11 @@
                                     <span class="material-icons text-green-600 text-2xl mb-2">home</span>
                                     <span class="text-green-800 text-sm font-medium">Bail</span>
                                     <span class="text-xs text-green-500 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                                </button>
+                                <button onclick="generateDocTemplate('location-courte')" class="flex flex-col items-center p-4 bg-yellow-100 hover:bg-yellow-200 rounded-xl transition group">
+                                    <span class="material-icons text-yellow-700 text-2xl mb-2">hotel</span>
+                                    <span class="text-yellow-900 text-sm font-semibold">Location Courte Durée</span>
+                                    <span class="text-xs text-yellow-700 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
                                 <button onclick="generateDocTemplate('devis')" class="flex flex-col items-center p-4 bg-orange-50 hover:bg-orange-100 rounded-xl transition group">
                                     <span class="material-icons text-orange-600 text-2xl mb-2">request_quote</span>
@@ -1554,9 +2390,15 @@
                                     <span class="text-purple-800 text-sm font-medium">Attestation</span>
                                     <span class="text-xs text-purple-500 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
+                                <button onclick="gotoFichePaieModule()" class="flex flex-col items-center p-4 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition group">
+                                    <span class="material-icons text-indigo-600 text-2xl mb-2">payments</span>
+                                    <span class="text-indigo-900 text-sm font-semibold">Fiche de paie</span>
+                                    <span class="text-xs text-indigo-600 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                                </button>
                             </div>
                         </div>
                         
+
                         <!-- Modèles personnalisés -->
                         <div>
                             <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Mes modèles personnalisés</h4>
@@ -1564,6 +2406,13 @@
                                 <p class="text-gray-400 text-center py-6 col-span-full">Aucun modèle personnalisé. Cliquez sur "Créer un modèle" pour commencer.</p>
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                <!-- MODULE: Fiche de paie employé -->
+                <section id="module-fiche-paie" class="module-section">
+                    <div class="glass-card rounded-2xl p-6 shadow-xl">
+                        <!-- Le formulaire et l'aperçu sont injectés par JS -->
                     </div>
                 </section>
 
@@ -1650,7 +2499,7 @@
                                 <label class="block text-blue-800 text-sm font-bold mb-2">
                                     <span class="material-icons align-middle text-sm mr-1">flash_on</span>Charger un client existant
                                 </label>
-                                <select id="trans-client-select" onchange="fillClientInfo(this.value, 'trans')" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+                                <select id="trans-client-select" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                                     <option value="">-- Saisie manuelle --</option>
                                 </select>
                             </div>
@@ -2230,6 +3079,48 @@
                                     <label class="block text-gray-600 text-sm mb-1">Client *</label>
                                     <select id="projet-client" class="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-lg text-gray-800">
                                         <option value="">-- Sélectionner un client --</option>
+                                        <script>
+                                        // --- AUTO-FILL CLIENT SELECTORS ---
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            if (typeof populateClientSelect === 'function' && typeof autoFillClientFields === 'function') {
+                                                // Transaction (facture, etc.)
+                                                populateClientSelect('trans-client-select', function(client) {
+                                                    autoFillClientFields(client, {
+                                                        'trans-tiers': 'nom',
+                                                        // Ajouter d'autres champs si besoin
+                                                    });
+                                                });
+                                                // Projet
+                                                populateClientSelect('projet-client', function(client) {
+                                                    autoFillClientFields(client, {
+                                                        // Ajouter ici les champs à auto-remplir pour le projet si besoin
+                                                    });
+                                                });
+                                                // Bail
+                                                if (document.getElementById('bail-client-select')) {
+                                                    populateClientSelect('bail-client-select', function(client) {
+                                                        autoFillClientFields(client, {
+                                                            'bail-nom': 'nom',
+                                                            'bail-tel': 'telephone',
+                                                            'bail-adresse': 'adresse',
+                                                            // Ajouter d'autres champs si besoin
+                                                        });
+                                                    });
+                                                }
+                                                // Contrat
+                                                if (document.getElementById('contrat-client-select')) {
+                                                    populateClientSelect('contrat-client-select', function(client) {
+                                                        autoFillClientFields(client, {
+                                                            'contrat-nom': 'nom',
+                                                            'contrat-tel': 'telephone',
+                                                            'contrat-adresse': 'adresse',
+                                                            // Ajouter d'autres champs si besoin
+                                                        });
+                                                    });
+                                                }
+                                            }
+                                        });
+                                        </script>
                                     </select>
                                 </div>
                             </div>
@@ -3021,6 +3912,192 @@
     </div>
 
     <!-- ============================================= -->
+    <!-- MODAL: ACCÈS EMPLOYÉ -->
+    <!-- ============================================= -->
+    <div id="employee-access-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeEmployeeAccessModal()"></div>
+            <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all animate__animated animate__fadeInUp animate__faster">
+                <!-- Header -->
+                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-3xl">
+                    <div class="flex items-center justify-between">
+                        <h3 id="employee-access-modal-title" class="text-xl font-bold text-white flex items-center">
+                            <span class="material-icons mr-2">person_add</span>Nouvel accès employé
+                        </h3>
+                        <button onclick="closeEmployeeAccessModal()" class="text-white/80 hover:text-white transition p-1">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Form -->
+                <form id="employee-access-form" class="p-6 space-y-5">
+                    <input type="hidden" id="emp-access-edit-id">
+                    
+                    <!-- Informations de base -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <span class="material-icons text-blue-600 text-sm">badge</span> Informations du compte
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Nom complet *</label>
+                                <input type="text" id="emp-access-name" placeholder="Ex: Mamadou Diallo" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Email *</label>
+                                <input type="email" id="emp-access-email" placeholder="employe@kfsbtp.sn" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Identifiant de connexion *</label>
+                                <input type="text" id="emp-access-username" placeholder="mdiallo" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800" required>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Mot de passe *</label>
+                                <div class="relative">
+                                    <input type="password" id="emp-access-password" placeholder="Min. 8 caractères" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 pr-20" minlength="8" required>
+                                    <button type="button" onclick="generateRandomPassword()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200">
+                                        Générer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Rôle et statut -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <span class="material-icons text-purple-600 text-sm">admin_panel_settings</span> Rôle et statut
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Poste / Fonction</label>
+                                <input type="text" id="emp-access-poste" placeholder="Ex: Comptable, Commercial..." class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Rôle</label>
+                                <select id="emp-access-role" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
+                                    <option value="employe">Employé (accès limité)</option>
+                                    <option value="manager">Manager (accès étendu)</option>
+                                    <option value="comptable">Comptable (finances)</option>
+                                    <option value="commercial">Commercial (clients/projets)</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 text-sm font-medium mb-1">Statut du compte</label>
+                                <div class="flex gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="emp-access-status" value="actif" checked class="w-4 h-4 text-green-600">
+                                        <span class="text-gray-700">Actif</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="emp-access-status" value="inactif" class="w-4 h-4 text-gray-600">
+                                        <span class="text-gray-700">Inactif</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="emp-access-status" value="suspendu" class="w-4 h-4 text-red-600">
+                                        <span class="text-gray-700">Suspendu</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Permissions / Modules accessibles -->
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-semibold text-gray-800 flex items-center gap-2">
+                                <span class="material-icons text-indigo-600 text-sm">key</span> Modules accessibles
+                            </h4>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="selectAllModules()" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Tout sélectionner</button>
+                                <button type="button" onclick="deselectAllModules()" class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Tout désélectionner</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-blue-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="dashboard" class="w-4 h-4 text-blue-600 rounded" checked>
+                                <span class="material-icons text-blue-600 text-lg">dashboard</span>
+                                <span class="text-sm text-gray-700">Dashboard</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-green-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="finances" class="w-4 h-4 text-green-600 rounded">
+                                <span class="material-icons text-green-600 text-lg">account_balance</span>
+                                <span class="text-sm text-gray-700">Finances</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-purple-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="clients" class="w-4 h-4 text-purple-600 rounded">
+                                <span class="material-icons text-purple-600 text-lg">people</span>
+                                <span class="text-sm text-gray-700">Clients</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-orange-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="projets" class="w-4 h-4 text-orange-600 rounded">
+                                <span class="material-icons text-orange-600 text-lg">engineering</span>
+                                <span class="text-sm text-gray-700">Projets</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-yellow-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="employes" class="w-4 h-4 text-yellow-600 rounded">
+                                <span class="material-icons text-yellow-600 text-lg">badge</span>
+                                <span class="text-sm text-gray-700">Employés</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-red-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="stocks" class="w-4 h-4 text-red-600 rounded">
+                                <span class="material-icons text-red-600 text-lg">inventory</span>
+                                <span class="text-sm text-gray-700">Stocks</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-indigo-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="documents" class="w-4 h-4 text-indigo-600 rounded">
+                                <span class="material-icons text-indigo-600 text-lg">folder</span>
+                                <span class="text-sm text-gray-700">Documents</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-pink-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="rdv" class="w-4 h-4 text-pink-600 rounded">
+                                <span class="material-icons text-pink-600 text-lg">event</span>
+                                <span class="text-sm text-gray-700">Rendez-vous</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-cyan-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="messages" class="w-4 h-4 text-cyan-600 rounded">
+                                <span class="material-icons text-cyan-600 text-lg">mail</span>
+                                <span class="text-sm text-gray-700">Messages</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-gray-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="catalogue" class="w-4 h-4 text-gray-600 rounded">
+                                <span class="material-icons text-gray-600 text-lg">home_work</span>
+                                <span class="text-sm text-gray-700">Catalogue</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-green-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="factures" class="w-4 h-4 text-green-600 rounded">
+                                <span class="material-icons text-green-600 text-lg">receipt</span>
+                                <span class="text-sm text-gray-700">Factures</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-3 bg-white rounded-xl border-2 border-transparent hover:border-blue-300 cursor-pointer transition">
+                                <input type="checkbox" name="emp-modules" value="analytics" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="material-icons text-blue-600 text-lg">insights</span>
+                                <span class="text-sm text-gray-700">Statistiques</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Notes internes</label>
+                        <textarea id="emp-access-notes" rows="2" placeholder="Notes sur cet accès..." class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800"></textarea>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                        <button type="button" onclick="closeEmployeeAccessModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
+                            Annuler
+                        </button>
+                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-bold hover:from-blue-700 hover:to-indigo-800 transition shadow-lg flex items-center gap-2">
+                            <span class="material-icons">save</span>Créer l'accès
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
     <!-- MODAL: TÉMOIGNAGES -->
     <!-- ============================================= -->
     <div id="temoignage-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
@@ -3105,7 +4182,7 @@
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeFaqModal()"></div>
             <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all animate__animated animate__fadeInUp animate__faster">
                 <!-- Header -->
-                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-gradient-to-r from-yellow-500 to-orange-600 rounded-t-3xl">
+                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-gradient-to-r from-orange-500 to-orange-700 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <h3 id="faq-modal-title" class="text-xl font-bold text-white flex items-center">
                             <span class="material-icons mr-2">help_outline</span>Nouvelle question FAQ
@@ -3144,7 +4221,7 @@
                         <button type="button" onclick="closeFaqModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                             Annuler
                         </button>
-                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-bold hover:from-yellow-600 hover:to-orange-700 transition shadow-lg">
+                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl font-bold hover:from-orange-600 hover:to-orange-800 transition shadow-lg">
                             <span class="material-icons align-middle mr-1">save</span>Enregistrer
                         </button>
                     </div>
@@ -3380,5 +4457,19 @@
     </div>
 
     <script src="admin.js"></script>
+
+<script>
+// Bouton de réinitialisation du mot de passe admin
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('reset-password-btn');
+    if (btn) {
+        btn.onclick = function() {
+            localStorage.removeItem('adminPasswordHash');
+            alert('Mot de passe réinitialisé à admin123. Rechargez la page et connectez-vous avec admin123.');
+            location.reload();
+        };
+    }
+});
+</script>
 </body>
 </html>

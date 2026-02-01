@@ -1,3 +1,294 @@
+// Correction bug : fonction dashboard manquante (empêche tout le JS de fonctionner)
+function initDashboard() {
+    // Mettre à jour les statistiques du dashboard
+    updateStats();
+    // Afficher les messages récents
+    renderRecentMessages();
+}
+
+// ================= MODULE : MESSAGES =====================
+function initMessages() {
+    // Afficher la liste des messages
+    renderMessages();
+    // Mettre à jour les statistiques
+    updateStats();
+}
+// ================= MODULE : AUTHENTIFICATION ADMIN =====================
+function initLogin() {
+    const loginScreen = document.getElementById('login-screen');
+    const dashboard = document.getElementById('dashboard-container');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    // Si déjà authentifié, afficher le dashboard
+    if (sessionStorage.getItem('adminAuth') === 'true') {
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (dashboard) dashboard.classList.remove('hidden');
+        return;
+    }
+    // Sinon, afficher l'écran de connexion
+    if (loginScreen) loginScreen.style.display = '';
+    if (dashboard) dashboard.classList.add('hidden');
+    if (loginForm) {
+        loginForm.onsubmit = function(e) {
+            e.preventDefault();
+            let pwd = document.getElementById('login-password').value;
+            let stored = localStorage.getItem('adminPassword');
+            if (!stored) stored = btoa('admin123');
+            if (btoa(pwd) === stored) {
+                sessionStorage.setItem('adminAuth', 'true');
+                if (loginScreen) loginScreen.style.display = 'none';
+                if (dashboard) dashboard.classList.remove('hidden');
+                if (loginError) loginError.classList.add('hidden');
+            } else {
+                if (loginError) loginError.classList.remove('hidden');
+            }
+        };
+    }
+}
+// ================= FIN MODULE AUTH =====================
+// ================= MODAL UTILS =====================
+// ================= MODULE : MODÈLES DE DOCUMENTS =====================
+// Catégories et icônes disponibles
+const KFS_DOC_CATEGORIES = [
+    { value: 'contrat', label: 'Contrat', icon: 'handshake' },
+    { value: 'bail', label: 'Bail', icon: 'home' },
+    { value: 'devis', label: 'Devis', icon: 'request_quote' },
+    { value: 'attestation', label: 'Attestation', icon: 'verified' },
+    { value: 'facture', label: 'Facture', icon: 'receipt' },
+    { value: 'rapport', label: 'Rapport', icon: 'assignment' },
+    { value: 'autre', label: 'Autre', icon: 'folder' }
+];
+
+// Initialisation du module (à appeler dans initDocuments)
+window.initKFSModeles = function() {
+    renderKFSModelesList();
+    document.getElementById('btn-add-modele')?.addEventListener('click', openKFSModeleForm);
+};
+
+// Affiche la liste des modèles
+function renderKFSModelesList() {
+    const container = document.getElementById('kfs-modeles-list');
+    if (!container) return;
+    let modeles = [];
+    try {
+        modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]');
+    } catch(e) { modeles = []; }
+    if (!Array.isArray(modeles)) modeles = [];
+    if (modeles.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-6 col-span-full">Aucun modèle. Cliquez sur "Créer un modèle".</p>';
+        return;
+    }
+    container.innerHTML = modeles.map((tpl, i) => `
+        <div class="bg-white border-2 border-gray-100 rounded-xl p-4 mb-3 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <span class="material-icons text-blue-600">${getKFSIcon(tpl.categorie)}</span>
+                <div>
+                    <div class="font-bold text-gray-800">${tpl.nom}</div>
+                    <div class="text-xs text-gray-500">${tpl.categorie || 'Autre'}${tpl.description ? ' - ' + tpl.description : ''}</div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-3 md:mt-0">
+                <button onclick="window.openKFSModeleForm(${i})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Éditer</button>
+                <button onclick="window.deleteKFSModele(${i})" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Supprimer</button>
+                <button onclick="window.useKFSModele(${i})" class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Utiliser</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getKFSIcon(cat) {
+    const found = KFS_DOC_CATEGORIES.find(c => c.value === cat);
+    return found ? found.icon : 'folder';
+}
+
+// Ouvre le formulaire d'ajout/édition
+window.openKFSModeleForm = function(index = null) {
+    let modeles = [];
+    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    const tpl = (index !== null && modeles[index]) ? modeles[index] : { nom: '', description: '', categorie: '', fields: [], content: '' };
+    window.openKFSModal(`
+        <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
+        <div class='relative min-h-screen flex items-center justify-center p-4'>
+            <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
+                <form id='kfs-modele-form' class='p-6 space-y-4'>
+                    <h2 class='text-xl font-bold mb-2'>${index !== null ? 'Modifier' : 'Créer'} un modèle</h2>
+                    <div><label class='block text-sm font-semibold mb-1'>Nom *</label><input type='text' name='nom' value='${tpl.nom || ''}' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Catégorie *</label><select name='categorie' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'>${KFS_DOC_CATEGORIES.map(c => `<option value='${c.value}' ${tpl.categorie === c.value ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Description</label><input type='text' name='description' value='${tpl.description || ''}' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Champs du formulaire</label><div id='kfs-fields-list'>${renderKFSFields(tpl.fields)}</div><button type='button' onclick='window.addKFSField()' class='mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200'>Ajouter un champ</button></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Contenu du modèle (HTML)</label><textarea name='content' rows='6' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl font-mono'>${tpl.content || ''}</textarea></div>
+                    <div class='flex justify-end gap-2 mt-4'><button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button><button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>${index !== null ? 'Enregistrer' : 'Créer'}</button></div>
+                </form>
+            </div>
+        </div>
+    `);
+    // Ajout dynamique de champs
+    window.addKFSField = function() {
+        const list = document.getElementById('kfs-fields-list');
+        if (!list) return;
+        list.insertAdjacentHTML('beforeend', renderKFSFieldRow({}));
+    };
+    // Suppression dynamique de champ
+    window.removeKFSField = function(btn) {
+        btn.closest('.kfs-field-row').remove();
+    };
+    // Soumission du formulaire
+    document.getElementById('kfs-modele-form').onsubmit = function(e) {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(this));
+        // Récupérer les champs dynamiques
+        const fields = Array.from(document.querySelectorAll('.kfs-field-row')).map(row => ({
+            name: row.querySelector('input[name="field-name"]').value.trim(),
+            type: row.querySelector('select[name="field-type"]').value,
+            required: row.querySelector('input[name="field-required"]').checked,
+            placeholder: row.querySelector('input[name="field-placeholder"]').value
+        })).filter(f => f.name);
+        const modele = {
+            nom: data.nom,
+            categorie: data.categorie,
+            description: data.description,
+            fields,
+            content: data.content,
+            createdAt: tpl.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        let modeles = [];
+        try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+        if (index !== null) modeles[index] = modele; else modeles.push(modele);
+        localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+        window.closeKFSModal();
+        renderKFSModelesList();
+    };
+};
+
+function renderKFSFields(fields) {
+    if (!fields || !fields.length) return '';
+    return fields.map(renderKFSFieldRow).join('');
+}
+function renderKFSFieldRow(field = {}) {
+    return `<div class='kfs-field-row flex gap-2 mb-2 items-center'>
+        <input type='text' name='field-name' value='${field.name || ''}' placeholder='Nom du champ' class='px-2 py-1 border rounded w-32'>
+        <select name='field-type' class='px-2 py-1 border rounded'>
+            <option value='text' ${field.type === 'text' ? 'selected' : ''}>Texte</option>
+            <option value='number' ${field.type === 'number' ? 'selected' : ''}>Nombre</option>
+            <option value='date' ${field.type === 'date' ? 'selected' : ''}>Date</option>
+            <option value='email' ${field.type === 'email' ? 'selected' : ''}>Email</option>
+            <option value='tel' ${field.type === 'tel' ? 'selected' : ''}>Téléphone</option>
+            <option value='textarea' ${field.type === 'textarea' ? 'selected' : ''}>Texte long</option>
+        </select>
+        <input type='text' name='field-placeholder' value='${field.placeholder || ''}' placeholder='Placeholder' class='px-2 py-1 border rounded w-32'>
+        <label class='flex items-center text-xs'><input type='checkbox' name='field-required' ${field.required ? 'checked' : ''}> Requis</label>
+        <button type='button' onclick='window.removeKFSField(this)' class='text-red-500 hover:bg-red-100 rounded p-1'><span class='material-icons text-sm'>close</span></button>
+    </div>`;
+}
+
+// Suppression d'un modèle
+window.deleteKFSModele = function(index) {
+    if (!confirm('Supprimer ce modèle ?')) return;
+    let modeles = [];
+    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    const nom = modeles[index]?.nom || '';
+    modeles.splice(index, 1);
+    localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+    renderKFSModelesList();
+    showNotification('Modèle supprimé', nom, 'warning');
+};
+
+// Utilisation d'un modèle (formulaire dynamique)
+window.useKFSModele = function(index) {
+    let modeles = [];
+    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    const tpl = modeles[index];
+    if (!tpl) return;
+    window.openKFSModal(`
+        <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
+        <div class='relative min-h-screen flex items-center justify-center p-4'>
+            <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
+                <form id='kfs-use-form' class='p-6 space-y-4'>
+                    <h2 class='text-xl font-bold mb-2'>${tpl.nom}</h2>
+                    ${(tpl.fields||[]).map(f => renderKFSUseField(f)).join('')}
+                    <div class='flex justify-end gap-2 mt-4'><button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button><button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>Générer le document</button></div>
+                </form>
+            </div>
+        </div>
+    `);
+    document.getElementById('kfs-use-form').onsubmit = function(e) {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(this));
+        let content = tpl.content;
+        (tpl.fields||[]).forEach(f => {
+            const regex = new RegExp(`\\{\\{${f.name}\\}\}`, 'g');
+            content = content.replace(regex, data[f.name] || '');
+        });
+        content = content.replace(/\\{\\{date\\}\}/g, new Date().toLocaleDateString('fr-FR'));
+        content = content.replace(/\\{\\{entreprise\\}\}/g, 'KFS BTP');
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`<!DOCTYPE html><html><head><title>${tpl.nom}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:0;}@media print{body{margin:20px;}}</style></head><body>${content}<script>setTimeout(()=>window.print(),500);<\/script></body></html>`);
+        printWindow.document.close();
+        window.closeKFSModal();
+        showNotification('Document généré', tpl.nom, 'success');
+    };
+};
+
+function renderKFSUseField(f) {
+    const label = `<label class='block text-sm font-semibold mb-1'>${f.name}${f.required ? ' *' : ''}</label>`;
+    const base = `class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl' name='${f.name}' ${f.required ? 'required' : ''} placeholder='${f.placeholder||''}'`;
+    if (f.type === 'textarea') return `<div>${label}<textarea ${base} rows='3'></textarea></div>`;
+    return `<div>${label}<input type='${f.type||'text'}' ${base}></div>`;
+}
+window.openKFSModal = function(html, modalId = 'kfs-modal') {
+    // Fermer tout modal existant
+    window.closeKFSModal(modalId);
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'fixed inset-0 z-50 overflow-y-auto';
+    modal.innerHTML = html;
+    document.body.appendChild(modal);
+    // Focus premier champ
+    setTimeout(() => {
+        const firstInput = modal.querySelector('input, textarea, select, button');
+        if (firstInput) firstInput.focus();
+    }, 100);
+    // Fermeture sur Echap
+    setTimeout(() => {
+        document.addEventListener('keydown', function escListener(e) {
+            if (e.key === 'Escape') {
+                window.closeKFSModal(modalId);
+                document.removeEventListener('keydown', escListener);
+            }
+        });
+    }, 10);
+};
+
+window.closeKFSModal = function(modalId = 'kfs-modal') {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+};
+// --- AUTO-REMPLISSAGE CLIENT POUR FORMULAIRES BAIL/CONTRAT ---
+function populateClientSelect(selectId, onChangeCb) {
+    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = '<option value="">Sélectionner un client...</option>' +
+        clients.map((c, i) => `<option value="${i}">${c.nom} - ${c.telephone || ''}</option>`).join('');
+    select.onchange = function() {
+        if (this.value !== '') onChangeCb(clients[this.value]);
+    };
+}
+
+function autoFillClientFields(client, mapping) {
+    if (!client) return;
+    Object.entries(mapping).forEach(([field, key]) => {
+        const el = document.getElementById(field);
+        if (el) el.value = client[key] || '';
+    });
+}
+
+// À appeler sur ouverture de chaque popup/modal/formulaire concerné :
+// Ex pour un formulaire de bail :
+// populateClientSelect('bail-client-select', c => autoFillClientFields(c, { 'bail-nom': 'nom', 'bail-tel': 'telephone', 'bail-adresse': 'adresse' }));
+// Ex pour un formulaire de contrat :
+// populateClientSelect('contrat-client-select', c => autoFillClientFields(c, { 'contrat-nom': 'nom', 'contrat-tel': 'telephone', 'contrat-adresse': 'adresse' }));
 // ===================================================
 // ADMIN DASHBOARD - KFS BTP
 // Script complet pour la gestion du site
@@ -6,7 +297,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // === INITIALISATION ===
+    // === INITIALISATION DE TOUS LES MODULES ===
     initLogin();
     initNavigation();
     initDashboard();
@@ -22,318 +313,232 @@ document.addEventListener('DOMContentLoaded', function() {
     initSecurity();
     initRdv();
     initAnalytics();
-    initNotifications();
-    initPWA();
-    initUpdates(); // Module mises à jour
-    initMaintenance(); // Module maintenance
-    
-    // Nouveaux modules Gestion Entreprise
-    initComptabilite();
-    initBilans();
+    initFinances(); // Module unifié Comptabilité + Bilans
+    initFactures();
+    initIAComptable();
     initClients();
     initProjets();
     initEmployes();
     initStocks();
     initDocuments();
+    initUpdates();
     
-    // Date actuelle
-    document.getElementById('current-date').textContent = new Date().toLocaleDateString('fr-FR', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
+    // Initialiser les modèles de documents (si le conteneur existe)
+    if (document.getElementById('kfs-modeles-list')) {
+        window.initKFSModeles();
+    }
+    
+    console.log('✅ KFS BTP Admin: Tous les modules initialisés');
 });
 
 // ===================================================
-// MODULE: LOGIN / AUTHENTIFICATION (SÉCURISÉE)
+// MODULE: NAVIGATION - Gestion des onglets/modules
 // ===================================================
 
-// Fonction de hachage SHA-256
-async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password + 'KFS_BTP_SALT_2026');
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function initLogin() {
-    const loginScreen = document.getElementById('login-screen');
-    const dashboard = document.getElementById('dashboard-container');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-    const logoutBtn = document.getElementById('logout-btn');
-    
-    // Vérifier si déjà connecté
-    if (sessionStorage.getItem('adminAuth') === 'true') {
-        loginScreen.classList.add('hidden');
-        dashboard.classList.remove('hidden');
-    }
-    
-    // Migration : convertir ancien mot de passe base64 vers SHA-256
-    (async function migratePassword() {
-        const oldPassword = localStorage.getItem('adminPassword');
-        if (oldPassword && !localStorage.getItem('adminPasswordHash')) {
-            // Ancien format base64, migrer vers SHA-256
-            try {
-                const decoded = atob(oldPassword);
-                const hash = await hashPassword(decoded);
-                localStorage.setItem('adminPasswordHash', hash);
-                console.log('✅ Mot de passe migré vers SHA-256');
-            } catch(e) {
-                // Déjà en nouveau format ou erreur
-            }
-        }
-        // Mot de passe par défaut si aucun n'existe
-        if (!localStorage.getItem('adminPasswordHash')) {
-            const defaultHash = await hashPassword('admin123');
-            localStorage.setItem('adminPasswordHash', defaultHash);
-        }
-    })();
-    
-    loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const password = document.getElementById('login-password').value;
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        
-        // UI loading
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="animate-pulse">Connexion...</span>';
-        
-        const hash = await hashPassword(password);
-        
-        // Vérifier aussi avec Firebase si configuré
-        if (typeof Auth !== 'undefined' && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
-            const emailInput = document.getElementById('login-email');
-            const email = emailInput ? emailInput.value : 'admin@kfs-btp.sn';
-            const result = await Auth.login(email, password);
-            
-            if (result.success) {
-                loginScreen.classList.add('hidden');
-                dashboard.classList.remove('hidden');
-                loginError.classList.add('hidden');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Connexion';
-                return;
-            }
-        }
-        
-        // Vérification locale avec SHA-256
-        if (hash === localStorage.getItem('adminPasswordHash')) {
-            sessionStorage.setItem('adminAuth', 'true');
-            loginScreen.classList.add('hidden');
-            dashboard.classList.remove('hidden');
-            loginError.classList.add('hidden');
-            
-            // Log de connexion
-            const loginLogs = JSON.parse(localStorage.getItem('loginLogs') || '[]');
-            loginLogs.unshift({
-                date: new Date().toISOString(),
-                success: true,
-                ip: 'local'
-            });
-            localStorage.setItem('loginLogs', JSON.stringify(loginLogs.slice(0, 50)));
-            
-        } else {
-            loginError.classList.remove('hidden');
-            document.getElementById('login-password').value = '';
-            
-            // Log tentative échouée
-            const loginLogs = JSON.parse(localStorage.getItem('loginLogs') || '[]');
-            loginLogs.unshift({
-                date: new Date().toISOString(),
-                success: false,
-                ip: 'local'
-            });
-            localStorage.setItem('loginLogs', JSON.stringify(loginLogs.slice(0, 50)));
-        }
-        
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Connexion';
-    });
-    
-    logoutBtn.addEventListener('click', async function() {
-        sessionStorage.removeItem('adminAuth');
-        if (typeof Auth !== 'undefined') {
-            await Auth.logout();
-        }
-        window.location.reload();
-    });
-}
-
-// ===================================================
-// MODULE: NAVIGATION
-// ===================================================
 function initNavigation() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    const modules = document.querySelectorAll('.module-section');
+    const navLinks = document.querySelectorAll('.nav-link[data-module]');
+    const moduleSections = document.querySelectorAll('.module-section');
     const pageTitle = document.getElementById('page-title');
     
+    // Titres des modules pour l'affichage
     const titles = {
         'dashboard': 'Tableau de bord',
-        'messages': 'Boîte de réception',
-        'catalogue': 'Gestion du catalogue',
-        'carousel': 'Gestion du carrousel',
-        'temoignages': 'Témoignages clients',
-        'faq': 'Questions fréquentes',
-        'media': 'Bibliothèque de médias',
-        'settings': 'Paramètres du site',
-        'seo': 'Optimisation SEO',
+        'messages': 'Messages',
+        'catalogue': 'Catalogue',
+        'carousel': 'Carrousel',
+        'temoignages': 'Témoignages',
+        'faq': 'FAQ',
+        'media': 'Médiathèque',
+        'settings': 'Paramètres',
+        'seo': 'SEO',
         'updates': 'Mises à jour',
-        'maintenance': 'Maintenance & Monitoring',
-        'backup': 'Sauvegarde & Restauration',
+        'maintenance': 'Maintenance',
+        'backup': 'Sauvegardes',
         'security': 'Sécurité',
-        'rdv': 'Gestion des Rendez-vous',
-        'analytics': 'Analytics & Statistiques',
+        'rdv': 'Rendez-vous',
+        'analytics': 'Statistiques',
+        'finances': 'Gestion Financière',
         'comptabilite': 'Comptabilité',
-        'bilans': 'Bilans Financiers',
-        'clients': 'CRM Clients',
-        'projets': 'Projets & Chantiers',
-        'employes': 'Gestion des Employés',
-        'stocks': 'Gestion des Stocks',
+        'factures': 'Factures',
+        'bilans': 'Bilans',
+        'clients': 'Clients',
+        'projets': 'Projets',
+        'employes': 'Employés',
+        'stocks': 'Stocks',
         'documents': 'Documents'
     };
     
-    function showModule(moduleId) {
-        modules.forEach(m => m.classList.remove('active'));
-        navLinks.forEach(l => l.classList.remove('active'));
+    // Fonction pour changer de module
+    function switchModule(moduleName) {
+        // Cacher toutes les sections
+        moduleSections.forEach(section => {
+            section.classList.remove('active');
+        });
         
-        const targetModule = document.getElementById('module-' + moduleId);
-        const targetLink = document.querySelector(`[data-module="${moduleId}"]`);
+        // Retirer la classe active de tous les liens
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+        });
         
-        if (targetModule) targetModule.classList.add('active');
-        if (targetLink) targetLink.classList.add('active');
-        if (titles[moduleId]) pageTitle.textContent = titles[moduleId];
+        // Afficher la section demandée
+        const targetSection = document.getElementById('module-' + moduleName);
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+        
+        // Activer le lien correspondant
+        const targetLink = document.querySelector('.nav-link[data-module="' + moduleName + '"]');
+        if (targetLink) {
+            targetLink.classList.add('active');
+        }
+        
+        // Mettre à jour le titre de la page
+        if (pageTitle && titles[moduleName]) {
+            pageTitle.textContent = titles[moduleName];
+        }
+        
+        console.log('📌 Module activé:', moduleName);
     }
     
+    // Ajouter les écouteurs sur les liens de navigation
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const moduleId = this.dataset.module;
-            showModule(moduleId);
+            const moduleName = this.getAttribute('data-module');
+            if (moduleName) {
+                switchModule(moduleName);
+            }
         });
     });
     
-    // Actions rapides
-    document.querySelectorAll('[data-goto]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            showModule(this.dataset.goto);
+    // Gérer les boutons d'actions rapides (data-goto)
+    const quickActionBtns = document.querySelectorAll('[data-goto]');
+    quickActionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const moduleName = this.getAttribute('data-goto');
+            if (moduleName) {
+                switchModule(moduleName);
+            }
         });
     });
     
-    // Quick actions
-    document.querySelectorAll('.quick-action').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const moduleId = this.dataset.goto;
-            showModule(moduleId);
-        });
-    });
+    // Exposer la fonction globalement pour usage externe
+    window.switchModule = switchModule;
+    
+    console.log('✅ Navigation initialisée avec', navLinks.length, 'liens');
 }
 
 // ===================================================
-// MODULE: DASHBOARD
+// MODULE: STATISTIQUES DASHBOARD
 // ===================================================
-function initDashboard() {
-    updateStats();
-    renderRecentMessages();
-}
 
 function updateStats() {
-    const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
-    const temoignages = JSON.parse(localStorage.getItem('temoignages') || '[]');
-    const media = JSON.parse(localStorage.getItem('media') || '[]');
+    // Récupérer toutes les données
     const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+    const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
+    const rdvs = JSON.parse(localStorage.getItem('rdvs') || '[]');
+    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const projets = JSON.parse(localStorage.getItem('projets') || '[]');
+    const employes = JSON.parse(localStorage.getItem('employes') || '[]');
     
-    document.getElementById('stat-annonces').textContent = annonces.length;
-    document.getElementById('stat-temoignages').textContent = temoignages.length;
-    document.getElementById('stat-media').textContent = media.length;
-    document.getElementById('stat-messages').textContent = messages.length;
+    // Messages non lus
+    const unreadMessages = messages.filter(m => !m.read).length;
+    
+    // RDV du jour
+    const today = new Date().toISOString().split('T')[0];
+    const todayRdvs = rdvs.filter(r => r.date === today).length;
+    
+    // Mettre à jour les compteurs dans le dashboard
+    const statsElements = {
+        'stat-messages': unreadMessages,
+        'stat-annonces': annonces.length,
+        'stat-rdv': todayRdvs,
+        'stat-clients': clients.length,
+        'stat-projets': projets.length,
+        'stat-employes': employes.length
+    };
+    
+    Object.entries(statsElements).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    });
     
     // Badge messages non lus
-    const unread = messages.filter(m => !m.read).length;
-    const badge = document.getElementById('messages-badge');
-    if (unread > 0) {
-        badge.textContent = unread;
-        badge.classList.remove('hidden');
-    } else {
-        badge.classList.add('hidden');
+    const messageBadge = document.getElementById('messages-badge');
+    if (messageBadge) {
+        if (unreadMessages > 0) {
+            messageBadge.textContent = unreadMessages;
+            messageBadge.classList.remove('hidden');
+        } else {
+            messageBadge.classList.add('hidden');
+        }
     }
-}
-
-function renderRecentMessages() {
-    const container = document.getElementById('recent-messages');
-    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-    
-    if (messages.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun message pour le moment</p>';
-        return;
-    }
-    
-    container.innerHTML = messages.slice(0, 3).map(msg => `
-        <div class="p-3 bg-gray-50 rounded-lg ${!msg.read ? 'border-l-4 border-yellow-400' : ''}">
-            <div class="flex justify-between items-start">
-                <p class="font-medium text-gray-800">${msg.name}</p>
-                <span class="text-xs text-gray-400">${new Date(msg.date).toLocaleDateString('fr-FR')}</span>
-            </div>
-            <p class="text-sm text-gray-600 truncate">${msg.message}</p>
-        </div>
-    `).join('');
 }
 
 // ===================================================
 // MODULE: MESSAGES
 // ===================================================
-function initMessages() {
-    renderMessages();
-    
-    document.getElementById('mark-all-read').addEventListener('click', function() {
-        const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-        messages.forEach(m => m.read = true);
-        localStorage.setItem('messages', JSON.stringify(messages));
-        renderMessages();
-        updateStats();
-        renderRecentMessages();
-    });
-    
-    document.getElementById('clear-messages').addEventListener('click', function() {
-        if (confirm('Supprimer tous les messages ?')) {
-            localStorage.removeItem('messages');
-            renderMessages();
-            updateStats();
-            renderRecentMessages();
-        }
-    });
-}
 
 function renderMessages() {
     const container = document.getElementById('messages-list');
+    if (!container) return;
+    
     const messages = JSON.parse(localStorage.getItem('messages') || '[]');
     
     if (messages.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-center py-12">Aucun message reçu</p>';
+        container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun message reçu.</p>';
         return;
     }
     
-    container.innerHTML = messages.map((msg, i) => `
-        <div class="message-card ${!msg.read ? 'unread' : ''} bg-white p-5 rounded-xl shadow-sm">
-            <div class="flex justify-between items-start mb-3">
+    container.innerHTML = messages.map((m, i) => `
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 ${m.read ? 'border-gray-300' : 'border-blue-500'} hover:shadow-md transition">
+            <div class="flex justify-between items-start mb-2">
                 <div>
-                    <h4 class="font-bold text-gray-800">${msg.name}</h4>
-                    <p class="text-sm text-gray-500">${msg.email} • ${msg.phone || 'N/A'}</p>
+                    <h4 class="font-bold text-gray-800 ${!m.read ? 'text-blue-700' : ''}">${m.name || 'Anonyme'}</h4>
+                    <p class="text-sm text-gray-500">${m.email || ''} ${m.phone ? '• ' + m.phone : ''}</p>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <span class="text-xs text-gray-400">${new Date(msg.date).toLocaleString('fr-FR')}</span>
-                    ${!msg.read ? '<span class="bg-yellow-400 text-yellow-800 text-xs px-2 py-1 rounded-full">Nouveau</span>' : ''}
-                </div>
+                <span class="text-xs text-gray-400">${m.date ? new Date(m.date).toLocaleDateString('fr-FR') : ''}</span>
             </div>
-            <p class="text-gray-700 mb-3">${msg.message}</p>
-            <p class="text-sm text-blue-600 mb-3"><strong>Besoin :</strong> ${msg.service || 'Non spécifié'}</p>
+            <p class="text-sm text-gray-500 mb-1"><strong>Sujet:</strong> ${m.subject || 'Sans sujet'}</p>
+            <p class="text-gray-700 mb-3">${m.message || ''}</p>
             <div class="flex space-x-2">
-                ${!msg.read ? `<button onclick="markAsRead(${i})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">Marquer lu</button>` : ''}
+                ${!m.read ? `<button onclick="markAsRead(${i})" class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200">Marquer lu</button>` : '<span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-lg text-sm">Lu ✓</span>'}
                 <button onclick="deleteMessage(${i})" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">Supprimer</button>
-                <a href="mailto:${msg.email}" class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200">Répondre</a>
             </div>
         </div>
     `).join('');
 }
+
+function renderRecentMessages() {
+    const container = document.getElementById('recent-messages');
+    if (!container) return;
+    
+    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+    const recent = messages.slice(0, 5);
+    
+    if (recent.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-4 text-sm">Aucun message récent.</p>';
+        return;
+    }
+    
+    container.innerHTML = recent.map((m, i) => `
+        <div class="flex items-center py-2 border-b border-gray-100 last:border-0 ${!m.read ? 'bg-blue-50 -mx-2 px-2 rounded' : ''}">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm mr-3">
+                ${(m.name || 'A').charAt(0).toUpperCase()}
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-gray-800 text-sm truncate">${m.name || 'Anonyme'}</p>
+                <p class="text-xs text-gray-500 truncate">${m.subject || m.message?.substring(0, 30) || 'Sans sujet'}...</p>
+            </div>
+            <span class="text-xs text-gray-400">${m.date ? new Date(m.date).toLocaleDateString('fr-FR', {day: '2-digit', month: 'short'}) : ''}</span>
+        </div>
+    `).join('');
+}
+
+// ===================================================
+// FONCTIONS GLOBALES POUR LES MESSAGES
+// ===================================================
 
 function markAsRead(index) {
     const messages = JSON.parse(localStorage.getItem('messages') || '[]');
@@ -355,64 +560,76 @@ function deleteMessage(index) {
     }
 }
 
-// ===================================================
-// MODULE: CATALOGUE
-// ===================================================
-// Variable globale pour stocker les images temporaires
-let catalogueTempImages = [];
-let catalogueExistingImages = [];
-
+// ================= MODULE : CATALOGUE =====================
 function initCatalogue() {
-    renderCatalogue();
-    initCatalogueDropzone();
+    // Initialisation basique pour éviter l'erreur JS
+    if (typeof renderCatalogue === 'function') {
+        renderCatalogue();
+    }
+    if (typeof initCatalogueDropzone === 'function') {
+        initCatalogueDropzone();
+    }
     
+    // Event listener pour le formulaire
     const form = document.getElementById('catalogue-form');
-    if (!form) return;
-    
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const editIndex = document.getElementById('catalogue-edit-index').value;
-        
-        // Combiner images existantes et nouvelles
-        const allImages = [...catalogueExistingImages, ...catalogueTempImages];
-        
-        const saveAnnonce = () => {
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const editIndex = document.getElementById('catalogue-edit-index').value;
             const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
+            
+            // Combiner images existantes et nouvelles
+            const allImages = [...catalogueExistingImages, ...catalogueTempImages];
+            
             const annonce = {
-                title: document.getElementById('catalogue-title').value || '',
-                description: document.getElementById('catalogue-desc').value || '',
-                price: document.getElementById('catalogue-price').value || '',
+                title: document.getElementById('catalogue-title').value,
+                description: document.getElementById('catalogue-desc').value,
+                price: document.getElementById('catalogue-price').value,
                 location: document.getElementById('catalogue-location')?.value || '',
-                category: document.getElementById('catalogue-category').value || 'vente',
+                category: document.getElementById('catalogue-category')?.value || 'vente',
                 type: document.getElementById('catalogue-type')?.value || 'maison',
-                status: document.getElementById('catalogue-status').value || 'actif',
-                images: allImages, // Tableau d'images
-                image: allImages[0] || '', // Compatibilité: première image
-                date: new Date().toISOString()
+                status: document.getElementById('catalogue-status')?.value || 'actif',
+                images: allImages,
+                image: allImages[0] || '', // Image principale pour compatibilité
+                createdAt: editIndex !== '' ? annonces[parseInt(editIndex)]?.createdAt : new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
             
             if (editIndex !== '') {
                 annonces[parseInt(editIndex)] = annonce;
                 showNotification('Annonce modifiée', annonce.title, 'success');
             } else {
-                annonces.push(annonce);
+                annonces.unshift(annonce);
                 showNotification('Annonce ajoutée', annonce.title, 'success');
             }
             
             localStorage.setItem('annonces', JSON.stringify(annonces));
+            
+            // Reset du formulaire
             form.reset();
             document.getElementById('catalogue-edit-index').value = '';
             catalogueTempImages = [];
             catalogueExistingImages = [];
-            closeCatalogueModal();
+            
+            // Fermer la modale automatiquement
+            const modal = document.getElementById('catalogue-modal');
+            if (modal) modal.classList.add('hidden');
+            
             renderCatalogue();
             updateStats();
-        };
-        
-        saveAnnonce();
-    });
+        });
+    }
 }
+window.initCatalogue = initCatalogue;
+
+// ===================================================
+// MODULE: CATALOGUE - Fonctions auxiliaires
+// ===================================================
+
+// Variables globales pour le catalogue
+let catalogueTempImages = [];
+let catalogueExistingImages = [];
 
 // Initialiser le drag & drop
 function initCatalogueDropzone() {
@@ -448,23 +665,23 @@ function initCatalogueDropzone() {
 function handleCatalogueFiles(files) {
     const maxFiles = 10;
     const maxSize = 5 * 1024 * 1024; // 5MB
-    
+
     Array.from(files).forEach(file => {
         if (catalogueTempImages.length + catalogueExistingImages.length >= maxFiles) {
             showNotification('Limite atteinte', 'Maximum 10 images par annonce', 'warning');
             return;
         }
-        
+
         if (file.size > maxSize) {
             showNotification('Fichier trop volumineux', `${file.name} dépasse 5MB`, 'error');
             return;
         }
-        
+
         if (!file.type.startsWith('image/')) {
             showNotification('Format invalide', `${file.name} n'est pas une image`, 'error');
             return;
         }
-        
+
         const reader = new FileReader();
         reader.onload = (e) => {
             catalogueTempImages.push(e.target.result);
@@ -535,6 +752,8 @@ function renderCatalogueExistingImages() {
 
 function renderCatalogue() {
     const container = document.getElementById('catalogue-list');
+    if (!container) return;
+    
     const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
     
     if (annonces.length === 0) {
@@ -657,6 +876,8 @@ function initCarousel() {
 
 function renderCarousel() {
     const container = document.getElementById('carousel-list');
+    if (!container) return;
+    
     const slides = JSON.parse(localStorage.getItem('carousel') || '[]');
     
     if (slides.length === 0) {
@@ -745,6 +966,8 @@ function initTemoignages() {
 
 function renderTemoignages() {
     const container = document.getElementById('temoignages-list');
+    if (!container) return;
+    
     const temoignages = JSON.parse(localStorage.getItem('temoignages') || '[]');
     
     if (temoignages.length === 0) {
@@ -833,6 +1056,8 @@ function initFaq() {
 
 function renderFaq() {
     const container = document.getElementById('faq-list');
+    if (!container) return;
+    
     const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
     
     if (faqs.length === 0) {
@@ -931,6 +1156,8 @@ function initMedia() {
 
 function renderMedia() {
     const container = document.getElementById('media-list');
+    if (!container) return;
+    
     const media = JSON.parse(localStorage.getItem('media') || '[]');
     
     if (media.length === 0) {
@@ -973,37 +1200,239 @@ function initSettings() {
     // Charger les paramètres existants
     const settings = JSON.parse(localStorage.getItem('siteSettings') || '{}');
     
-    if (settings.company) document.getElementById('settings-company').value = settings.company;
-    if (settings.slogan) document.getElementById('settings-slogan').value = settings.slogan;
-    if (settings.email) document.getElementById('settings-email').value = settings.email;
-    if (settings.phone) document.getElementById('settings-phone').value = settings.phone;
-    if (settings.whatsapp) document.getElementById('settings-whatsapp').value = settings.whatsapp;
-    if (settings.address) document.getElementById('settings-address').value = settings.address;
-    if (settings.hours) document.getElementById('settings-hours').value = settings.hours;
-    if (settings.facebook) document.getElementById('settings-facebook').value = settings.facebook;
-    if (settings.instagram) document.getElementById('settings-instagram').value = settings.instagram;
-    if (settings.linkedin) document.getElementById('settings-linkedin').value = settings.linkedin;
+    // Fonction helper pour remplir les champs
+    const setVal = (id, val) => { 
+        const el = document.getElementById(id); 
+        if (el && val !== undefined && val !== null) {
+            if (el.type === 'checkbox') {
+                el.checked = val;
+            } else {
+                el.value = val;
+            }
+        }
+    };
     
-    document.getElementById('settings-form').addEventListener('submit', function(e) {
+    // Charger tous les paramètres dans les champs
+    // Entreprise
+    setVal('settings-company', settings.company || 'KFS BTP IMMO');
+    setVal('settings-slogan', settings.slogan || 'Bâtir l\'avenir au Sénégal');
+    setVal('settings-description', settings.description);
+    setVal('settings-hours', settings.hours || 'Lun-Ven: 8h-18h, Sam: 9h-13h');
+    setVal('settings-closed', settings.closed);
+    setVal('settings-available', settings.available !== false);
+    
+    // Contact
+    setVal('settings-phone', settings.phone || '+221 78 584 28 71');
+    setVal('settings-phone-france', settings.phoneFrance || '+33 6 05 84 68 07');
+    setVal('settings-whatsapp', settings.whatsapp || '221785842871');
+    setVal('settings-email', settings.email || 'kfsbtpproimmo@gmail.com');
+    setVal('settings-address', settings.address || 'Villa 123 MC, Quartier Medinacoura, Tambacounda');
+    setVal('settings-city', settings.city || 'Tambacounda, Sénégal');
+    setVal('settings-maps', settings.maps);
+    
+    // Réseaux sociaux
+    setVal('settings-facebook', settings.facebook);
+    setVal('settings-instagram', settings.instagram);
+    setVal('settings-linkedin', settings.linkedin);
+    setVal('settings-youtube', settings.youtube);
+    setVal('settings-twitter', settings.twitter);
+    setVal('settings-tiktok', settings.tiktok);
+    
+    // Apparence
+    setVal('settings-color-primary', settings.colorPrimary || '#1e3a8a');
+    setVal('settings-color-secondary', settings.colorSecondary || '#facc15');
+    setVal('settings-logo', settings.logo);
+    setVal('settings-favicon', settings.favicon);
+    setVal('settings-show-whatsapp-btn', settings.showWhatsappBtn !== false);
+    
+    // Légal
+    setVal('settings-ninea', settings.ninea || '009468499');
+    setVal('settings-rccm', settings.rccm || 'SN TBC 2025 M 1361');
+    setVal('settings-capital', settings.capital);
+    setVal('settings-owner', settings.owner);
+    setVal('settings-host', settings.host);
+    
+    // Synchroniser les couleurs avec les champs hex
+    const colorPrimary = document.getElementById('settings-color-primary');
+    const colorPrimaryHex = document.getElementById('settings-color-primary-hex');
+    const colorSecondary = document.getElementById('settings-color-secondary');
+    const colorSecondaryHex = document.getElementById('settings-color-secondary-hex');
+    
+    if (colorPrimary && colorPrimaryHex) {
+        colorPrimary.addEventListener('input', () => colorPrimaryHex.value = colorPrimary.value);
+    }
+    if (colorSecondary && colorSecondaryHex) {
+        colorSecondary.addEventListener('input', () => colorSecondaryHex.value = colorSecondary.value);
+    }
+    
+    // Mettre à jour l'aperçu du footer
+    updateSettingsPreview();
+    
+    // Écouter les changements pour l'aperçu en temps réel
+    document.querySelectorAll('#settings-form input, #settings-form textarea').forEach(el => {
+        el.addEventListener('input', updateSettingsPreview);
+    });
+    
+    const settingsForm = document.getElementById('settings-form');
+    if (!settingsForm) return;
+    
+    settingsForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const settings = {
-            company: document.getElementById('settings-company').value,
-            slogan: document.getElementById('settings-slogan').value,
-            email: document.getElementById('settings-email').value,
-            phone: document.getElementById('settings-phone').value,
-            whatsapp: document.getElementById('settings-whatsapp').value,
-            address: document.getElementById('settings-address').value,
-            hours: document.getElementById('settings-hours').value,
-            facebook: document.getElementById('settings-facebook').value,
-            instagram: document.getElementById('settings-instagram').value,
-            linkedin: document.getElementById('settings-linkedin').value
+            // Entreprise
+            company: document.getElementById('settings-company')?.value || '',
+            slogan: document.getElementById('settings-slogan')?.value || '',
+            description: document.getElementById('settings-description')?.value || '',
+            hours: document.getElementById('settings-hours')?.value || '',
+            closed: document.getElementById('settings-closed')?.value || '',
+            available: document.getElementById('settings-available')?.checked,
+            
+            // Contact
+            phone: document.getElementById('settings-phone')?.value || '',
+            phoneFrance: document.getElementById('settings-phone-france')?.value || '',
+            whatsapp: document.getElementById('settings-whatsapp')?.value || '',
+            email: document.getElementById('settings-email')?.value || '',
+            address: document.getElementById('settings-address')?.value || '',
+            city: document.getElementById('settings-city')?.value || '',
+            maps: document.getElementById('settings-maps')?.value || '',
+            
+            // Réseaux sociaux
+            facebook: document.getElementById('settings-facebook')?.value || '',
+            instagram: document.getElementById('settings-instagram')?.value || '',
+            linkedin: document.getElementById('settings-linkedin')?.value || '',
+            youtube: document.getElementById('settings-youtube')?.value || '',
+            twitter: document.getElementById('settings-twitter')?.value || '',
+            tiktok: document.getElementById('settings-tiktok')?.value || '',
+            
+            // Apparence
+            colorPrimary: document.getElementById('settings-color-primary')?.value || '#1e3a8a',
+            colorSecondary: document.getElementById('settings-color-secondary')?.value || '#facc15',
+            logo: document.getElementById('settings-logo')?.value || '',
+            favicon: document.getElementById('settings-favicon')?.value || '',
+            showWhatsappBtn: document.getElementById('settings-show-whatsapp-btn')?.checked,
+            
+            // Légal
+            ninea: document.getElementById('settings-ninea')?.value || '',
+            rccm: document.getElementById('settings-rccm')?.value || '',
+            capital: document.getElementById('settings-capital')?.value || '',
+            owner: document.getElementById('settings-owner')?.value || '',
+            host: document.getElementById('settings-host')?.value || '',
+            
+            // Métadonnées
+            updatedAt: new Date().toISOString()
         };
         
         localStorage.setItem('siteSettings', JSON.stringify(settings));
-        alert('Paramètres sauvegardés !');
+        showNotification('✅ Paramètres sauvegardés', 'Les modifications seront appliquées sur le site public', 'success');
+        updateSettingsPreview();
     });
 }
+
+// Fonction pour changer d'onglet dans les paramètres
+window.switchSettingsTab = function(tabName) {
+    // Masquer tous les contenus
+    document.querySelectorAll('.settings-tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // Désactiver tous les boutons
+    document.querySelectorAll('.settings-tab').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'border-b-2', 'border-blue-600');
+        btn.classList.add('text-gray-600');
+    });
+    
+    // Afficher le contenu sélectionné
+    const content = document.getElementById(`settings-tab-${tabName}`);
+    if (content) content.classList.remove('hidden');
+    
+    // Activer le bouton sélectionné
+    const btn = document.querySelector(`.settings-tab[data-tab="${tabName}"]`);
+    if (btn) {
+        btn.classList.add('active', 'bg-blue-50', 'text-blue-600', 'border-b-2', 'border-blue-600');
+        btn.classList.remove('text-gray-600');
+    }
+};
+
+// Mettre à jour l'aperçu du footer
+function updateSettingsPreview() {
+    const preview = document.getElementById('settings-footer-preview');
+    if (!preview) return;
+    
+    const company = document.getElementById('settings-company')?.value || 'KFS BTP IMMO';
+    const slogan = document.getElementById('settings-slogan')?.value || 'Bâtir l\'avenir au Sénégal';
+    const phone = document.getElementById('settings-phone')?.value || '+221 78 584 28 71';
+    const phoneFrance = document.getElementById('settings-phone-france')?.value || '+33 6 05 84 68 07';
+    const email = document.getElementById('settings-email')?.value || 'kfsbtpproimmo@gmail.com';
+    const address = document.getElementById('settings-address')?.value || 'Tambacounda, Sénégal';
+    const ninea = document.getElementById('settings-ninea')?.value || '009468499';
+    const rccm = document.getElementById('settings-rccm')?.value || 'SN TBC 2025 M 1361';
+    const facebook = document.getElementById('settings-facebook')?.value;
+    const instagram = document.getElementById('settings-instagram')?.value;
+    const linkedin = document.getElementById('settings-linkedin')?.value;
+    
+    preview.innerHTML = `
+        <div class="flex flex-wrap justify-between gap-4">
+            <div>
+                <p class="font-bold text-lg">${company}</p>
+                <p class="text-blue-200">${slogan}</p>
+                <div class="flex gap-2 mt-2">
+                    ${facebook ? '<span class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">f</span>' : ''}
+                    ${instagram ? '<span class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">📷</span>' : ''}
+                    ${linkedin ? '<span class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">in</span>' : ''}
+                </div>
+            </div>
+            <div class="text-right">
+                <p>📧 ${email}</p>
+                <p>📞 ${phone}</p>
+                <p>🇫🇷 ${phoneFrance}</p>
+                <p>📍 ${address}</p>
+                <p class="text-blue-200 mt-2">NINEA: ${ninea} | RCCM: ${rccm}</p>
+            </div>
+        </div>
+        <div class="text-center mt-4 pt-4 border-t border-white/20">
+            © ${new Date().getFullYear()} ${company}. Tous droits réservés.
+        </div>
+    `;
+}
+
+// Prévisualiser les changements
+window.previewSettingsChanges = function() {
+    updateSettingsPreview();
+    showNotification('👁️ Aperçu mis à jour', 'Consultez l\'aperçu du footer ci-dessous', 'info');
+};
+
+// Réinitialiser les paramètres par défaut
+window.resetSettingsToDefault = function() {
+    if (!confirm('Réinitialiser tous les paramètres aux valeurs par défaut ?')) return;
+    
+    const defaultSettings = {
+        company: 'KFS BTP IMMO',
+        slogan: 'Bâtir l\'avenir au Sénégal',
+        phone: '+221 78 584 28 71',
+        phoneFrance: '+33 6 05 84 68 07',
+        whatsapp: '221785842871',
+        email: 'kfsbtpproimmo@gmail.com',
+        address: 'Villa 123 MC, Quartier Medinacoura, Tambacounda',
+        city: 'Tambacounda, Sénégal',
+        hours: 'Lun-Ven: 8h-18h, Sam: 9h-13h',
+        ninea: '009468499',
+        rccm: 'SN TBC 2025 M 1361',
+        colorPrimary: '#1e3a8a',
+        colorSecondary: '#facc15',
+        showWhatsappBtn: true,
+        available: true
+    };
+    
+    localStorage.setItem('siteSettings', JSON.stringify(defaultSettings));
+    initSettings();
+    showNotification('🔄 Réinitialisé', 'Les paramètres par défaut ont été restaurés', 'success');
+};
+
+// Ouvrir le site public dans un nouvel onglet
+window.testSettingsOnPublic = function() {
+    window.open('index.html', '_blank');
+};
 
 // ===================================================
 // MODULE: SEO
@@ -1011,17 +1440,24 @@ function initSettings() {
 function initSeo() {
     const seo = JSON.parse(localStorage.getItem('seoSettings') || '{}');
     
-    if (seo.analytics) document.getElementById('seo-analytics').value = seo.analytics;
-    if (seo.searchConsole) document.getElementById('seo-search-console').value = seo.searchConsole;
-    if (seo.description) document.getElementById('seo-description').value = seo.description;
-    if (seo.keywords) document.getElementById('seo-keywords').value = seo.keywords;
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    setVal('seo-analytics', seo.analytics);
+    setVal('seo-search-console', seo.searchConsole);
+    setVal('seo-description', seo.description);
+    setVal('seo-keywords', seo.keywords);
     
     // Mise à jour de l'aperçu en temps réel
-    document.getElementById('seo-description').addEventListener('input', function() {
-        document.getElementById('seo-preview-desc').textContent = this.value || 'Entreprise de BTP au Sénégal...';
-    });
+    const seoDesc = document.getElementById('seo-description');
+    const seoPreview = document.getElementById('seo-preview-desc');
+    if (seoDesc && seoPreview) {
+        seoDesc.addEventListener('input', function() {
+            seoPreview.textContent = this.value || 'Entreprise de BTP au Sénégal...';
+        });
+    }
     
-    document.getElementById('seo-form').addEventListener('submit', function(e) {
+    const seoForm = document.getElementById('seo-form');
+    if (!seoForm) return;
+    seoForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const seo = {
@@ -1040,7 +1476,11 @@ function initSeo() {
 // MODULE: SAUVEGARDE
 // ===================================================
 function initBackup() {
-    document.getElementById('backup-export').addEventListener('click', function() {
+    const backupExport = document.getElementById('backup-export');
+    const backupImport = document.getElementById('backup-import');
+    const backupReset = document.getElementById('backup-reset');
+    if (!backupExport) return;
+    backupExport.addEventListener('click', function() {
         const data = {
             annonces: localStorage.getItem('annonces'),
             temoignages: localStorage.getItem('temoignages'),
@@ -1062,11 +1502,15 @@ function initBackup() {
         a.click();
         URL.revokeObjectURL(url);
         
-        document.getElementById('backup-message').textContent = 'Sauvegarde téléchargée !';
-        document.getElementById('backup-message').className = 'text-sm text-green-600';
+        const msg = document.getElementById('backup-message');
+        if (msg) {
+            msg.textContent = 'Sauvegarde téléchargée !';
+            msg.className = 'text-sm text-green-600';
+        }
     });
     
-    document.getElementById('backup-import').addEventListener('change', function(e) {
+    if (!backupImport) return;
+    backupImport.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
@@ -1085,19 +1529,26 @@ function initBackup() {
                 if (data.seoSettings) localStorage.setItem('seoSettings', data.seoSettings);
                 if (data.adminPassword) localStorage.setItem('adminPassword', data.adminPassword);
                 
-                document.getElementById('backup-message').textContent = 'Importation réussie ! Rechargez la page.';
-                document.getElementById('backup-message').className = 'text-sm text-green-600';
+                const msg = document.getElementById('backup-message');
+                if (msg) {
+                    msg.textContent = 'Importation réussie ! Rechargez la page.';
+                    msg.className = 'text-sm text-green-600';
+                }
                 
                 setTimeout(() => window.location.reload(), 1500);
             } catch (err) {
-                document.getElementById('backup-message').textContent = 'Erreur lors de l\'importation';
-                document.getElementById('backup-message').className = 'text-sm text-red-600';
+                const msg = document.getElementById('backup-message');
+                if (msg) {
+                    msg.textContent = 'Erreur lors de l\'importation';
+                    msg.className = 'text-sm text-red-600';
+                }
             }
         };
         reader.readAsText(file);
     });
     
-    document.getElementById('backup-reset').addEventListener('click', function() {
+    if (!backupReset) return;
+    backupReset.addEventListener('click', function() {
         if (confirm('⚠️ ATTENTION : Toutes vos données seront supprimées. Continuer ?')) {
             if (confirm('Êtes-vous vraiment sûr ? Cette action est irréversible.')) {
                 localStorage.removeItem('annonces');
@@ -1117,42 +1568,754 @@ function initBackup() {
 }
 
 // ===================================================
-// MODULE: SÉCURITÉ
+// MODULE: SÉCURITÉ AVANCÉE
 // ===================================================
 function initSecurity() {
-    document.getElementById('security-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const password = document.getElementById('security-password').value;
-        const confirm = document.getElementById('security-password-confirm').value;
-        const message = document.getElementById('security-message');
-        
-        if (password.length < 6) {
-            message.textContent = 'Le mot de passe doit contenir au moins 6 caractères';
-            message.className = 'text-sm text-red-600';
-            return;
-        }
-        
-        if (password !== confirm) {
-            message.textContent = 'Les mots de passe ne correspondent pas';
-            message.className = 'text-sm text-red-600';
-            return;
-        }
-        
-        localStorage.setItem('adminPassword', btoa(password));
-        message.textContent = 'Mot de passe modifié avec succès !';
-        message.className = 'text-sm text-green-600';
-        this.reset();
+    // Initialiser les données de sécurité si nécessaire
+    if (!localStorage.getItem('securityLogs')) {
+        localStorage.setItem('securityLogs', JSON.stringify([]));
+    }
+    if (!localStorage.getItem('employeeAccess')) {
+        localStorage.setItem('employeeAccess', JSON.stringify([]));
+    }
+    if (!localStorage.getItem('securitySettings')) {
+        localStorage.setItem('securitySettings', JSON.stringify({
+            sessionTimeout: 30,
+            autoLogout: true,
+            maxAttempts: 5,
+            lockoutDuration: 15,
+            alertFailed: true,
+            alertLogin: false,
+            alertDelete: true,
+            requireUppercase: true,
+            requireNumber: true,
+            requireSpecial: false
+        }));
+    }
+    
+    // Charger les paramètres
+    loadSecuritySettings();
+    
+    // Rendre les interfaces
+    renderSecurityDashboard();
+    renderEmployeeAccessList();
+    renderSecurityLogs();
+    runSecurityAudit();
+    
+    // Formulaire de changement de mot de passe admin
+    const securityForm = document.getElementById('security-form');
+    if (securityForm) {
+        securityForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('security-current-password')?.value || '';
+            const newPassword = document.getElementById('security-password').value;
+            const confirmPassword = document.getElementById('security-password-confirm').value;
+            const message = document.getElementById('security-message');
+            
+            // Vérifier le mot de passe actuel
+            const storedPassword = localStorage.getItem('adminPassword');
+            if (storedPassword && atob(storedPassword) !== currentPassword) {
+                message.textContent = 'Mot de passe actuel incorrect';
+                message.className = 'text-sm text-red-600';
+                return;
+            }
+            
+            // Vérifier la force du mot de passe
+            const settings = JSON.parse(localStorage.getItem('securitySettings') || '{}');
+            if (newPassword.length < 8) {
+                message.textContent = 'Le mot de passe doit contenir au moins 8 caractères';
+                message.className = 'text-sm text-red-600';
+                return;
+            }
+            if (settings.requireUppercase && !/[A-Z]/.test(newPassword)) {
+                message.textContent = 'Le mot de passe doit contenir au moins une majuscule';
+                message.className = 'text-sm text-red-600';
+                return;
+            }
+            if (settings.requireNumber && !/[0-9]/.test(newPassword)) {
+                message.textContent = 'Le mot de passe doit contenir au moins un chiffre';
+                message.className = 'text-sm text-red-600';
+                return;
+            }
+            if (settings.requireSpecial && !/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+                message.textContent = 'Le mot de passe doit contenir au moins un caractère spécial';
+                message.className = 'text-sm text-red-600';
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                message.textContent = 'Les mots de passe ne correspondent pas';
+                message.className = 'text-sm text-red-600';
+                return;
+            }
+            
+            localStorage.setItem('adminPassword', btoa(newPassword));
+            logSecurityEvent('action', 'Mot de passe administrateur modifié', 'Admin');
+            
+            message.textContent = 'Mot de passe modifié avec succès !';
+            message.className = 'text-sm text-green-600';
+            this.reset();
+            
+            showNotification('Sécurité', 'Mot de passe mis à jour', 'success');
+        });
+    }
+    
+    // Bouton reset mot de passe
+    const securityReset = document.getElementById('security-reset');
+    if (securityReset) {
+        securityReset.addEventListener('click', function() {
+            if (confirm('⚠️ Réinitialiser le mot de passe à "admin123" ?\n\nCette action sera enregistrée dans les logs.')) {
+                localStorage.setItem('adminPassword', btoa('admin123'));
+                logSecurityEvent('action', 'Mot de passe réinitialisé à la valeur par défaut', 'Admin');
+                
+                const msg = document.getElementById('security-message');
+                if (msg) {
+                    msg.textContent = 'Mot de passe réinitialisé à "admin123"';
+                    msg.className = 'text-sm text-orange-600';
+                }
+                showNotification('Sécurité', 'Mot de passe réinitialisé', 'warning');
+            }
+        });
+    }
+    
+    // Vérificateur de force de mot de passe
+    const passwordInput = document.getElementById('security-password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            checkPasswordStrength(this.value);
+        });
+    }
+    
+    // Formulaire d'accès employé
+    const employeeAccessForm = document.getElementById('employee-access-form');
+    if (employeeAccessForm) {
+        employeeAccessForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveEmployeeAccess();
+        });
+    }
+    
+    // Filtre des logs
+    document.getElementById('sec-log-filter')?.addEventListener('change', function() {
+        renderSecurityLogs(this.value);
     });
     
-    document.getElementById('security-reset').addEventListener('click', function() {
-        if (confirm('Réinitialiser le mot de passe à "admin123" ?')) {
-            localStorage.setItem('adminPassword', btoa('admin123'));
-            document.getElementById('security-message').textContent = 'Mot de passe réinitialisé à "admin123"';
-            document.getElementById('security-message').className = 'text-sm text-green-600';
-        }
+    // Recherche utilisateur
+    document.getElementById('sec-search-user')?.addEventListener('input', function() {
+        renderEmployeeAccessList(this.value);
     });
+    
+    console.log('✅ Module Sécurité initialisé');
 }
+
+// Afficher/cacher les onglets de sécurité
+window.showSecurityTab = function(tabName) {
+    // Cacher tous les contenus
+    document.querySelectorAll('.security-tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // Retirer la classe active de tous les boutons
+    document.querySelectorAll('.security-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Afficher le contenu sélectionné
+    const targetTab = document.getElementById('security-tab-' + tabName);
+    if (targetTab) {
+        targetTab.classList.remove('hidden');
+    }
+    
+    // Activer le bouton
+    const activeBtn = document.querySelector(`.security-tab[data-tab="${tabName}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+};
+
+// Vérificateur de force de mot de passe
+function checkPasswordStrength(password) {
+    let strength = 0;
+    const indicators = ['strength-1', 'strength-2', 'strength-3', 'strength-4'];
+    const strengthText = document.getElementById('strength-text');
+    
+    // Reset
+    indicators.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.className = 'h-1 flex-1 bg-gray-200 rounded';
+    });
+    
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+    
+    const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+    const texts = ['Très faible', 'Faible', 'Moyen', 'Fort'];
+    
+    for (let i = 0; i < strength; i++) {
+        const el = document.getElementById(indicators[i]);
+        if (el) el.className = `h-1 flex-1 ${colors[Math.min(strength - 1, 3)]} rounded`;
+    }
+    
+    if (strengthText) {
+        if (password.length === 0) {
+            strengthText.textContent = 'Min. 8 caractères, majuscule, chiffre, caractère spécial';
+            strengthText.className = 'text-xs text-gray-500';
+        } else {
+            strengthText.textContent = `Force: ${texts[Math.max(0, strength - 1)]}`;
+            strengthText.className = `text-xs ${strength >= 3 ? 'text-green-600' : strength >= 2 ? 'text-yellow-600' : 'text-red-600'}`;
+        }
+    }
+}
+
+// Toggle visibilité mot de passe
+window.togglePasswordVisibility = function(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    const icon = input.nextElementSibling?.querySelector('.material-icons');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) icon.textContent = 'visibility_off';
+    } else {
+        input.type = 'password';
+        if (icon) icon.textContent = 'visibility';
+    }
+};
+
+// Enregistrer un événement de sécurité
+function logSecurityEvent(type, description, user = 'Admin') {
+    const logs = JSON.parse(localStorage.getItem('securityLogs') || '[]');
+    logs.unshift({
+        id: Date.now(),
+        type: type, // login, logout, failed, action
+        description: description,
+        user: user,
+        timestamp: new Date().toISOString(),
+        ip: '127.0.0.1' // Simulation
+    });
+    
+    // Garder seulement les 500 derniers logs
+    if (logs.length > 500) logs.pop();
+    
+    localStorage.setItem('securityLogs', JSON.stringify(logs));
+}
+
+// Rendre le tableau de bord sécurité
+function renderSecurityDashboard() {
+    const logs = JSON.parse(localStorage.getItem('securityLogs') || '[]');
+    const employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+    const activeEmployees = employees.filter(e => e.status === 'actif');
+    
+    // Compter les connexions des 7 derniers jours
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentLogins = logs.filter(l => l.type === 'login' && new Date(l.timestamp) > sevenDaysAgo).length;
+    const failedAttempts = logs.filter(l => l.type === 'failed').length;
+    
+    // Dernière connexion
+    const lastLogin = logs.find(l => l.type === 'login');
+    
+    // Mettre à jour les KPIs
+    const usersCount = document.getElementById('sec-users-count');
+    const usersDetail = document.getElementById('sec-users-detail');
+    const loginsEl = document.getElementById('sec-logins');
+    const lastLoginEl = document.getElementById('sec-last-login');
+    const alertsEl = document.getElementById('sec-alerts');
+    
+    if (usersCount) usersCount.textContent = 1 + activeEmployees.length;
+    if (usersDetail) usersDetail.textContent = `1 admin, ${activeEmployees.length} employés`;
+    if (loginsEl) loginsEl.textContent = recentLogins;
+    if (lastLoginEl && lastLogin) {
+        lastLoginEl.textContent = `Dernière: ${new Date(lastLogin.timestamp).toLocaleDateString('fr-FR')}`;
+    }
+    if (alertsEl) alertsEl.textContent = failedAttempts;
+}
+
+// Rendre la liste des accès employés
+function renderEmployeeAccessList(searchTerm = '') {
+    const container = document.getElementById('sec-users-list');
+    if (!container) return;
+    
+    let employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+    
+    // Filtrer par recherche
+    if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        employees = employees.filter(e => 
+            e.name.toLowerCase().includes(term) || 
+            e.email.toLowerCase().includes(term) ||
+            e.username.toLowerCase().includes(term)
+        );
+    }
+    
+    // Admin par défaut
+    let html = `
+        <div class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span class="material-icons text-white">admin_panel_settings</span>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-800">Administrateur Principal</p>
+                    <p class="text-sm text-gray-500">admin@kfsbtp.sn • Accès complet</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">ADMIN</span>
+                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Actif</span>
+            </div>
+        </div>
+    `;
+    
+    if (employees.length === 0) {
+        html += `<p class="text-gray-400 text-center py-6">Aucun accès employé créé</p>`;
+    } else {
+        employees.forEach((emp, index) => {
+            const statusColors = {
+                actif: 'bg-green-100 text-green-800',
+                inactif: 'bg-gray-100 text-gray-800',
+                suspendu: 'bg-red-100 text-red-800'
+            };
+            const roleColors = {
+                employe: 'bg-gray-100 text-gray-700',
+                manager: 'bg-purple-100 text-purple-700',
+                comptable: 'bg-green-100 text-green-700',
+                commercial: 'bg-orange-100 text-orange-700'
+            };
+            
+            const moduleIcons = {
+                dashboard: '📊', finances: '💰', clients: '👥', projets: '🏗️',
+                employes: '👔', stocks: '📦', documents: '📄', rdv: '📅',
+                messages: '📧', catalogue: '🏠', factures: '🧾', analytics: '📈'
+            };
+            
+            const modulesDisplay = (emp.modules || []).map(m => moduleIcons[m] || '•').join(' ');
+            
+            html += `
+                <div class="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 transition">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                            <span class="material-icons text-gray-600">person</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800">${emp.name}</p>
+                            <p class="text-sm text-gray-500">${emp.email} • @${emp.username}</p>
+                            <p class="text-xs text-gray-400 mt-1">Modules: ${modulesDisplay || 'Aucun'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 ${roleColors[emp.role] || roleColors.employe} rounded-full text-xs font-semibold">${emp.role?.toUpperCase() || 'EMPLOYÉ'}</span>
+                        <span class="px-3 py-1 ${statusColors[emp.status] || statusColors.actif} rounded-full text-xs font-semibold">${emp.status?.charAt(0).toUpperCase() + emp.status?.slice(1) || 'Actif'}</span>
+                        <button onclick="editEmployeeAccess(${index})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Modifier">
+                            <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button onclick="toggleEmployeeStatus(${index})" class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg" title="Activer/Désactiver">
+                            <span class="material-icons text-sm">${emp.status === 'actif' ? 'pause' : 'play_arrow'}</span>
+                        </button>
+                        <button onclick="deleteEmployeeAccess(${index})" class="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Supprimer">
+                            <span class="material-icons text-sm">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+// Rendre les logs de sécurité
+function renderSecurityLogs(filter = 'all') {
+    const container = document.getElementById('sec-logs-list');
+    if (!container) return;
+    
+    let logs = JSON.parse(localStorage.getItem('securityLogs') || '[]');
+    
+    if (filter !== 'all') {
+        logs = logs.filter(l => l.type === filter);
+    }
+    
+    if (logs.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun événement enregistré</p>';
+        return;
+    }
+    
+    const typeIcons = {
+        login: { icon: 'login', color: 'text-green-600', bg: 'bg-green-100' },
+        logout: { icon: 'logout', color: 'text-blue-600', bg: 'bg-blue-100' },
+        failed: { icon: 'error', color: 'text-red-600', bg: 'bg-red-100' },
+        action: { icon: 'settings', color: 'text-yellow-600', bg: 'bg-yellow-100' }
+    };
+    
+    container.innerHTML = logs.slice(0, 100).map(log => {
+        const typeInfo = typeIcons[log.type] || typeIcons.action;
+        const date = new Date(log.timestamp);
+        
+        return `
+            <div class="log-item ${log.type} flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 ${typeInfo.bg} rounded-full flex items-center justify-center">
+                        <span class="material-icons ${typeInfo.color}">${typeInfo.icon}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800">${log.description}</p>
+                        <p class="text-xs text-gray-500">Par: ${log.user} • IP: ${log.ip}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">${date.toLocaleDateString('fr-FR')}</p>
+                    <p class="text-xs text-gray-400">${date.toLocaleTimeString('fr-FR')}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Modale accès employé
+window.openEmployeeAccessModal = function(editIndex = null) {
+    const modal = document.getElementById('employee-access-modal');
+    const form = document.getElementById('employee-access-form');
+    const title = document.getElementById('employee-access-modal-title');
+    
+    if (!modal) return;
+    
+    form.reset();
+    document.getElementById('emp-access-edit-id').value = '';
+    
+    // Reset checkboxes
+    document.querySelectorAll('input[name="emp-modules"]').forEach(cb => cb.checked = false);
+    document.querySelector('input[name="emp-modules"][value="dashboard"]').checked = true;
+    
+    if (editIndex !== null) {
+        const employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+        const emp = employees[editIndex];
+        if (emp) {
+            title.innerHTML = '<span class="material-icons mr-2">edit</span>Modifier l\'accès';
+            document.getElementById('emp-access-edit-id').value = editIndex;
+            document.getElementById('emp-access-name').value = emp.name;
+            document.getElementById('emp-access-email').value = emp.email;
+            document.getElementById('emp-access-username').value = emp.username;
+            document.getElementById('emp-access-password').value = '';
+            document.getElementById('emp-access-password').removeAttribute('required');
+            document.getElementById('emp-access-poste').value = emp.poste || '';
+            document.getElementById('emp-access-role').value = emp.role || 'employe';
+            document.getElementById('emp-access-notes').value = emp.notes || '';
+            
+            // Status
+            document.querySelector(`input[name="emp-access-status"][value="${emp.status || 'actif'}"]`).checked = true;
+            
+            // Modules
+            (emp.modules || []).forEach(mod => {
+                const cb = document.querySelector(`input[name="emp-modules"][value="${mod}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
+    } else {
+        title.innerHTML = '<span class="material-icons mr-2">person_add</span>Nouvel accès employé';
+        document.getElementById('emp-access-password').setAttribute('required', 'required');
+    }
+    
+    modal.classList.remove('hidden');
+};
+
+window.closeEmployeeAccessModal = function() {
+    document.getElementById('employee-access-modal')?.classList.add('hidden');
+};
+
+// Sauvegarder accès employé
+function saveEmployeeAccess() {
+    const employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+    const editId = document.getElementById('emp-access-edit-id').value;
+    
+    // Récupérer les modules cochés
+    const modules = [];
+    document.querySelectorAll('input[name="emp-modules"]:checked').forEach(cb => {
+        modules.push(cb.value);
+    });
+    
+    const password = document.getElementById('emp-access-password').value;
+    
+    const empData = {
+        name: document.getElementById('emp-access-name').value,
+        email: document.getElementById('emp-access-email').value,
+        username: document.getElementById('emp-access-username').value,
+        poste: document.getElementById('emp-access-poste').value,
+        role: document.getElementById('emp-access-role').value,
+        status: document.querySelector('input[name="emp-access-status"]:checked').value,
+        modules: modules,
+        notes: document.getElementById('emp-access-notes').value,
+        updatedAt: new Date().toISOString()
+    };
+    
+    if (editId !== '') {
+        // Mise à jour
+        if (password) {
+            empData.password = btoa(password);
+        } else {
+            empData.password = employees[parseInt(editId)].password;
+        }
+        empData.createdAt = employees[parseInt(editId)].createdAt;
+        employees[parseInt(editId)] = empData;
+        logSecurityEvent('action', `Accès modifié pour ${empData.name}`, 'Admin');
+        showNotification('Accès modifié', `Compte de ${empData.name} mis à jour`, 'success');
+    } else {
+        // Nouveau
+        empData.password = btoa(password);
+        empData.createdAt = new Date().toISOString();
+        employees.push(empData);
+        logSecurityEvent('action', `Nouvel accès créé pour ${empData.name}`, 'Admin');
+        showNotification('Accès créé', `Compte créé pour ${empData.name}`, 'success');
+    }
+    
+    localStorage.setItem('employeeAccess', JSON.stringify(employees));
+    closeEmployeeAccessModal();
+    renderEmployeeAccessList();
+    renderSecurityDashboard();
+}
+
+window.editEmployeeAccess = function(index) {
+    openEmployeeAccessModal(index);
+};
+
+window.deleteEmployeeAccess = function(index) {
+    const employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+    const emp = employees[index];
+    
+    if (confirm(`Supprimer l'accès de ${emp.name} ?\n\nCette action est irréversible.`)) {
+        employees.splice(index, 1);
+        localStorage.setItem('employeeAccess', JSON.stringify(employees));
+        logSecurityEvent('action', `Accès supprimé pour ${emp.name}`, 'Admin');
+        showNotification('Accès supprimé', `Compte de ${emp.name} supprimé`, 'warning');
+        renderEmployeeAccessList();
+        renderSecurityDashboard();
+    }
+};
+
+window.toggleEmployeeStatus = function(index) {
+    const employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+    const emp = employees[index];
+    
+    emp.status = emp.status === 'actif' ? 'suspendu' : 'actif';
+    emp.updatedAt = new Date().toISOString();
+    
+    employees[index] = emp;
+    localStorage.setItem('employeeAccess', JSON.stringify(employees));
+    
+    const action = emp.status === 'actif' ? 'réactivé' : 'suspendu';
+    logSecurityEvent('action', `Compte ${action} pour ${emp.name}`, 'Admin');
+    showNotification('Statut modifié', `Compte de ${emp.name} ${action}`, 'info');
+    
+    renderEmployeeAccessList();
+    renderSecurityDashboard();
+};
+
+// Générer un mot de passe aléatoire
+window.generateRandomPassword = function() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    const input = document.getElementById('emp-access-password');
+    if (input) {
+        input.value = password;
+        input.type = 'text';
+        setTimeout(() => { input.type = 'password'; }, 3000);
+    }
+};
+
+// Sélectionner/Désélectionner tous les modules
+window.selectAllModules = function() {
+    document.querySelectorAll('input[name="emp-modules"]').forEach(cb => cb.checked = true);
+};
+
+window.deselectAllModules = function() {
+    document.querySelectorAll('input[name="emp-modules"]').forEach(cb => cb.checked = false);
+};
+
+// Effacer les logs
+window.clearSecurityLogs = function() {
+    if (confirm('Effacer tout l\'historique de sécurité ?\n\nCette action est irréversible.')) {
+        localStorage.setItem('securityLogs', JSON.stringify([]));
+        logSecurityEvent('action', 'Historique de sécurité effacé', 'Admin');
+        renderSecurityLogs();
+        showNotification('Logs effacés', 'Historique de sécurité vidé', 'warning');
+    }
+};
+
+// Exporter les logs
+window.exportSecurityLogs = function() {
+    const logs = JSON.parse(localStorage.getItem('securityLogs') || '[]');
+    
+    let csv = 'Date,Heure,Type,Description,Utilisateur,IP\n';
+    logs.forEach(log => {
+        const date = new Date(log.timestamp);
+        csv += `${date.toLocaleDateString('fr-FR')},${date.toLocaleTimeString('fr-FR')},${log.type},"${log.description}",${log.user},${log.ip}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `logs-securite-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    showNotification('Export', 'Logs exportés en CSV', 'success');
+};
+
+// Charger les paramètres de sécurité
+function loadSecuritySettings() {
+    const settings = JSON.parse(localStorage.getItem('securitySettings') || '{}');
+    
+    // Appliquer aux inputs
+    const sessionTimeout = document.getElementById('sec-session-timeout');
+    const autoLogout = document.getElementById('sec-auto-logout');
+    const maxAttempts = document.getElementById('sec-max-attempts');
+    const lockoutDuration = document.getElementById('sec-lockout-duration');
+    
+    if (sessionTimeout) sessionTimeout.value = settings.sessionTimeout || 30;
+    if (autoLogout) autoLogout.checked = settings.autoLogout !== false;
+    if (maxAttempts) maxAttempts.value = settings.maxAttempts || 5;
+    if (lockoutDuration) lockoutDuration.value = settings.lockoutDuration || 15;
+    
+    // Alertes
+    document.getElementById('sec-alert-failed')?.setAttribute('checked', settings.alertFailed ? 'checked' : '');
+    document.getElementById('sec-alert-login')?.setAttribute('checked', settings.alertLogin ? 'checked' : '');
+    document.getElementById('sec-alert-delete')?.setAttribute('checked', settings.alertDelete ? 'checked' : '');
+    
+    // Politique mot de passe
+    document.getElementById('sec-require-uppercase')?.setAttribute('checked', settings.requireUppercase ? 'checked' : '');
+    document.getElementById('sec-require-number')?.setAttribute('checked', settings.requireNumber ? 'checked' : '');
+    document.getElementById('sec-require-special')?.setAttribute('checked', settings.requireSpecial ? 'checked' : '');
+}
+
+// Sauvegarder les paramètres de sécurité
+window.saveSecuritySettings = function() {
+    const settings = {
+        sessionTimeout: parseInt(document.getElementById('sec-session-timeout')?.value) || 30,
+        autoLogout: document.getElementById('sec-auto-logout')?.checked || false,
+        maxAttempts: parseInt(document.getElementById('sec-max-attempts')?.value) || 5,
+        lockoutDuration: parseInt(document.getElementById('sec-lockout-duration')?.value) || 15,
+        alertFailed: document.getElementById('sec-alert-failed')?.checked || false,
+        alertLogin: document.getElementById('sec-alert-login')?.checked || false,
+        alertDelete: document.getElementById('sec-alert-delete')?.checked || false,
+        requireUppercase: document.getElementById('sec-require-uppercase')?.checked || false,
+        requireNumber: document.getElementById('sec-require-number')?.checked || false,
+        requireSpecial: document.getElementById('sec-require-special')?.checked || false
+    };
+    
+    localStorage.setItem('securitySettings', JSON.stringify(settings));
+    logSecurityEvent('action', 'Paramètres de sécurité modifiés', 'Admin');
+    showNotification('Paramètres sauvegardés', 'Configuration de sécurité mise à jour', 'success');
+};
+
+// Audit de sécurité
+window.runSecurityAudit = function() {
+    const results = [];
+    
+    // Vérifier le mot de passe admin
+    const adminPwd = localStorage.getItem('adminPassword');
+    if (!adminPwd || atob(adminPwd) === 'admin123') {
+        results.push({ status: 'warning', title: 'Mot de passe par défaut', desc: 'Changez le mot de passe admin' });
+    } else if (atob(adminPwd).length >= 8) {
+        results.push({ status: 'success', title: 'Mot de passe admin', desc: 'Mot de passe fort configuré' });
+    }
+    
+    // Vérifier les accès employés
+    const employees = JSON.parse(localStorage.getItem('employeeAccess') || '[]');
+    const suspendedCount = employees.filter(e => e.status === 'suspendu').length;
+    if (suspendedCount > 0) {
+        results.push({ status: 'info', title: 'Comptes suspendus', desc: `${suspendedCount} compte(s) suspendu(s)` });
+    }
+    if (employees.length > 0) {
+        results.push({ status: 'success', title: 'Accès employés', desc: `${employees.length} accès configuré(s)` });
+    }
+    
+    // Vérifier les logs
+    const logs = JSON.parse(localStorage.getItem('securityLogs') || '[]');
+    const failedAttempts = logs.filter(l => l.type === 'failed').length;
+    if (failedAttempts > 10) {
+        results.push({ status: 'danger', title: 'Tentatives échouées', desc: `${failedAttempts} échecs détectés` });
+    } else if (failedAttempts > 0) {
+        results.push({ status: 'warning', title: 'Tentatives échouées', desc: `${failedAttempts} échec(s) enregistré(s)` });
+    } else {
+        results.push({ status: 'success', title: 'Aucune intrusion', desc: 'Pas de tentative suspecte' });
+    }
+    
+    // Paramètres de sécurité
+    const settings = JSON.parse(localStorage.getItem('securitySettings') || '{}');
+    if (settings.autoLogout) {
+        results.push({ status: 'success', title: 'Déconnexion auto', desc: 'Activée après inactivité' });
+    } else {
+        results.push({ status: 'warning', title: 'Déconnexion auto', desc: 'Désactivée - risque de session' });
+    }
+    
+    // Sauvegardes
+    const lastBackup = localStorage.getItem('lastBackupDate');
+    if (lastBackup) {
+        const daysSince = Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSince > 7) {
+            results.push({ status: 'warning', title: 'Sauvegarde', desc: `Dernière il y a ${daysSince} jours` });
+        } else {
+            results.push({ status: 'success', title: 'Sauvegarde', desc: 'Effectuée récemment' });
+        }
+    } else {
+        results.push({ status: 'danger', title: 'Sauvegarde', desc: 'Aucune sauvegarde effectuée' });
+    }
+    
+    // Afficher les résultats
+    const container = document.getElementById('sec-audit-results');
+    const dateEl = document.getElementById('sec-audit-date');
+    
+    if (dateEl) {
+        dateEl.textContent = `Dernière vérification: ${new Date().toLocaleString('fr-FR')}`;
+    }
+    
+    if (container) {
+        const statusStyles = {
+            success: { bg: 'bg-green-50', border: 'border-green-200', icon: 'check_circle', iconColor: 'text-green-600' },
+            warning: { bg: 'bg-yellow-50', border: 'border-yellow-200', icon: 'warning', iconColor: 'text-yellow-600' },
+            danger: { bg: 'bg-red-50', border: 'border-red-200', icon: 'error', iconColor: 'text-red-600' },
+            info: { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'info', iconColor: 'text-blue-600' }
+        };
+        
+        container.innerHTML = results.map(r => {
+            const style = statusStyles[r.status] || statusStyles.info;
+            return `
+                <div class="${style.bg} ${style.border} border rounded-xl p-4 flex items-center gap-3">
+                    <span class="material-icons ${style.iconColor}">${style.icon}</span>
+                    <div>
+                        <p class="font-semibold text-gray-800">${r.title}</p>
+                        <p class="text-sm text-gray-600">${r.desc}</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // Mettre à jour le statut global
+    const statusEl = document.getElementById('sec-status');
+    if (statusEl) {
+        const hasDanger = results.some(r => r.status === 'danger');
+        const hasWarning = results.some(r => r.status === 'warning');
+        
+        if (hasDanger) {
+            statusEl.textContent = 'À risque';
+            statusEl.className = 'text-xl font-bold text-red-600';
+        } else if (hasWarning) {
+            statusEl.textContent = 'Attention';
+            statusEl.className = 'text-xl font-bold text-yellow-600';
+        } else {
+            statusEl.textContent = 'Sécurisé';
+            statusEl.className = 'text-xl font-bold text-green-600';
+        }
+    }
+    
+    showNotification('Audit terminé', 'Vérification de sécurité effectuée', 'info');
+};
 
 // ===================================================
 // FONCTION GLOBALE: Enregistrer un message depuis le formulaire public
@@ -1184,22 +2347,29 @@ function initRdv() {
     updateRdvBadge();
     
     // Navigation calendrier
-    document.getElementById('cal-prev').addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-        renderCalendar();
-    });
+    const calPrev = document.getElementById('cal-prev');
+    const calNext = document.getElementById('cal-next');
+    if (calPrev) {
+        calPrev.addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        });
+    }
     
-    document.getElementById('cal-next').addEventListener('click', () => {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-        renderCalendar();
-    });
+    if (calNext) {
+        calNext.addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        });
+    }
     
     // Formulaire RDV
     const form = document.getElementById('rdv-form');
     const cancelBtn = document.getElementById('rdv-cancel');
+    const rdvDateInput = document.getElementById('rdv-date');
     
     // Date par défaut = aujourd'hui
-    document.getElementById('rdv-date').value = new Date().toISOString().split('T')[0];
+    if (rdvDateInput) rdvDateInput.value = new Date().toISOString().split('T')[0];
     
     form.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -1232,18 +2402,33 @@ function initRdv() {
         document.getElementById('rdv-date').value = new Date().toISOString().split('T')[0];
         cancelBtn.classList.add('hidden');
         
+        // Fermer la modale automatiquement
+        const modal = document.getElementById('rdv-modal');
+        if (modal) modal.classList.add('hidden');
+        
         renderCalendar();
         renderUpcomingRdv();
         renderDayRdv(selectedDate || new Date().toISOString().split('T')[0]);
         updateRdvBadge();
     });
     
-    cancelBtn.addEventListener('click', function() {
-        form.reset();
-        document.getElementById('rdv-edit-index').value = '';
-        document.getElementById('rdv-date').value = new Date().toISOString().split('T')[0];
-        cancelBtn.classList.add('hidden');
-    });
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            if (form) form.reset();
+            const editIndex = document.getElementById('rdv-edit-index');
+            if (editIndex) editIndex.value = '';
+            const dateInput = document.getElementById('rdv-date');
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            cancelBtn.classList.add('hidden');
+        });
+    }
+    // --- Renforcement de l'exposition globale des modals pour compatibilité onclick="open*Modal()" ---
+    window.openCatalogueModal = window.openCatalogueModal;
+    window.openRdvModal = window.openRdvModal;
+    window.openMediaModal = window.openMediaModal;
+    window.openCarouselModal = window.openCarouselModal;
+    window.openTemoignageModal = window.openTemoignageModal;
+    window.openFaqModal = window.openFaqModal;
     
     // Afficher RDV du jour par défaut
     const today = new Date().toISOString().split('T')[0];
@@ -1254,6 +2439,8 @@ function initRdv() {
 function renderCalendar() {
     const container = document.getElementById('calendar-days');
     const monthYear = document.getElementById('cal-month-year');
+    
+    if (!container || !monthYear) return;
     
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
@@ -1304,6 +2491,8 @@ window.selectCalendarDay = function(dateStr) {
 function renderDayRdv(dateStr) {
     const container = document.getElementById('rdv-day-list');
     const dateTitle = document.getElementById('rdv-selected-date');
+    
+    if (!container || !dateTitle) return;
     
     const date = new Date(dateStr);
     dateTitle.textContent = date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -1358,6 +2547,8 @@ function renderDayRdv(dateStr) {
 
 function renderUpcomingRdv() {
     const container = document.getElementById('rdv-upcoming');
+    if (!container) return;
+    
     const rdvs = JSON.parse(localStorage.getItem('rdvs') || '[]');
     const today = new Date().toISOString().split('T')[0];
     
@@ -1417,6 +2608,7 @@ function updateRdvBadge() {
     const todayRdvs = rdvs.filter(r => r.date === today && r.status !== 'annule').length;
     
     const badge = document.getElementById('rdv-badge');
+    if (!badge) return;
     if (todayRdvs > 0) {
         badge.textContent = todayRdvs;
         badge.classList.remove('hidden');
@@ -1614,11 +2806,947 @@ function exportToCSV(data, filename, columns) {
             if (typeof val === 'string') val = val.replace(/;/g, ',').replace(/\n/g, ' ');
             return val;
         });
-        csv += row.join(';') + '\n';
+        // ...existing code export CSV...
+    });
+}
+
+// === Module Fiche de Paie Employé (global) ===
+function initFicheDePaieModule() {
+    const section = document.getElementById('module-fiche-paie');
+    if (!section) return;
+
+    renderFicheDePaieForm();
+}
+
+function renderFicheDePaieForm() {
+    const section = document.getElementById('module-fiche-paie');
+    if (!section) return;
+    
+    const employes = JSON.parse(localStorage.getItem('employes') || '[]');
+    const employesActifs = employes.filter(e => e.statut === 'actif' || !e.statut);
+    
+    // Date par défaut : mois en cours
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+    
+    section.innerHTML = `
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+                    <h2 class="text-2xl font-bold text-white flex items-center">
+                        <span class="material-icons mr-3">payments</span>
+                        Génération de Fiche de Paie
+                    </h2>
+                    <p class="text-yellow-100 text-sm mt-1">Sélectionnez un employé pour générer sa fiche de paie</p>
+                </div>
+                
+                <!-- Formulaire -->
+                <form id="fiche-paie-form" class="p-6 space-y-6">
+                    ${employesActifs.length === 0 ? `
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+                            <span class="material-icons text-yellow-500 text-4xl mb-2">warning</span>
+                            <p class="text-yellow-700 font-medium">Aucun employé enregistré</p>
+                            <p class="text-yellow-600 text-sm mt-1">Ajoutez d'abord des employés dans le module "Employés"</p>
+                            <button type="button" onclick="window.switchModule && window.switchModule('employes')" 
+                                class="mt-3 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                                <span class="material-icons text-sm mr-1">person_add</span> Ajouter un employé
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Sélection employé -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <span class="material-icons text-sm mr-1 align-middle">person</span> Employé *
+                                </label>
+                                <select id="fiche-paie-employe" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" required>
+                                    <option value="">-- Sélectionner un employé --</option>
+                                    ${employesActifs.map(emp => `
+                                        <option value="${emp.matricule}" 
+                                            data-nom="${emp.nom || ''}" 
+                                            data-prenom="${emp.prenom || ''}"
+                                            data-poste="${emp.poste || ''}"
+                                            data-salaire="${emp.salaire || 0}"
+                                            data-departement="${emp.departement || ''}">
+                                            ${emp.prenom || ''} ${emp.nom || ''} - ${emp.poste || 'N/A'} (${emp.matricule})
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            
+                            <!-- Infos employé sélectionné -->
+                            <div id="employe-info-card" class="md:col-span-2 hidden">
+                                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg" id="employe-avatar">--</div>
+                                        <div>
+                                            <p class="font-bold text-gray-800" id="employe-fullname">-</p>
+                                            <p class="text-sm text-gray-600" id="employe-poste-info">-</p>
+                                        </div>
+                                        <div class="ml-auto text-right">
+                                            <p class="text-xs text-gray-500">Matricule</p>
+                                            <p class="font-mono font-bold text-blue-600" id="employe-matricule-info">-</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Mois -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <span class="material-icons text-sm mr-1 align-middle">calendar_month</span> Période *
+                                </label>
+                                <input type="month" id="fiche-paie-mois" value="${currentMonth}" 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" required>
+                            </div>
+                            
+                            <!-- Salaire de base -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <span class="material-icons text-sm mr-1 align-middle">account_balance_wallet</span> Salaire de base (FCFA) *
+                                </label>
+                                <input type="number" id="fiche-paie-salaire" min="0" step="1000" 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" 
+                                    placeholder="Ex: 350000" required>
+                            </div>
+                            
+                            <!-- Primes -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <span class="material-icons text-sm mr-1 align-middle">add_circle</span> Primes (FCFA)
+                                </label>
+                                <input type="number" id="fiche-paie-primes" min="0" step="1000" value="0"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 transition" 
+                                    placeholder="0">
+                            </div>
+                            
+                            <!-- Retenues -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <span class="material-icons text-sm mr-1 align-middle">remove_circle</span> Retenues (FCFA)
+                                </label>
+                                <input type="number" id="fiche-paie-retenues" min="0" step="1000" value="0"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-red-400 transition" 
+                                    placeholder="0">
+                            </div>
+                            
+                            <!-- Mode de paiement -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <span class="material-icons text-sm mr-1 align-middle">payments</span> Mode de paiement *
+                                </label>
+                                <select id="fiche-paie-mode-paiement" 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" required>
+                                    <option value="">-- Sélectionner --</option>
+                                    <option value="Virement bancaire">Virement bancaire</option>
+                                    <option value="Espèces">Espèces</option>
+                                    <option value="Chèque">Chèque</option>
+                                    <option value="Mobile Money">Mobile Money (Orange/Wave/Free)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Calcul en temps réel -->
+                            <div class="md:col-span-2">
+                                <div class="bg-gray-50 rounded-xl p-4 border-2 border-dashed border-gray-200">
+                                    <p class="text-sm text-gray-600 mb-2">Récapitulatif</p>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-700">Salaire de base :</span>
+                                        <span id="recap-salaire" class="font-mono">0 FCFA</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-green-600">
+                                        <span>+ Primes :</span>
+                                        <span id="recap-primes" class="font-mono">0 FCFA</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-red-600">
+                                        <span>- Retenues :</span>
+                                        <span id="recap-retenues" class="font-mono">0 FCFA</span>
+                                    </div>
+                                    <hr class="my-2 border-gray-300">
+                                    <div class="flex justify-between items-center text-lg font-bold">
+                                        <span class="text-gray-800">Net à payer :</span>
+                                        <span id="recap-net" class="text-blue-600 font-mono">0 FCFA</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Boutons -->
+                        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                            <button type="button" id="btn-apercu-fiche" class="flex-1 min-w-[150px] px-6 py-3 bg-yellow-500 text-white rounded-xl font-semibold hover:bg-yellow-600 transition flex items-center justify-center gap-2">
+                                <span class="material-icons">preview</span> Aperçu
+                            </button>
+                            <button type="button" id="btn-generer-pdf" class="flex-1 min-w-[150px] px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition flex items-center justify-center gap-2">
+                                <span class="material-icons">picture_as_pdf</span> Générer PDF
+                            </button>
+                            <button type="submit" class="flex-1 min-w-[150px] px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition flex items-center justify-center gap-2">
+                                <span class="material-icons">save</span> Enregistrer
+                            </button>
+                        </div>
+                    `}
+                </form>
+                
+                <!-- Zone d'aperçu -->
+                <div id="fiche-paie-apercu" class="p-6 border-t border-gray-200 hidden"></div>
+            </div>
+            
+            <!-- Historique des fiches -->
+            <div class="mt-6 bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="material-icons mr-2 text-yellow-500">history</span>
+                    Historique des fiches de paie
+                </h3>
+                <div id="fiches-paie-historique"></div>
+            </div>
+        </div>
+    `;
+    
+    // Initialiser les événements
+    initFichePaieEvents();
+    renderFichesPaieHistorique();
+}
+
+function initFichePaieEvents() {
+    const selectEmploye = document.getElementById('fiche-paie-employe');
+    const inputSalaire = document.getElementById('fiche-paie-salaire');
+    const inputPrimes = document.getElementById('fiche-paie-primes');
+    const inputRetenues = document.getElementById('fiche-paie-retenues');
+    const btnApercu = document.getElementById('btn-apercu-fiche');
+    const btnPDF = document.getElementById('btn-generer-pdf');
+    const form = document.getElementById('fiche-paie-form');
+    
+    if (!selectEmploye) return;
+    
+    // Sélection d'un employé
+    selectEmploye.addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        const infoCard = document.getElementById('employe-info-card');
+        
+        if (this.value) {
+            const prenom = option.dataset.prenom || '';
+            const nom = option.dataset.nom || '';
+            const poste = option.dataset.poste || 'N/A';
+            const salaire = option.dataset.salaire || 0;
+            
+            // Afficher la carte info
+            if (infoCard) infoCard.classList.remove('hidden');
+            
+            document.getElementById('employe-avatar').textContent = (prenom.charAt(0) + nom.charAt(0)).toUpperCase();
+            document.getElementById('employe-fullname').textContent = `${prenom} ${nom}`;
+            document.getElementById('employe-poste-info').textContent = poste;
+            document.getElementById('employe-matricule-info').textContent = this.value;
+            
+            // Remplir le salaire
+            if (inputSalaire) inputSalaire.value = salaire;
+            
+            updateRecapFiche();
+        } else {
+            if (infoCard) infoCard.classList.add('hidden');
+            if (inputSalaire) inputSalaire.value = '';
+        }
     });
     
-    downloadFile(csv, `${filename}-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv;charset=utf-8');
-    showNotification('Export réussi', `${data.length} ${filename} exportés`, 'success');
+    // Mise à jour du récapitulatif en temps réel
+    [inputSalaire, inputPrimes, inputRetenues].forEach(input => {
+        if (input) {
+            input.addEventListener('input', updateRecapFiche);
+        }
+    });
+    
+    // Bouton Aperçu
+    if (btnApercu) {
+        btnApercu.addEventListener('click', function() {
+            apercuFicheDePaie();
+        });
+    }
+    
+    // Bouton PDF
+    if (btnPDF) {
+        btnPDF.addEventListener('click', function() {
+            genererFicheDePaiePDF();
+        });
+    }
+    
+    // Formulaire - Enregistrer
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            enregistrerFicheDePaie();
+        });
+    }
+}
+
+function updateRecapFiche() {
+    const salaire = parseFloat(document.getElementById('fiche-paie-salaire')?.value) || 0;
+    const primes = parseFloat(document.getElementById('fiche-paie-primes')?.value) || 0;
+    const retenues = parseFloat(document.getElementById('fiche-paie-retenues')?.value) || 0;
+    const net = salaire + primes - retenues;
+    
+    const format = (n) => n.toLocaleString('fr-FR') + ' FCFA';
+    
+    const recapSalaire = document.getElementById('recap-salaire');
+    const recapPrimes = document.getElementById('recap-primes');
+    const recapRetenues = document.getElementById('recap-retenues');
+    const recapNet = document.getElementById('recap-net');
+    
+    if (recapSalaire) recapSalaire.textContent = format(salaire);
+    if (recapPrimes) recapPrimes.textContent = format(primes);
+    if (recapRetenues) recapRetenues.textContent = format(retenues);
+    if (recapNet) recapNet.textContent = format(net);
+}
+
+function getFichePaieData() {
+    const selectEmploye = document.getElementById('fiche-paie-employe');
+    if (!selectEmploye || !selectEmploye.value) {
+        showNotification('Erreur', 'Veuillez sélectionner un employé', 'error');
+        return null;
+    }
+    
+    const option = selectEmploye.options[selectEmploye.selectedIndex];
+    const mois = document.getElementById('fiche-paie-mois')?.value;
+    const salaire = parseFloat(document.getElementById('fiche-paie-salaire')?.value) || 0;
+    const primes = parseFloat(document.getElementById('fiche-paie-primes')?.value) || 0;
+    const retenues = parseFloat(document.getElementById('fiche-paie-retenues')?.value) || 0;
+    const modePaiement = document.getElementById('fiche-paie-mode-paiement')?.value;
+    
+    if (!mois) {
+        showNotification('Erreur', 'Veuillez sélectionner une période', 'error');
+        return null;
+    }
+    
+    if (salaire <= 0) {
+        showNotification('Erreur', 'Le salaire doit être supérieur à 0', 'error');
+        return null;
+    }
+    
+    if (!modePaiement) {
+        showNotification('Erreur', 'Veuillez sélectionner un mode de paiement', 'error');
+        return null;
+    }
+    
+    // Récupérer les infos complètes de l'employé
+    const employes = JSON.parse(localStorage.getItem('employes') || '[]');
+    const employe = employes.find(e => e.matricule === selectEmploye.value);
+    
+    return {
+        matricule: selectEmploye.value,
+        nom: option.dataset.nom || employe?.nom || '',
+        prenom: option.dataset.prenom || employe?.prenom || '',
+        poste: option.dataset.poste || employe?.poste || '',
+        departement: option.dataset.departement || employe?.departement || '',
+        mois,
+        salaire,
+        primes,
+        retenues,
+        modePaiement,
+        net: salaire + primes - retenues,
+        date: new Date().toISOString(),
+        // Infos entreprise
+        entreprise: 'KFS BTP IMMO',
+        adresse: 'Villa 123 MC, Quartier Medinacoura, Tambacounda, Senegal',
+        telephone: '+221 78 584 28 71',
+        email: 'kfsbtpproimmo@gmail.com'
+    };
+}
+
+function apercuFicheDePaie() {
+    const fiche = getFichePaieData();
+    if (!fiche) return;
+    
+    const moisFormate = new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    const dateEmission = new Date().toLocaleDateString('fr-FR');
+    const heureEmission = new Date().toLocaleTimeString('fr-FR');
+    
+    // Créer la modale
+    const modal = document.createElement('div');
+    modal.id = 'modal-apercu-fiche-paie';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+    modal.onclick = function(e) {
+        if (e.target === modal) fermerApercuFichePaie();
+    };
+    
+    modal.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate__animated animate__zoomIn">
+            <!-- Header de la modale -->
+            <div class="bg-gradient-to-r from-blue-700 to-blue-900 px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <span class="material-icons text-yellow-400 text-2xl">receipt_long</span>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">Aperçu du Bulletin de Paie</h2>
+                        <p class="text-blue-200 text-sm">${fiche.prenom} ${fiche.nom} - ${moisFormate}</p>
+                    </div>
+                </div>
+                <button onclick="fermerApercuFichePaie()" class="text-white hover:text-yellow-400 transition p-2 hover:bg-white/10 rounded-full">
+                    <span class="material-icons text-2xl">close</span>
+                </button>
+            </div>
+            
+            <!-- Contenu scrollable -->
+            <div class="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
+                <!-- En-tête entreprise -->
+                <div class="flex flex-col md:flex-row justify-between items-start gap-4 border-b-2 border-blue-600 pb-4 mb-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-blue-900 rounded-xl flex items-center justify-center">
+                            <span class="text-yellow-400 font-bold text-xl">KFS</span>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-blue-800">${fiche.entreprise}</h1>
+                            <p class="text-sm text-gray-600">${fiche.adresse}</p>
+                            <p class="text-sm text-gray-600">Tél: ${fiche.telephone} | ${fiche.email}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white px-5 py-3 rounded-xl shadow-lg">
+                            <p class="text-xs opacity-80">BULLETIN DE PAIE</p>
+                            <p class="font-bold text-lg">${moisFormate.toUpperCase()}</p>
+                            <p class="text-xs opacity-80">Émis le ${dateEmission}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Infos employé -->
+                <div class="bg-gradient-to-r from-blue-50 to-gray-50 rounded-xl p-5 mb-6 border-l-4 border-blue-600">
+                    <h3 class="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                        <span class="material-icons text-blue-600">badge</span>
+                        Identification du Salarié
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-500 text-xs">Nom complet</p>
+                            <p class="font-bold text-gray-800">${fiche.prenom} ${fiche.nom}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs">Matricule</p>
+                            <p class="font-bold font-mono text-blue-700 bg-blue-100 inline-block px-2 py-1 rounded">${fiche.matricule}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs">Poste occupé</p>
+                            <p class="font-bold text-gray-800">${fiche.poste || 'Non défini'}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500 text-xs">Département</p>
+                            <p class="font-bold text-gray-800">${fiche.departement || 'Non défini'}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tableau détail salaire -->
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <!-- Colonne GAINS -->
+                    <div class="border rounded-xl overflow-hidden">
+                        <div class="bg-green-600 text-white px-4 py-2 font-bold flex items-center gap-2">
+                            <span class="material-icons">add_circle</span> GAINS
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+                                <span class="text-gray-700">Salaire de base</span>
+                                <span class="font-mono font-bold">${fiche.salaire.toLocaleString('fr-FR')}</span>
+                            </div>
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+                                <span class="text-gray-700">Primes et indemnités</span>
+                                <span class="font-mono font-bold text-green-600">+ ${fiche.primes.toLocaleString('fr-FR')}</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 bg-green-50 -mx-4 px-4 py-2">
+                                <span class="font-bold text-green-700">TOTAL GAINS</span>
+                                <span class="font-mono font-bold text-green-700">${(fiche.salaire + fiche.primes).toLocaleString('fr-FR')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Colonne RETENUES -->
+                    <div class="border rounded-xl overflow-hidden">
+                        <div class="bg-red-600 text-white px-4 py-2 font-bold flex items-center gap-2">
+                            <span class="material-icons">remove_circle</span> RETENUES
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+                                <span class="text-gray-700">Retenues sur salaire</span>
+                                <span class="font-mono font-bold text-red-600">- ${fiche.retenues.toLocaleString('fr-FR')}</span>
+                            </div>
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+                                <span class="text-gray-400 italic">Autres retenues</span>
+                                <span class="font-mono text-gray-400">Néant</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 bg-red-50 -mx-4 px-4 py-2">
+                                <span class="font-bold text-red-700">TOTAL RETENUES</span>
+                                <span class="font-mono font-bold text-red-700">${fiche.retenues.toLocaleString('fr-FR')}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- NET À PAYER -->
+                <div class="bg-gradient-to-r from-blue-800 to-blue-900 rounded-xl p-5 mb-6 shadow-lg">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="material-icons text-yellow-400 text-3xl">account_balance_wallet</span>
+                            <span class="text-white font-bold text-xl">NET À PAYER</span>
+                        </div>
+                        <div class="bg-yellow-400 text-blue-900 font-bold text-2xl px-6 py-3 rounded-xl shadow-md font-mono">
+                            ${fiche.net.toLocaleString('fr-FR')} FCFA
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mode de paiement -->
+                <div class="bg-gray-100 rounded-xl p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span class="material-icons text-white">payments</span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">Mode de paiement</p>
+                        <p class="font-bold text-gray-800 text-lg">${fiche.modePaiement}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer avec boutons -->
+            <div class="bg-gray-50 px-6 py-4 border-t flex flex-wrap justify-between items-center gap-3">
+                <p class="text-xs text-gray-500">
+                    <span class="material-icons text-sm align-middle">info</span>
+                    Ce bulletin doit être conservé sans limitation de durée
+                </p>
+                <div class="flex gap-3">
+                    <button onclick="fermerApercuFichePaie()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center gap-2">
+                        <span class="material-icons">close</span> Fermer
+                    </button>
+                    <button onclick="fermerApercuFichePaie(); genererFicheDePaiePDF();" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition flex items-center gap-2">
+                        <span class="material-icons">picture_as_pdf</span> Télécharger PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Empêcher le scroll du body
+    document.body.style.overflow = 'hidden';
+}
+
+// Fonction pour fermer l'aperçu
+function fermerApercuFichePaie() {
+    const modal = document.getElementById('modal-apercu-fiche-paie');
+    if (modal) {
+        modal.classList.add('animate__animated', 'animate__fadeOut');
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+        }, 200);
+    }
+}
+
+function genererFicheDePaiePDF() {
+    const fiche = getFichePaieData();
+    if (!fiche) return;
+    
+    // Vérifier si jsPDF est chargé
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        showNotification('Erreur', 'La bibliothèque PDF n\'est pas chargée. Rechargez la page.', 'error');
+        console.error('jsPDF non disponible. window.jspdf =', window.jspdf);
+        return;
+    }
+    
+    // Fonction de formatage des nombres compatible avec jsPDF
+    function formatMontant(nombre) {
+        return nombre.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const moisFormate = new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        const dateEmission = new Date().toLocaleDateString('fr-FR');
+        
+        // Couleurs professionnelles
+        const bleuFonce = [30, 58, 138];
+        const bleuClair = [59, 130, 246];
+        const gris = [100, 100, 100];
+        const grisClair = [245, 245, 245];
+        const vert = [34, 197, 94];
+        const rouge = [220, 38, 38];
+        
+        // ========== EN-TÊTE ==========
+        // Bandeau supérieur bleu
+        doc.setFillColor(...bleuFonce);
+        doc.rect(0, 0, 210, 8, 'F');
+        
+        // Zone entreprise (gauche)
+        doc.setFillColor(255, 255, 255);
+        doc.rect(10, 12, 90, 35, 'F');
+        doc.setDrawColor(...bleuClair);
+        doc.setLineWidth(0.5);
+        doc.rect(10, 12, 90, 35, 'S');
+        
+        doc.setTextColor(...bleuFonce);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('KFS BTP IMMO', 55, 22, { align: 'center' });
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...gris);
+        doc.text('Villa 123 MC, Quartier Medinacoura', 55, 29, { align: 'center' });
+        doc.text('Tambacounda, Senegal', 55, 34, { align: 'center' });
+        doc.text('Tel: +221 78 584 28 71', 55, 39, { align: 'center' });
+        doc.text('Email: kfsbtpproimmo@gmail.com', 55, 44, { align: 'center' });
+        
+        // Zone titre (droite)
+        doc.setFillColor(...bleuFonce);
+        doc.rect(110, 12, 90, 35, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BULLETIN DE PAIE', 155, 25, { align: 'center' });
+        
+        doc.setFontSize(12);
+        doc.text(moisFormate.toUpperCase(), 155, 35, { align: 'center' });
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Emis le: ' + dateEmission, 155, 44, { align: 'center' });
+        
+        // ========== INFORMATIONS EMPLOYE ==========
+        const startEmploye = 55;
+        
+        // Titre section
+        doc.setFillColor(...bleuClair);
+        doc.rect(10, startEmploye, 190, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('IDENTIFICATION DU SALARIE', 105, startEmploye + 5.5, { align: 'center' });
+        
+        // Cadre infos employé
+        doc.setFillColor(...grisClair);
+        doc.rect(10, startEmploye + 8, 190, 28, 'F');
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(10, startEmploye + 8, 190, 28, 'S');
+        
+        // Colonne gauche
+        doc.setTextColor(...gris);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Nom et Prenom:', 15, startEmploye + 16);
+        doc.text('Poste occupe:', 15, startEmploye + 24);
+        doc.text('Departement:', 15, startEmploye + 32);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text((fiche.prenom + ' ' + fiche.nom).toUpperCase(), 50, startEmploye + 16);
+        doc.text(fiche.poste || 'Non defini', 50, startEmploye + 24);
+        doc.text(fiche.departement || 'Non defini', 50, startEmploye + 32);
+        
+        // Colonne droite
+        doc.setTextColor(...gris);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Matricule:', 130, startEmploye + 16);
+        doc.text('Periode:', 130, startEmploye + 24);
+        doc.text('Mode de paiement:', 130, startEmploye + 32);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(fiche.matricule, 165, startEmploye + 16);
+        doc.text(moisFormate, 165, startEmploye + 24);
+        doc.text(fiche.modePaiement || 'Non specifie', 165, startEmploye + 32);
+        
+        // ========== TABLEAU SALAIRE ==========
+        const startTableau = 100;
+        
+        // Titre section GAINS
+        doc.setFillColor(...bleuClair);
+        doc.rect(10, startTableau, 95, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GAINS', 57, startTableau + 5.5, { align: 'center' });
+        
+        // Titre section RETENUES
+        doc.setFillColor(...bleuClair);
+        doc.rect(105, startTableau, 95, 8, 'F');
+        doc.text('RETENUES', 152, startTableau + 5.5, { align: 'center' });
+        
+        // Colonne GAINS
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(10, startTableau + 8, 95, 50, 'S');
+        
+        let yGains = startTableau + 18;
+        
+        // Salaire de base
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Salaire de base', 15, yGains);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatMontant(fiche.salaire), 100, yGains, { align: 'right' });
+        
+        doc.setDrawColor(230, 230, 230);
+        doc.line(12, yGains + 3, 103, yGains + 3);
+        
+        // Primes
+        yGains += 12;
+        doc.setFont('helvetica', 'normal');
+        doc.text('Primes et indemnites', 15, yGains);
+        doc.setTextColor(...vert);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatMontant(fiche.primes), 100, yGains, { align: 'right' });
+        
+        doc.setDrawColor(230, 230, 230);
+        doc.line(12, yGains + 3, 103, yGains + 3);
+        
+        // Total Gains
+        yGains += 20;
+        doc.setFillColor(240, 255, 240);
+        doc.rect(12, yGains - 5, 91, 12, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TOTAL GAINS', 15, yGains + 2);
+        doc.setTextColor(...vert);
+        doc.text(formatMontant(fiche.salaire + fiche.primes), 100, yGains + 2, { align: 'right' });
+        
+        // Colonne RETENUES
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(105, startTableau + 8, 95, 50, 'S');
+        
+        let yRetenues = startTableau + 18;
+        
+        // Retenues sur salaire
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Retenues sur salaire', 110, yRetenues);
+        doc.setTextColor(...rouge);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatMontant(fiche.retenues), 195, yRetenues, { align: 'right' });
+        
+        doc.setDrawColor(230, 230, 230);
+        doc.line(107, yRetenues + 3, 198, yRetenues + 3);
+        
+        // Espace pour autres retenues potentielles
+        yRetenues += 12;
+        doc.setTextColor(...gris);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text('(Autres retenues: neant)', 110, yRetenues);
+        
+        // Total Retenues
+        yRetenues += 20;
+        doc.setFillColor(255, 240, 240);
+        doc.rect(107, yRetenues - 5, 91, 12, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TOTAL RETENUES', 110, yRetenues + 2);
+        doc.setTextColor(...rouge);
+        doc.text(formatMontant(fiche.retenues), 195, yRetenues + 2, { align: 'right' });
+        
+        // ========== NET A PAYER ==========
+        const startNet = 168;
+        
+        // Grand encadré bleu foncé
+        doc.setFillColor(...bleuFonce);
+        doc.roundedRect(10, startNet, 190, 22, 3, 3, 'F');
+        
+        // Texte NET A PAYER
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('NET A PAYER', 20, startNet + 14);
+        
+        // Encadré jaune pour le montant
+        doc.setFillColor(250, 204, 21);
+        doc.roundedRect(100, startNet + 3, 95, 16, 2, 2, 'F');
+        
+        // Montant
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatMontant(fiche.net) + ' FCFA', 147, startNet + 14, { align: 'center' });
+        
+        // ========== SIGNATURES ==========
+        const startSign = 198;
+        
+        // Ligne de séparation
+        doc.setDrawColor(...bleuClair);
+        doc.setLineWidth(0.5);
+        doc.line(10, startSign - 3, 200, startSign - 3);
+        
+        // Signature Employeur
+        doc.setDrawColor(200, 200, 200);
+        doc.rect(15, startSign, 80, 35, 'S');
+        doc.setTextColor(...gris);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Signature et cachet de l\'employeur', 55, startSign + 6, { align: 'center' });
+        doc.text('KFS BTP IMMO', 55, startSign + 30, { align: 'center' });
+        
+        // Signature Employé
+        doc.rect(115, startSign, 80, 35, 'S');
+        doc.text('Signature du salarie', 155, startSign + 6, { align: 'center' });
+        doc.text('(Lu et approuve)', 155, startSign + 30, { align: 'center' });
+        
+        // ========== PIED DE PAGE ==========
+        // Bandeau inférieur
+        doc.setFillColor(...bleuFonce);
+        doc.rect(0, 280, 210, 17, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Ce bulletin de paie doit etre conserve sans limitation de duree - Article L.143-3 du Code du Travail', 105, 286, { align: 'center' });
+        doc.text('KFS BTP IMMO - NINEA: XXXXXXXXX - RC: XXXXXXXX - Document genere electroniquement', 105, 292, { align: 'center' });
+        
+        // Sauvegarder le PDF
+        const filename = 'Bulletin_Paie_' + fiche.prenom + '_' + fiche.nom + '_' + fiche.mois + '.pdf';
+        doc.save(filename);
+        
+        showNotification('PDF genere', 'Bulletin de paie telecharge: ' + filename, 'success');
+        
+    } catch (error) {
+        console.error('Erreur generation PDF:', error);
+        showNotification('Erreur', 'Impossible de generer le PDF: ' + error.message, 'error');
+    }
+}
+
+function enregistrerFicheDePaie() {
+    const fiche = getFichePaieData();
+    if (!fiche) return;
+    
+    // Sauvegarder dans localStorage
+    const fiches = JSON.parse(localStorage.getItem('fichesPaie') || '[]');
+    fiche.id = Date.now().toString();
+    fiches.unshift(fiche);
+    localStorage.setItem('fichesPaie', JSON.stringify(fiches));
+    
+    // 🔗 LIAISON FINANCES: Enregistrer le salaire comme dépense
+    if (fiche.net > 0) {
+        autoAddTransaction({
+            type: 'depense',
+            montant: fiche.net,
+            categorie: 'salaires',
+            description: `Salaire ${fiche.mois} - ${fiche.prenom} ${fiche.nom} (${fiche.matricule})`,
+            reference: `PAIE_${fiche.matricule}_${fiche.mois.replace(/\s/g, '_')}`,
+            sourceModule: 'paie',
+            date: new Date().toISOString().split('T')[0]
+        });
+        showNotification('💰 Finances mises à jour', `Salaire de ${fiche.net.toLocaleString('fr-FR')} FCFA enregistré`, 'info');
+    }
+    
+    // Enregistrer aussi les cotisations patronales comme dépense séparée
+    if (fiche.cotisationsPatronales > 0) {
+        autoAddTransaction({
+            type: 'depense',
+            montant: fiche.cotisationsPatronales,
+            categorie: 'charges_sociales',
+            description: `Cotisations patronales ${fiche.mois} - ${fiche.prenom} ${fiche.nom}`,
+            reference: `COTIS_${fiche.matricule}_${fiche.mois.replace(/\s/g, '_')}`,
+            sourceModule: 'paie',
+            date: new Date().toISOString().split('T')[0]
+        });
+    }
+    
+    showNotification('Fiche enregistrée', `Fiche de paie de ${fiche.prenom} ${fiche.nom} enregistrée`, 'success');
+    
+    // Rafraîchir l'historique
+    renderFichesPaieHistorique();
+    
+    // Afficher l'aperçu
+    apercuFicheDePaie();
+}
+
+function renderFichesPaieHistorique() {
+    const container = document.getElementById('fiches-paie-historique');
+    if (!container) return;
+    
+    const fiches = JSON.parse(localStorage.getItem('fichesPaie') || '[]');
+    
+    if (fiches.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-400">
+                <span class="material-icons text-4xl mb-2">inbox</span>
+                <p>Aucune fiche de paie enregistrée</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="text-left p-3 rounded-tl-lg">Employé</th>
+                        <th class="text-left p-3">Période</th>
+                        <th class="text-right p-3">Net</th>
+                        <th class="text-center p-3 rounded-tr-lg">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${fiches.slice(0, 10).map(f => `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3">
+                                <p class="font-medium">${f.prenom || ''} ${f.nom || ''}</p>
+                                <p class="text-xs text-gray-500">${f.matricule || ''}</p>
+                            </td>
+                            <td class="p-3">${f.mois || '-'}</td>
+                            <td class="p-3 text-right font-mono font-bold text-blue-600">${(f.net || 0).toLocaleString('fr-FR')} FCFA</td>
+                            <td class="p-3 text-center">
+                                <button onclick="regenererFichePDF('${f.id}')" class="p-1 text-blue-600 hover:bg-blue-50 rounded" title="Télécharger PDF">
+                                    <span class="material-icons text-sm">download</span>
+                                </button>
+                                <button onclick="supprimerFichePaie('${f.id}')" class="p-1 text-red-600 hover:bg-red-50 rounded" title="Supprimer">
+                                    <span class="material-icons text-sm">delete</span>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+// Fonctions globales pour l'historique
+window.regenererFichePDF = function(id) {
+    const fiches = JSON.parse(localStorage.getItem('fichesPaie') || '[]');
+    const fiche = fiches.find(f => f.id === id);
+    if (!fiche) return;
+    
+    // Remplir le formulaire avec les données
+    const select = document.getElementById('fiche-paie-employe');
+    if (select) select.value = fiche.matricule;
+    document.getElementById('fiche-paie-mois').value = fiche.mois;
+    document.getElementById('fiche-paie-salaire').value = fiche.salaire;
+    document.getElementById('fiche-paie-primes').value = fiche.primes;
+    document.getElementById('fiche-paie-retenues').value = fiche.retenues;
+    
+    updateRecapFiche();
+    genererFicheDePaiePDF();
+};
+
+window.supprimerFichePaie = function(id) {
+    if (!confirm('Supprimer cette fiche de paie ?')) return;
+    
+    let fiches = JSON.parse(localStorage.getItem('fichesPaie') || '[]');
+    fiches = fiches.filter(f => f.id !== id);
+    localStorage.setItem('fichesPaie', JSON.stringify(fiches));
+    
+    renderFichesPaieHistorique();
+    showNotification('Supprimée', 'Fiche de paie supprimée', 'info');
+};
+
+function genererFicheDePaie() {
+    enregistrerFicheDePaie();
+}
+
+function renderFichePaieApercu(fiche) {
+    apercuFicheDePaie();
 }
 
 function downloadFile(content, filename, mimeType) {
@@ -1717,11 +3845,1308 @@ function updateTabTitle() {
 }
 
 // ===================================================
-// MODULE: COMPTABILITÉ
+// MODULE UNIFIÉ: FINANCES (Comptabilité + Bilans)
+// ===================================================
+
+// Variables globales pour les charts
+let finChartEvolution = null;
+let finChartDepenses = null;
+let finChartComparaison = null;
+let finChartTendance = null;
+let finCurrentTab = 'overview';
+let finCurrentPage = 1;
+const finItemsPerPage = 10;
+
+function initFinances() {
+    // Initialisation des filtres
+    const periodeSelect = document.getElementById('finance-periode');
+    const anneeSelect = document.getElementById('finance-annee');
+    const customDates = document.getElementById('finance-custom-dates');
+    
+    if (periodeSelect) {
+        periodeSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDates?.classList.remove('hidden');
+            } else {
+                customDates?.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Filtres transactions
+    document.getElementById('fin-filter-type')?.addEventListener('change', renderFinTransactions);
+    document.getElementById('fin-filter-categorie')?.addEventListener('change', renderFinTransactions);
+    document.getElementById('fin-filter-source')?.addEventListener('change', renderFinTransactions);
+    document.getElementById('fin-search')?.addEventListener('input', debounce(renderFinTransactions, 300));
+    
+    // Définir l'année actuelle par défaut
+    const currentYear = new Date().getFullYear();
+    if (anneeSelect) anneeSelect.value = currentYear.toString();
+    
+    // Rendre le module
+    refreshFinances();
+}
+
+// Fonction de rafraîchissement global
+window.refreshFinances = function() {
+    const transactions = getFilteredTransactions();
+    
+    updateFinKPIs(transactions);
+    renderFinCharts(transactions);
+    renderFinTransactions();
+    renderFinRecentTransactions(transactions);
+    renderFinTopCategories(transactions);
+    renderFinHealthIndicators(transactions);
+    renderFinAnalyseIA(transactions);
+    renderFinBilanDetaille(transactions);
+};
+
+// Récupérer les transactions filtrées selon la période
+function getFilteredTransactions() {
+    const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
+    const periode = document.getElementById('finance-periode')?.value || 'annee';
+    const annee = document.getElementById('finance-annee')?.value || new Date().getFullYear();
+    
+    const now = new Date();
+    let dateDebut, dateFin;
+    
+    switch (periode) {
+        case 'mois':
+            dateDebut = new Date(now.getFullYear(), now.getMonth(), 1);
+            dateFin = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            break;
+        case 'trimestre':
+            const currentQuarter = Math.floor(now.getMonth() / 3);
+            dateDebut = new Date(now.getFullYear(), currentQuarter * 3, 1);
+            dateFin = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+            break;
+        case 'semestre':
+            const currentSemester = now.getMonth() < 6 ? 0 : 1;
+            dateDebut = new Date(now.getFullYear(), currentSemester * 6, 1);
+            dateFin = new Date(now.getFullYear(), (currentSemester + 1) * 6, 0);
+            break;
+        case 'annee':
+            dateDebut = new Date(parseInt(annee), 0, 1);
+            dateFin = new Date(parseInt(annee), 11, 31);
+            break;
+        case 'tout':
+            return transactions;
+        case 'custom':
+            const debut = document.getElementById('finance-date-debut')?.value;
+            const fin = document.getElementById('finance-date-fin')?.value;
+            if (debut && fin) {
+                dateDebut = new Date(debut);
+                dateFin = new Date(fin);
+            } else {
+                return transactions;
+            }
+            break;
+        default:
+            return transactions;
+    }
+    
+    return transactions.filter(t => {
+        if (!t.date) return false;
+        const tDate = new Date(t.date);
+        return tDate >= dateDebut && tDate <= dateFin;
+    });
+}
+
+// Mise à jour des KPIs
+function updateFinKPIs(transactions) {
+    const recettes = transactions.filter(t => t.type === 'recette');
+    const depenses = transactions.filter(t => t.type === 'depense');
+    
+    const totalRecettes = recettes.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const totalDepenses = depenses.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const resultatNet = totalRecettes - totalDepenses;
+    const marge = totalRecettes > 0 ? ((resultatNet / totalRecettes) * 100).toFixed(1) : 0;
+    
+    // Afficher les KPIs
+    const elRecettes = document.getElementById('fin-total-recettes');
+    const elDepenses = document.getElementById('fin-total-depenses');
+    const elResultat = document.getElementById('fin-resultat-net');
+    const elMarge = document.getElementById('fin-marge');
+    const elNbTrans = document.getElementById('fin-nb-transactions');
+    const elNbRec = document.getElementById('fin-nb-recettes');
+    const elNbDep = document.getElementById('fin-nb-depenses');
+    
+    if (elRecettes) elRecettes.textContent = formatMontantDisplay(totalRecettes);
+    if (elDepenses) elDepenses.textContent = formatMontantDisplay(totalDepenses);
+    if (elResultat) {
+        elResultat.textContent = formatMontantDisplay(resultatNet);
+        elResultat.className = `text-2xl font-bold ${resultatNet >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
+    if (elMarge) elMarge.textContent = marge + '%';
+    if (elNbTrans) elNbTrans.textContent = transactions.length;
+    if (elNbRec) elNbRec.textContent = recettes.length;
+    if (elNbDep) elNbDep.textContent = depenses.length;
+}
+
+// Formater les montants pour l'affichage (avec séparateurs)
+function formatMontantDisplay(montant) {
+    return Math.abs(montant).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
+}
+
+// Gestion des onglets
+window.showFinanceTab = function(tabName) {
+    finCurrentTab = tabName;
+    
+    // Masquer tous les contenus
+    document.querySelectorAll('.finance-tab-content').forEach(el => el.classList.add('hidden'));
+    
+    // Désactiver tous les onglets
+    document.querySelectorAll('.finance-tab').forEach(el => el.classList.remove('active'));
+    
+    // Afficher le contenu actif
+    const tabContent = document.getElementById(`finance-tab-${tabName}`);
+    if (tabContent) tabContent.classList.remove('hidden');
+    
+    // Activer l'onglet
+    const tabBtn = document.querySelector(`.finance-tab[data-tab="${tabName}"]`);
+    if (tabBtn) tabBtn.classList.add('active');
+    
+    // Rafraîchir les graphiques si nécessaire
+    if (tabName === 'overview' || tabName === 'analyse') {
+        setTimeout(() => {
+            const transactions = getFilteredTransactions();
+            renderFinCharts(transactions);
+        }, 100);
+    }
+};
+
+// Rendu des graphiques
+function renderFinCharts(transactions) {
+    renderEvolutionChart(transactions);
+    renderDepensesChart(transactions);
+    renderComparaisonChart(transactions);
+    renderTendanceChart(transactions);
+}
+
+function renderEvolutionChart(transactions) {
+    const ctx = document.getElementById('fin-chart-evolution');
+    if (!ctx) return;
+    
+    // Détruire l'ancien graphique
+    if (finChartEvolution) {
+        finChartEvolution.destroy();
+    }
+    
+    // Données mensuelles
+    const moisNoms = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const recettesParMois = Array(12).fill(0);
+    const depensesParMois = Array(12).fill(0);
+    
+    transactions.forEach(t => {
+        if (!t.date) return;
+        const mois = new Date(t.date).getMonth();
+        if (t.type === 'recette') {
+            recettesParMois[mois] += t.montant || 0;
+        } else {
+            depensesParMois[mois] += t.montant || 0;
+        }
+    });
+    
+    finChartEvolution = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: moisNoms,
+            datasets: [
+                {
+                    label: 'Recettes',
+                    data: recettesParMois,
+                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                    borderColor: 'rgb(34, 197, 94)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Dépenses',
+                    data: depensesParMois,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => formatCompactNumber(value)
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderDepensesChart(transactions) {
+    const ctx = document.getElementById('fin-chart-depenses');
+    if (!ctx) return;
+    
+    if (finChartDepenses) {
+        finChartDepenses.destroy();
+    }
+    
+    // Grouper par catégorie
+    const depenses = transactions.filter(t => t.type === 'depense');
+    const parCategorie = {};
+    
+    depenses.forEach(t => {
+        const cat = t.categorie || 'Autre';
+        parCategorie[cat] = (parCategorie[cat] || 0) + (t.montant || 0);
+    });
+    
+    const labels = Object.keys(parCategorie);
+    const data = Object.values(parCategorie);
+    const colors = [
+        '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+        '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#1f2937'
+    ];
+    
+    finChartDepenses = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+function renderComparaisonChart(transactions) {
+    const ctx = document.getElementById('fin-chart-comparaison');
+    if (!ctx) return;
+    
+    if (finChartComparaison) {
+        finChartComparaison.destroy();
+    }
+    
+    const moisNoms = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const resultatParMois = Array(12).fill(0);
+    
+    transactions.forEach(t => {
+        if (!t.date) return;
+        const mois = new Date(t.date).getMonth();
+        if (t.type === 'recette') {
+            resultatParMois[mois] += t.montant || 0;
+        } else {
+            resultatParMois[mois] -= t.montant || 0;
+        }
+    });
+    
+    finChartComparaison = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: moisNoms,
+            datasets: [{
+                label: 'Résultat mensuel',
+                data: resultatParMois,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    ticks: { callback: value => formatCompactNumber(value) }
+                }
+            }
+        }
+    });
+}
+
+function renderTendanceChart(transactions) {
+    const ctx = document.getElementById('fin-chart-tendance');
+    if (!ctx) return;
+    
+    if (finChartTendance) {
+        finChartTendance.destroy();
+    }
+    
+    // Cumul progressif
+    const moisNoms = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+    const cumulParMois = Array(12).fill(0);
+    let cumul = 0;
+    
+    // D'abord calculer par mois
+    const resultatParMois = Array(12).fill(0);
+    transactions.forEach(t => {
+        if (!t.date) return;
+        const mois = new Date(t.date).getMonth();
+        if (t.type === 'recette') {
+            resultatParMois[mois] += t.montant || 0;
+        } else {
+            resultatParMois[mois] -= t.montant || 0;
+        }
+    });
+    
+    // Puis cumuler
+    for (let i = 0; i < 12; i++) {
+        cumul += resultatParMois[i];
+        cumulParMois[i] = cumul;
+    }
+    
+    finChartTendance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: moisNoms,
+            datasets: [{
+                label: 'Résultat cumulé',
+                data: cumulParMois,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    ticks: { callback: value => formatCompactNumber(value) }
+                }
+            }
+        }
+    });
+}
+
+// Format compact pour les axes des graphiques
+function formatCompactNumber(value) {
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+    return value;
+}
+
+// Rendu des transactions
+function renderFinTransactions() {
+    const container = document.getElementById('fin-transactions-list');
+    if (!container) return;
+    
+    let transactions = getFilteredTransactions();
+    
+    // Appliquer les filtres
+    const filterType = document.getElementById('fin-filter-type')?.value || 'all';
+    const filterCat = document.getElementById('fin-filter-categorie')?.value || 'all';
+    const filterSource = document.getElementById('fin-filter-source')?.value || 'all';
+    const searchTerm = document.getElementById('fin-search')?.value?.toLowerCase() || '';
+    
+    if (filterType !== 'all') {
+        transactions = transactions.filter(t => t.type === filterType);
+    }
+    if (filterCat !== 'all') {
+        transactions = transactions.filter(t => t.categorie === filterCat);
+    }
+    // Filtre par source (nouveau)
+    if (filterSource !== 'all') {
+        if (filterSource === 'manual') {
+            transactions = transactions.filter(t => !t.autoGenerated);
+        } else if (filterSource === 'auto') {
+            transactions = transactions.filter(t => t.autoGenerated === true);
+        } else {
+            transactions = transactions.filter(t => t.sourceModule === filterSource);
+        }
+    }
+    if (searchTerm) {
+        transactions = transactions.filter(t => 
+            (t.description || '').toLowerCase().includes(searchTerm) ||
+            (t.categorie || '').toLowerCase().includes(searchTerm) ||
+            (t.reference || '').toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Trier par date décroissante
+    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Pagination
+    const totalPages = Math.ceil(transactions.length / finItemsPerPage);
+    const start = (finCurrentPage - 1) * finItemsPerPage;
+    const paginatedTransactions = transactions.slice(start, start + finItemsPerPage);
+    
+    if (paginatedTransactions.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucune transaction trouvée</p>';
+        document.getElementById('fin-pagination').innerHTML = '';
+        return;
+    }
+    
+    // Récupérer toutes les transactions pour l'index global
+    const allTransactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
+    
+    container.innerHTML = paginatedTransactions.map(t => {
+        const globalIndex = allTransactions.findIndex(at => 
+            at.date === t.date && at.montant === t.montant && at.description === t.description
+        );
+        const isRecette = t.type === 'recette';
+        const dateStr = t.date ? new Date(t.date).toLocaleDateString('fr-FR') : 'N/A';
+        const isAuto = t.autoGenerated === true;
+        
+        // Icônes par source module
+        const sourceIcons = {
+            'factures': 'receipt',
+            'stocks': 'inventory',
+            'projets': 'construction',
+            'paie': 'badge',
+            'employes': 'person'
+        };
+        const sourceIcon = sourceIcons[t.sourceModule] || '';
+        
+        return `
+            <div class="transaction-item ${t.type} flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 hover:shadow-md transition ${isAuto ? 'border-l-4 border-l-blue-400' : ''}">
+                <div class="flex items-center flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4 ${isRecette ? 'bg-green-100' : 'bg-red-100'}">
+                        <span class="material-icons ${isRecette ? 'text-green-600' : 'text-red-600'}">
+                            ${isRecette ? 'arrow_downward' : 'arrow_upward'}
+                        </span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">
+                            ${t.description || t.categorie}
+                            ${isAuto ? `<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700" title="Transaction automatique depuis ${t.sourceModule}">
+                                <span class="material-icons text-xs mr-0.5">${sourceIcon || 'sync'}</span>Auto
+                            </span>` : ''}
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(t.categorie)}">
+                                ${t.categorie || 'Non classé'}
+                            </span>
+                            <span class="ml-2">${dateStr}</span>
+                            ${t.reference ? `<span class="ml-2 text-gray-400">Réf: ${t.reference}</span>` : ''}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="font-bold text-lg ${isRecette ? 'text-green-600' : 'text-red-600'}">
+                        ${isRecette ? '+' : '-'}${formatMontantDisplay(t.montant)}
+                    </span>
+                    <div class="flex gap-1">
+                        ${!isAuto ? `
+                        <button onclick="editFinTransaction(${globalIndex})" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg" title="Modifier">
+                            <span class="material-icons text-sm">edit</span>
+                        </button>` : ''}
+                        <button onclick="deleteFinTransaction(${globalIndex})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg" title="${isAuto ? 'Supprimer (attention: transaction liée)' : 'Supprimer'}">
+                            <span class="material-icons text-sm">delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Pagination
+    renderFinPagination(totalPages);
+}
+
+function getCategoryColor(cat) {
+    const colors = {
+        // Recettes
+        'ventes': 'bg-green-100 text-green-800',
+        'vente': 'bg-green-100 text-green-800',
+        'acomptes': 'bg-emerald-100 text-emerald-800',
+        'location': 'bg-purple-100 text-purple-800',
+        'service': 'bg-cyan-100 text-cyan-800',
+        // Dépenses
+        'achats': 'bg-orange-100 text-orange-800',
+        'salaires': 'bg-red-100 text-red-800',
+        'salaire': 'bg-red-100 text-red-800',
+        'charges_sociales': 'bg-pink-100 text-pink-800',
+        'chantier': 'bg-amber-100 text-amber-800',
+        'materiel': 'bg-yellow-100 text-yellow-800',
+        'transport': 'bg-teal-100 text-teal-800',
+        'charges': 'bg-gray-100 text-gray-800',
+        // Autres
+        'autre': 'bg-slate-100 text-slate-800'
+    };
+    return colors[cat?.toLowerCase()] || 'bg-gray-100 text-gray-800';
+}
+
+function renderFinPagination(totalPages) {
+    const container = document.getElementById('fin-pagination');
+    if (!container || totalPages <= 1) {
+        if (container) container.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    // Bouton précédent
+    html += `<button onclick="finChangePage(${finCurrentPage - 1})" 
+        class="px-3 py-1 rounded-lg ${finCurrentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}"
+        ${finCurrentPage === 1 ? 'disabled' : ''}>
+        <span class="material-icons text-sm align-middle">chevron_left</span>
+    </button>`;
+    
+    // Numéros de page
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= finCurrentPage - 1 && i <= finCurrentPage + 1)) {
+            html += `<button onclick="finChangePage(${i})" 
+                class="px-3 py-1 rounded-lg ${i === finCurrentPage ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+                ${i}
+            </button>`;
+        } else if (i === finCurrentPage - 2 || i === finCurrentPage + 2) {
+            html += '<span class="px-2">...</span>';
+        }
+    }
+    
+    // Bouton suivant
+    html += `<button onclick="finChangePage(${finCurrentPage + 1})" 
+        class="px-3 py-1 rounded-lg ${finCurrentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}"
+        ${finCurrentPage === totalPages ? 'disabled' : ''}>
+        <span class="material-icons text-sm align-middle">chevron_right</span>
+    </button>`;
+    
+    container.innerHTML = html;
+}
+
+window.finChangePage = function(page) {
+    finCurrentPage = page;
+    renderFinTransactions();
+};
+
+// Transactions récentes (5 dernières)
+function renderFinRecentTransactions(transactions) {
+    const container = document.getElementById('fin-recent-transactions');
+    if (!container) return;
+    
+    const recent = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    
+    if (recent.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-4">Aucune transaction récente</p>';
+        return;
+    }
+    
+    container.innerHTML = recent.map(t => {
+        const isRecette = t.type === 'recette';
+        const dateStr = t.date ? new Date(t.date).toLocaleDateString('fr-FR') : 'N/A';
+        
+        return `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 ${isRecette ? 'bg-green-100' : 'bg-red-100'}">
+                        <span class="material-icons text-sm ${isRecette ? 'text-green-600' : 'text-red-600'}">
+                            ${isRecette ? 'arrow_downward' : 'arrow_upward'}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-800 text-sm">${t.description || t.categorie}</p>
+                        <p class="text-xs text-gray-500">${dateStr}</p>
+                    </div>
+                </div>
+                <span class="font-semibold ${isRecette ? 'text-green-600' : 'text-red-600'}">
+                    ${isRecette ? '+' : '-'}${formatMontantDisplay(t.montant)}
+                </span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Top 5 catégories
+function renderFinTopCategories(transactions) {
+    const containerDepenses = document.getElementById('fin-top-depenses');
+    const containerRecettes = document.getElementById('fin-top-recettes');
+    
+    // Top dépenses
+    if (containerDepenses) {
+        const depenses = transactions.filter(t => t.type === 'depense');
+        const parCategorie = {};
+        depenses.forEach(t => {
+            const cat = t.categorie || 'Autre';
+            parCategorie[cat] = (parCategorie[cat] || 0) + (t.montant || 0);
+        });
+        
+        const totalDepenses = Object.values(parCategorie).reduce((a, b) => a + b, 0);
+        const sorted = Object.entries(parCategorie).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        
+        containerDepenses.innerHTML = sorted.map(([cat, montant]) => {
+            const pct = totalDepenses > 0 ? ((montant / totalDepenses) * 100).toFixed(1) : 0;
+            return `
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 mr-4">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${cat}</span>
+                            <span class="text-sm text-gray-500">${pct}%</span>
+                        </div>
+                        <div class="finance-progress-bar">
+                            <div class="finance-progress-fill bg-red-500" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                    <span class="text-sm font-semibold text-red-600">${formatMontantDisplay(montant)}</span>
+                </div>
+            `;
+        }).join('') || '<p class="text-gray-400 text-center">Aucune dépense</p>';
+    }
+    
+    // Top recettes
+    if (containerRecettes) {
+        const recettes = transactions.filter(t => t.type === 'recette');
+        const parCategorie = {};
+        recettes.forEach(t => {
+            const cat = t.categorie || 'Autre';
+            parCategorie[cat] = (parCategorie[cat] || 0) + (t.montant || 0);
+        });
+        
+        const totalRecettes = Object.values(parCategorie).reduce((a, b) => a + b, 0);
+        const sorted = Object.entries(parCategorie).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        
+        containerRecettes.innerHTML = sorted.map(([cat, montant]) => {
+            const pct = totalRecettes > 0 ? ((montant / totalRecettes) * 100).toFixed(1) : 0;
+            return `
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 mr-4">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700">${cat}</span>
+                            <span class="text-sm text-gray-500">${pct}%</span>
+                        </div>
+                        <div class="finance-progress-bar">
+                            <div class="finance-progress-fill bg-green-500" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                    <span class="text-sm font-semibold text-green-600">${formatMontantDisplay(montant)}</span>
+                </div>
+            `;
+        }).join('') || '<p class="text-gray-400 text-center">Aucune recette</p>';
+    }
+}
+
+// Indicateurs de santé financière
+function renderFinHealthIndicators(transactions) {
+    const recettes = transactions.filter(t => t.type === 'recette');
+    const depenses = transactions.filter(t => t.type === 'depense');
+    
+    const totalRecettes = recettes.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const totalDepenses = depenses.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const resultat = totalRecettes - totalDepenses;
+    
+    // Ratio de rentabilité
+    const ratioRentabilite = totalRecettes > 0 ? ((resultat / totalRecettes) * 100).toFixed(1) : 0;
+    const elRatio = document.getElementById('fin-ratio-rentabilite');
+    if (elRatio) {
+        elRatio.textContent = ratioRentabilite + '%';
+        elRatio.className = `text-2xl font-bold ${parseFloat(ratioRentabilite) >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
+    
+    // Taux de croissance (comparaison avec période précédente - simplifié)
+    const elCroissance = document.getElementById('fin-taux-croissance');
+    if (elCroissance) {
+        // Pour simplifier, on indique N/A ou on calcule basé sur les données disponibles
+        elCroissance.textContent = 'N/A';
+        elCroissance.className = 'text-2xl font-bold text-gray-600';
+    }
+    
+    // Moyenne mensuelle
+    const moisActifs = new Set(transactions.map(t => t.date?.substring(0, 7))).size || 1;
+    const moyenneMensuelle = resultat / moisActifs;
+    const elMoyenne = document.getElementById('fin-moyenne-mensuelle');
+    if (elMoyenne) {
+        elMoyenne.textContent = formatMontantDisplay(moyenneMensuelle);
+        elMoyenne.className = `text-lg font-bold ${moyenneMensuelle >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
+    
+    // Prévision fin d'année (extrapolation simple)
+    const moisRestants = 12 - new Date().getMonth();
+    const prevision = resultat + (moyenneMensuelle * moisRestants);
+    const elPrevision = document.getElementById('fin-prevision');
+    if (elPrevision) {
+        elPrevision.textContent = formatMontantDisplay(prevision);
+        elPrevision.className = `text-lg font-bold ${prevision >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
+}
+
+// Analyse IA (recommandations basiques)
+function renderFinAnalyseIA(transactions) {
+    const container = document.getElementById('fin-ia-analyse');
+    if (!container) return;
+    
+    const recettes = transactions.filter(t => t.type === 'recette');
+    const depenses = transactions.filter(t => t.type === 'depense');
+    const totalRecettes = recettes.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const totalDepenses = depenses.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const marge = totalRecettes > 0 ? ((totalRecettes - totalDepenses) / totalRecettes) * 100 : 0;
+    
+    // Catégorie la plus dépensière
+    const depensesParCat = {};
+    depenses.forEach(t => {
+        const cat = t.categorie || 'Autre';
+        depensesParCat[cat] = (depensesParCat[cat] || 0) + (t.montant || 0);
+    });
+    const topDepense = Object.entries(depensesParCat).sort((a, b) => b[1] - a[1])[0];
+    
+    // Générer les recommandations
+    const recommendations = [];
+    
+    // Analyse de la marge
+    if (marge < 10) {
+        recommendations.push({
+            icon: 'warning',
+            color: 'red',
+            title: 'Marge faible',
+            text: 'Votre marge est inférieure à 10%. Envisagez de réduire les coûts ou d\'augmenter les prix.'
+        });
+    } else if (marge > 30) {
+        recommendations.push({
+            icon: 'thumb_up',
+            color: 'green',
+            title: 'Excellente rentabilité',
+            text: 'Votre marge est supérieure à 30%. Continuez ainsi et pensez à réinvestir.'
+        });
+    } else {
+        recommendations.push({
+            icon: 'info',
+            color: 'blue',
+            title: 'Marge correcte',
+            text: 'Votre marge est dans la moyenne. Surveillez vos dépenses pour l\'améliorer.'
+        });
+    }
+    
+    // Analyse des dépenses
+    if (topDepense) {
+        const pctTopDepense = totalDepenses > 0 ? (topDepense[1] / totalDepenses) * 100 : 0;
+        if (pctTopDepense > 40) {
+            recommendations.push({
+                icon: 'pie_chart',
+                color: 'orange',
+                title: `${topDepense[0]} domine`,
+                text: `Cette catégorie représente ${pctTopDepense.toFixed(0)}% de vos dépenses. Cherchez à diversifier.`
+            });
+        } else {
+            recommendations.push({
+                icon: 'check_circle',
+                color: 'green',
+                title: 'Dépenses équilibrées',
+                text: 'Vos dépenses sont bien réparties entre les catégories.'
+            });
+        }
+    }
+    
+    // Conseil de trésorerie
+    if (totalRecettes > totalDepenses * 1.5) {
+        recommendations.push({
+            icon: 'savings',
+            color: 'green',
+            title: 'Trésorerie saine',
+            text: 'Vous avez une bonne trésorerie. Pensez à investir ou épargner.'
+        });
+    } else if (totalRecettes < totalDepenses) {
+        recommendations.push({
+            icon: 'error',
+            color: 'red',
+            title: 'Déficit détecté',
+            text: 'Vos dépenses dépassent vos recettes. Agissez rapidement pour rééquilibrer.'
+        });
+    }
+    
+    container.innerHTML = recommendations.map(r => `
+        <div class="bg-white rounded-xl p-4 border border-${r.color}-200 shadow-sm">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons text-${r.color}-500">${r.icon}</span>
+                <h5 class="font-semibold text-gray-800">${r.title}</h5>
+            </div>
+            <p class="text-sm text-gray-600">${r.text}</p>
+        </div>
+    `).join('');
+}
+
+// Bilan détaillé
+function renderFinBilanDetaille(transactions) {
+    renderCompteResultat(transactions);
+    renderBilanMensuel(transactions);
+}
+
+function renderCompteResultat(transactions) {
+    const tbody = document.getElementById('fin-compte-resultat');
+    if (!tbody) return;
+    
+    const recettes = transactions.filter(t => t.type === 'recette');
+    const depenses = transactions.filter(t => t.type === 'depense');
+    
+    const totalRecettes = recettes.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const totalDepenses = depenses.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const resultat = totalRecettes - totalDepenses;
+    
+    // Grouper par catégorie
+    const recettesParCat = {};
+    recettes.forEach(t => {
+        const cat = t.categorie || 'Autre';
+        recettesParCat[cat] = (recettesParCat[cat] || 0) + (t.montant || 0);
+    });
+    
+    const depensesParCat = {};
+    depenses.forEach(t => {
+        const cat = t.categorie || 'Autre';
+        depensesParCat[cat] = (depensesParCat[cat] || 0) + (t.montant || 0);
+    });
+    
+    let html = '';
+    
+    // Section Recettes
+    html += `<tr class="bg-green-50"><td colspan="3" class="p-3 font-bold text-green-800">PRODUITS D'EXPLOITATION</td></tr>`;
+    Object.entries(recettesParCat).sort((a, b) => b[1] - a[1]).forEach(([cat, montant]) => {
+        const pct = totalRecettes > 0 ? ((montant / totalRecettes) * 100).toFixed(1) : 0;
+        html += `
+            <tr class="border-b border-gray-100">
+                <td class="p-3 pl-6 text-gray-700">${cat}</td>
+                <td class="p-3 text-right text-green-600 font-medium">${formatMontantDisplay(montant)}</td>
+                <td class="p-3 text-right text-gray-500">${pct}%</td>
+            </tr>
+        `;
+    });
+    html += `
+        <tr class="bg-green-100 font-bold">
+            <td class="p-3">Total Produits</td>
+            <td class="p-3 text-right text-green-700">${formatMontantDisplay(totalRecettes)}</td>
+            <td class="p-3 text-right">100%</td>
+        </tr>
+    `;
+    
+    // Section Dépenses
+    html += `<tr class="bg-red-50"><td colspan="3" class="p-3 font-bold text-red-800">CHARGES D'EXPLOITATION</td></tr>`;
+    Object.entries(depensesParCat).sort((a, b) => b[1] - a[1]).forEach(([cat, montant]) => {
+        const pct = totalDepenses > 0 ? ((montant / totalDepenses) * 100).toFixed(1) : 0;
+        html += `
+            <tr class="border-b border-gray-100">
+                <td class="p-3 pl-6 text-gray-700">${cat}</td>
+                <td class="p-3 text-right text-red-600 font-medium">${formatMontantDisplay(montant)}</td>
+                <td class="p-3 text-right text-gray-500">${pct}%</td>
+            </tr>
+        `;
+    });
+    html += `
+        <tr class="bg-red-100 font-bold">
+            <td class="p-3">Total Charges</td>
+            <td class="p-3 text-right text-red-700">${formatMontantDisplay(totalDepenses)}</td>
+            <td class="p-3 text-right">100%</td>
+        </tr>
+    `;
+    
+    // Résultat
+    html += `
+        <tr class="bg-blue-100 font-bold text-lg">
+            <td class="p-4">RÉSULTAT NET</td>
+            <td class="p-4 text-right ${resultat >= 0 ? 'text-green-700' : 'text-red-700'}">${formatMontantDisplay(resultat)}</td>
+            <td class="p-4 text-right">${totalRecettes > 0 ? ((resultat / totalRecettes) * 100).toFixed(1) : 0}%</td>
+        </tr>
+    `;
+    
+    tbody.innerHTML = html;
+}
+
+function renderBilanMensuel(transactions) {
+    const tbody = document.getElementById('fin-bilan-mensuel');
+    const tfoot = document.getElementById('fin-bilan-total');
+    if (!tbody) return;
+    
+    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    
+    // Calculer par mois
+    const recettesParMois = Array(12).fill(0);
+    const depensesParMois = Array(12).fill(0);
+    
+    transactions.forEach(t => {
+        if (!t.date) return;
+        const mois = new Date(t.date).getMonth();
+        if (t.type === 'recette') {
+            recettesParMois[mois] += t.montant || 0;
+        } else {
+            depensesParMois[mois] += t.montant || 0;
+        }
+    });
+    
+    let cumul = 0;
+    let totalRecettes = 0;
+    let totalDepenses = 0;
+    
+    let html = '';
+    for (let i = 0; i < 12; i++) {
+        const rec = recettesParMois[i];
+        const dep = depensesParMois[i];
+        const res = rec - dep;
+        cumul += res;
+        totalRecettes += rec;
+        totalDepenses += dep;
+        
+        // Ne montrer que les mois avec des données
+        if (rec > 0 || dep > 0) {
+            html += `
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="p-3 font-medium text-gray-700">${moisNoms[i]}</td>
+                    <td class="p-3 text-right text-green-600">${formatMontantDisplay(rec)}</td>
+                    <td class="p-3 text-right text-red-600">${formatMontantDisplay(dep)}</td>
+                    <td class="p-3 text-right font-medium ${res >= 0 ? 'text-green-600' : 'text-red-600'}">${formatMontantDisplay(res)}</td>
+                    <td class="p-3 text-right ${cumul >= 0 ? 'text-blue-600' : 'text-red-600'}">${formatMontantDisplay(cumul)}</td>
+                </tr>
+            `;
+        }
+    }
+    
+    tbody.innerHTML = html || '<tr><td colspan="5" class="p-4 text-center text-gray-400">Aucune donnée pour cette période</td></tr>';
+    
+    // Total
+    if (tfoot) {
+        const totalResultat = totalRecettes - totalDepenses;
+        tfoot.innerHTML = `
+            <tr>
+                <td class="p-3">TOTAL ANNÉE</td>
+                <td class="p-3 text-right text-green-700">${formatMontantDisplay(totalRecettes)}</td>
+                <td class="p-3 text-right text-red-700">${formatMontantDisplay(totalDepenses)}</td>
+                <td class="p-3 text-right ${totalResultat >= 0 ? 'text-green-700' : 'text-red-700'}">${formatMontantDisplay(totalResultat)}</td>
+                <td class="p-3 text-right ${cumul >= 0 ? 'text-blue-700' : 'text-red-700'}">${formatMontantDisplay(cumul)}</td>
+            </tr>
+        `;
+    }
+}
+
+// Édition et suppression de transactions
+window.editFinTransaction = function(index) {
+    const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
+    const t = transactions[index];
+    if (!t) return;
+    
+    // Ouvrir la modale de transaction avec les données
+    openTransactionModal(t.type);
+    
+    setTimeout(() => {
+        document.getElementById('compta-edit-index').value = index;
+        document.getElementById('compta-type').value = t.type;
+        document.getElementById('compta-categorie').value = t.categorie || '';
+        document.getElementById('compta-montant').value = t.montant;
+        document.getElementById('compta-description').value = t.description || '';
+        document.getElementById('compta-date').value = t.date;
+    }, 100);
+};
+
+window.deleteFinTransaction = function(index) {
+    if (confirm('Supprimer cette transaction ?')) {
+        const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
+        transactions.splice(index, 1);
+        localStorage.setItem('comptabilite', JSON.stringify(transactions));
+        refreshFinances();
+        showNotification('Transaction supprimée', 'La transaction a été supprimée', 'warning');
+    }
+};
+
+// Export PDF
+window.exportFinancesPDF = function() {
+    if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
+        showNotification('Erreur', 'Bibliothèque PDF non chargée', 'error');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const transactions = getFilteredTransactions();
+    const recettes = transactions.filter(t => t.type === 'recette');
+    const depenses = transactions.filter(t => t.type === 'depense');
+    const totalRecettes = recettes.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const totalDepenses = depenses.reduce((sum, t) => sum + (t.montant || 0), 0);
+    const resultat = totalRecettes - totalDepenses;
+    
+    const annee = document.getElementById('finance-annee')?.value || new Date().getFullYear();
+    
+    // En-tête
+    doc.setFillColor(30, 58, 138);
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RAPPORT FINANCIER', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`KFS BTP IMMO - Annee ${annee}`, 105, 30, { align: 'center' });
+    
+    // Date de génération
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(9);
+    doc.text(`Genere le ${new Date().toLocaleDateString('fr-FR')}`, 105, 50, { align: 'center' });
+    
+    // Résumé
+    let y = 65;
+    doc.setTextColor(30, 58, 138);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUME FINANCIER', 20, y);
+    
+    y += 10;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, y, 190, y);
+    
+    y += 10;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(34, 197, 94);
+    doc.text(`Total Recettes: ${formatMontant(totalRecettes)} FCFA`, 20, y);
+    
+    y += 8;
+    doc.setTextColor(239, 68, 68);
+    doc.text(`Total Depenses: ${formatMontant(totalDepenses)} FCFA`, 20, y);
+    
+    y += 8;
+    doc.setTextColor(resultat >= 0 ? 34 : 239, resultat >= 0 ? 197 : 68, resultat >= 0 ? 94 : 68);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Resultat Net: ${formatMontant(resultat)} FCFA`, 20, y);
+    
+    // Marge
+    const marge = totalRecettes > 0 ? ((resultat / totalRecettes) * 100).toFixed(1) : 0;
+    y += 8;
+    doc.setTextColor(100, 100, 100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Marge: ${marge}%`, 20, y);
+    
+    // Liste des transactions (dernières 20)
+    y += 20;
+    doc.setTextColor(30, 58, 138);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DERNIERES TRANSACTIONS', 20, y);
+    
+    y += 10;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(20, y, 190, y);
+    
+    y += 5;
+    const sortedTrans = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    
+    sortedTrans.forEach(t => {
+        if (y > 270) {
+            doc.addPage();
+            y = 20;
+        }
+        
+        const isRecette = t.type === 'recette';
+        const dateStr = t.date ? new Date(t.date).toLocaleDateString('fr-FR') : 'N/A';
+        
+        doc.setTextColor(100, 100, 100);
+        doc.text(dateStr, 20, y);
+        
+        doc.setTextColor(60, 60, 60);
+        doc.text((t.description || t.categorie || '').substring(0, 40), 45, y);
+        
+        doc.setTextColor(isRecette ? 34 : 239, isRecette ? 197 : 68, isRecette ? 94 : 68);
+        doc.text(`${isRecette ? '+' : '-'}${formatMontant(t.montant)} FCFA`, 150, y, { align: 'right' });
+        
+        y += 6;
+    });
+    
+    // Pied de page
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i}/${pageCount}`, 105, 290, { align: 'center' });
+        doc.text('KFS BTP IMMO - Document confidentiel', 105, 295, { align: 'center' });
+    }
+    
+    doc.save(`rapport-financier-${annee}.pdf`);
+    showNotification('PDF exporté', 'Le rapport financier a été téléchargé', 'success');
+};
+
+// Export Excel (CSV)
+window.exportFinancesExcel = function() {
+    const transactions = getFilteredTransactions();
+    
+    // En-têtes
+    let csv = 'Date,Type,Categorie,Description,Montant\n';
+    
+    // Données
+    transactions.forEach(t => {
+        const date = t.date || '';
+        const type = t.type === 'recette' ? 'Recette' : 'Depense';
+        const categorie = (t.categorie || '').replace(/,/g, ';');
+        const description = (t.description || '').replace(/,/g, ';');
+        const montant = t.montant || 0;
+        
+        csv += `${date},${type},${categorie},${description},${montant}\n`;
+    });
+    
+    // Télécharger
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    showNotification('Excel exporté', 'Le fichier CSV a été téléchargé', 'success');
+};
+
+// Fonction debounce pour la recherche
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// ===================================================
+// FONCTION UTILITAIRE: LIAISON AUTOMATIQUE FINANCES
+// ===================================================
+// Cette fonction permet d'ajouter automatiquement des transactions
+// depuis n'importe quel module vers le module Finances unifié
+
+/**
+ * Ajoute automatiquement une transaction au module Finances
+ * @param {Object} options - Options de la transaction
+ * @param {string} options.type - 'recette' ou 'depense'
+ * @param {number} options.montant - Montant de la transaction
+ * @param {string} options.categorie - Catégorie (salaires, achats, ventes, etc.)
+ * @param {string} options.description - Description détaillée
+ * @param {string} options.reference - Référence (numéro facture, ID, etc.)
+ * @param {string} options.sourceModule - Module source (factures, stocks, projets, paie)
+ * @param {string} [options.date] - Date de la transaction (défaut: aujourd'hui)
+ * @returns {boolean} - Succès de l'opération
+ */
+window.autoAddTransaction = function(options) {
+    try {
+        const {
+            type,
+            montant,
+            categorie,
+            description,
+            reference = '',
+            sourceModule = '',
+            date = new Date().toISOString().split('T')[0]
+        } = options;
+
+        // Validation
+        if (!type || !['recette', 'depense'].includes(type)) {
+            console.error('[AutoTransaction] Type invalide:', type);
+            return false;
+        }
+        if (!montant || montant <= 0) {
+            console.error('[AutoTransaction] Montant invalide:', montant);
+            return false;
+        }
+        if (!categorie) {
+            console.error('[AutoTransaction] Catégorie requise');
+            return false;
+        }
+
+        // Vérifier si une transaction similaire existe déjà (éviter les doublons)
+        const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
+        const existeDeja = transactions.some(t => 
+            t.reference === reference && 
+            reference !== '' &&
+            t.sourceModule === sourceModule &&
+            t.montant === montant
+        );
+
+        if (existeDeja) {
+            console.log('[AutoTransaction] Transaction déjà existante, ignorée:', reference);
+            return false;
+        }
+
+        // Créer la nouvelle transaction
+        const newTransaction = {
+            id: 'auto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            type: type,
+            montant: parseFloat(montant),
+            categorie: categorie,
+            description: description || `Transaction automatique - ${sourceModule}`,
+            reference: reference,
+            sourceModule: sourceModule,
+            date: date,
+            createdAt: new Date().toISOString(),
+            autoGenerated: true
+        };
+
+        // Ajouter au début de la liste
+        transactions.unshift(newTransaction);
+        localStorage.setItem('comptabilite', JSON.stringify(transactions));
+
+        // Log pour suivi
+        console.log(`[AutoTransaction] ${type.toUpperCase()} ajoutée:`, {
+            montant: montant,
+            categorie: categorie,
+            source: sourceModule,
+            ref: reference
+        });
+
+        // Rafraîchir le module Finances si disponible
+        if (typeof refreshFinances === 'function') {
+            setTimeout(refreshFinances, 100);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('[AutoTransaction] Erreur:', error);
+        return false;
+    }
+};
+
+/**
+ * Supprime une transaction automatique par sa référence
+ * @param {string} reference - Référence de la transaction
+ * @param {string} sourceModule - Module source
+ */
+window.autoRemoveTransaction = function(reference, sourceModule) {
+    try {
+        let transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
+        const initialLength = transactions.length;
+        
+        transactions = transactions.filter(t => 
+            !(t.reference === reference && t.sourceModule === sourceModule && t.autoGenerated)
+        );
+
+        if (transactions.length < initialLength) {
+            localStorage.setItem('comptabilite', JSON.stringify(transactions));
+            console.log('[AutoTransaction] Transaction supprimée:', reference);
+            
+            if (typeof refreshFinances === 'function') {
+                setTimeout(refreshFinances, 100);
+            }
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('[AutoTransaction] Erreur suppression:', error);
+        return false;
+    }
+};
+
+// ===================================================
+// MODULE: COMPTABILITÉ (Ancien - conservé pour compatibilité)
 // ===================================================
 function initComptabilite() {
-    renderComptabilite();
-    updateComptaDashboard();
+    // Redirigé vers initFinances - conservé pour compatibilité
+    // renderComptabilite();
+    // updateComptaDashboard();
     
     const form = document.getElementById('compta-form');
     const cancelBtn = document.getElementById('compta-cancel');
@@ -1752,7 +5177,7 @@ function initComptabilite() {
             showNotification('Transaction modifiée', 'La transaction a été mise à jour', 'success');
         } else {
             transactions.push(transaction);
-            showNotification('Transaction ajoutée', `${transaction.type === 'recette' ? 'Recette' : 'Dépense'} de ${transaction.montant.toLocaleString('fr-FR')} FCFA`, 'success');
+            showNotification('Transaction ajoutée', `${transaction.type === 'recette' ? 'Recette' : 'Dépense'} enregistrée`, 'success');
         }
         
         localStorage.setItem('comptabilite', JSON.stringify(transactions));
@@ -1761,7 +5186,14 @@ function initComptabilite() {
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
         if (cancelBtn) cancelBtn.classList.add('hidden');
         
-        renderComptabilite();
+        // Fermer la modale automatiquement
+        const modal = document.getElementById('transaction-modal');
+        if (modal) modal.classList.add('hidden');
+        
+        // Rafraîchir le module Finances unifié
+        if (typeof refreshFinances === 'function') {
+            refreshFinances();
+        }
     });
     
     if (cancelBtn) {
@@ -2257,6 +5689,7 @@ window.printFacture = function(index) {
 window.changeFactureStatus = function(index) {
     const factures = JSON.parse(localStorage.getItem('factures') || '[]');
     const f = factures[index];
+    const oldStatus = f.status;
     
     const statusOptions = f.type === 'facture' 
         ? ['en_attente', 'payee', 'annulee']
@@ -2275,19 +5708,64 @@ window.changeFactureStatus = function(index) {
     if (newStatus && statusOptions.includes(newStatus)) {
         factures[index].status = newStatus;
         localStorage.setItem('factures', JSON.stringify(factures));
+        
+        // 🔗 LIAISON FINANCES: Si facture passe à "payée", créer une recette
+        if (f.type === 'facture' && newStatus === 'payee' && oldStatus !== 'payee') {
+            autoAddTransaction({
+                type: 'recette',
+                montant: f.totalTTC,
+                categorie: 'ventes',
+                description: `Paiement facture ${f.numero} - Client: ${f.client}`,
+                reference: f.numero,
+                sourceModule: 'factures',
+                date: new Date().toISOString().split('T')[0]
+            });
+            showNotification('💰 Finances mises à jour', `Recette de ${f.totalTTC.toLocaleString('fr-FR')} FCFA ajoutée`, 'success');
+        }
+        
+        // 🔗 LIAISON FINANCES: Si facture annulée et était payée, supprimer la recette
+        if (f.type === 'facture' && newStatus === 'annulee' && oldStatus === 'payee') {
+            autoRemoveTransaction(f.numero, 'factures');
+            showNotification('💰 Finances mises à jour', `Recette de ${f.totalTTC.toLocaleString('fr-FR')} FCFA annulée`, 'warning');
+        }
+        
+        // 🔗 LIAISON FINANCES: Si devis accepté, créer un acompte (30%)
+        if (f.type === 'devis' && newStatus === 'accepte' && oldStatus !== 'accepte') {
+            const acompte = Math.round(f.totalTTC * 0.3);
+            autoAddTransaction({
+                type: 'recette',
+                montant: acompte,
+                categorie: 'acomptes',
+                description: `Acompte devis ${f.numero} (30%) - Client: ${f.client}`,
+                reference: f.numero + '_acompte',
+                sourceModule: 'factures',
+                date: new Date().toISOString().split('T')[0]
+            });
+            showNotification('💰 Finances mises à jour', `Acompte de ${acompte.toLocaleString('fr-FR')} FCFA enregistré`, 'success');
+        }
+        
         renderFactures();
         showNotification('Statut modifié', `${f.numero} → ${statusLabels[newStatus]}`, 'success');
     }
 };
 
 window.deleteFacture = function(index) {
-    if (confirm('Supprimer cette facture/devis ?')) {
+    if (confirm('Supprimer cette facture/devis ?\n\n⚠️ Les transactions financières associées seront également supprimées.')) {
         const factures = JSON.parse(localStorage.getItem('factures') || '[]');
         const f = factures[index];
+        
+        // 🔗 LIAISON FINANCES: Supprimer les transactions associées
+        if (f.status === 'payee') {
+            autoRemoveTransaction(f.numero, 'factures');
+        }
+        if (f.type === 'devis' && f.status === 'accepte') {
+            autoRemoveTransaction(f.numero + '_acompte', 'factures');
+        }
+        
         factures.splice(index, 1);
         localStorage.setItem('factures', JSON.stringify(factures));
         renderFactures();
-        showNotification('Supprimé', `${f.numero} a été supprimé`, 'warning');
+        showNotification('Supprimé', `${f.numero} a été supprimé (avec transactions)`, 'warning');
     }
 };
 
@@ -2971,6 +6449,10 @@ function initClients() {
         
         if (cancelBtn) cancelBtn.classList.add('hidden');
         
+        // Fermer la modale automatiquement
+        const modal = document.getElementById('client-modal');
+        if (modal) modal.classList.add('hidden');
+        
         renderClients();
         updateClientStats();
     });
@@ -3311,6 +6793,32 @@ function initProjets() {
         } else {
             projets.push(projet);
             showNotification('Projet créé', `${projet.nom} ajouté`, 'success');
+            
+            // 🔗 LIAISON FINANCES: Enregistrer l'acompte reçu comme recette
+            if (projet.acompte > 0) {
+                autoAddTransaction({
+                    type: 'recette',
+                    montant: projet.acompte,
+                    categorie: 'acomptes',
+                    description: `Acompte projet ${projet.nom} - Client: ${projet.client || 'Non spécifié'}`,
+                    reference: `${projet.reference}_acompte_init`,
+                    sourceModule: 'projets',
+                    date: new Date().toISOString().split('T')[0]
+                });
+            }
+            
+            // 🔗 LIAISON FINANCES: Enregistrer les dépenses initiales
+            if (projet.depenses > 0) {
+                autoAddTransaction({
+                    type: 'depense',
+                    montant: projet.depenses,
+                    categorie: 'chantier',
+                    description: `Dépenses initiales projet ${projet.nom}`,
+                    reference: `${projet.reference}_dep_init`,
+                    sourceModule: 'projets',
+                    date: new Date().toISOString().split('T')[0]
+                });
+            }
         }
         
         localStorage.setItem('projets', JSON.stringify(projets));
@@ -3319,6 +6827,10 @@ function initProjets() {
         if (dateDebut) dateDebut.value = new Date().toISOString().split('T')[0];
         if (avancementSlider) avancementSlider.value = 0;
         if (avancementValue) avancementValue.textContent = '0%';
+        
+        // Fermer la modale automatiquement
+        const modal = document.getElementById('projet-modal');
+        if (modal) modal.classList.add('hidden');
         
         renderProjets();
         updateProjetStats();
@@ -3502,16 +7014,19 @@ function renderProjets() {
                 </div>
                 
                 <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-2">
-                    <button onclick="viewProjet(${globalIndex})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">
+                    <button onclick="viewProjet(${globalIndex})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200" title="Voir détails">
                         <span class="material-icons text-sm align-middle">visibility</span> Détails
                     </button>
-                    <button onclick="editProjet(${globalIndex})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200">
+                    <button onclick="editProjet(${globalIndex})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200" title="Modifier">
                         <span class="material-icons text-sm align-middle">edit</span>
                     </button>
-                    <button onclick="addProjetDepense(${globalIndex})" class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200">
+                    <button onclick="recevoirAcompteProjet(${globalIndex})" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200" title="Recevoir acompte">
+                        <span class="material-icons text-sm align-middle">account_balance_wallet</span>
+                    </button>
+                    <button onclick="addProjetDepense(${globalIndex})" class="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-sm hover:bg-orange-200" title="Ajouter dépense">
                         <span class="material-icons text-sm align-middle">payments</span>
                     </button>
-                    <button onclick="deleteProjet(${globalIndex})" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+                    <button onclick="deleteProjet(${globalIndex})" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200" title="Supprimer">
                         <span class="material-icons text-sm align-middle">delete</span>
                     </button>
                 </div>
@@ -3538,7 +7053,7 @@ window.deleteProjet = function(index) {
 
 window.addProjetDepense = function(index) {
     const montant = prompt('Montant de la dépense (FCFA):');
-    if (!montant || isNaN(montant)) return;
+    if (!montant || isNaN(montant) || parseFloat(montant) <= 0) return;
     
     const description = prompt('Description de la dépense:') || 'Dépense projet';
     
@@ -3548,20 +7063,19 @@ window.addProjetDepense = function(index) {
     
     localStorage.setItem('projets', JSON.stringify(projets));
     
-    // Ajouter aussi en comptabilité
-    const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
-    transactions.push({
+    // 🔗 LIAISON FINANCES: Créer une dépense via la fonction utilitaire
+    autoAddTransaction({
         type: 'depense',
-        categorie: 'Chantier',
         montant: parseFloat(montant),
-        description: `${projets[index].nom} - ${description}`,
-        date: new Date().toISOString().split('T')[0],
-        createdAt: new Date().toISOString()
+        categorie: 'chantier',
+        description: `Projet ${projets[index].nom} - ${description}`,
+        reference: `${projets[index].reference}_dep_${Date.now()}`,
+        sourceModule: 'projets',
+        date: new Date().toISOString().split('T')[0]
     });
-    localStorage.setItem('comptabilite', JSON.stringify(transactions));
     
     renderProjets();
-    showNotification('Dépense ajoutée', `${parseFloat(montant).toLocaleString('fr-FR')} FCFA ajoutés au projet`, 'success');
+    showNotification('💰 Dépense ajoutée', `${parseFloat(montant).toLocaleString('fr-FR')} FCFA enregistrés en dépense chantier`, 'success');
 };
 
 window.viewProjet = function(index) {
@@ -3627,19 +7141,92 @@ window.viewProjet = function(index) {
             
             ${p.notes ? `<div class="p-4 bg-yellow-50 rounded-xl"><p class="text-sm text-gray-600"><strong>Notes:</strong> ${p.notes}</p></div>` : ''}
             
-            <div class="mt-6 flex gap-2">
+            <div class="mt-6 grid grid-cols-2 gap-2">
+                <button onclick="recevoirAcompteProjet(${index}); this.closest('.fixed').remove();" 
+                    class="py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition">
+                    <span class="material-icons align-middle mr-1">account_balance_wallet</span> Recevoir acompte
+                </button>
                 <button onclick="addProjetDepense(${index}); this.closest('.fixed').remove();" 
-                    class="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition">
-                    <span class="material-icons align-middle mr-2">payments</span> Ajouter dépense
+                    class="py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 transition">
+                    <span class="material-icons align-middle mr-1">payments</span> Ajouter dépense
+                </button>
+                <button onclick="finaliserPaiementProjet(${index}); this.closest('.fixed').remove();" 
+                    class="py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition">
+                    <span class="material-icons align-middle mr-1">check_circle</span> Paiement final
                 </button>
                 <button onclick="editProjet(${index}); this.closest('.fixed').remove();" 
-                    class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
-                    <span class="material-icons align-middle mr-2">edit</span> Modifier
+                    class="py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition">
+                    <span class="material-icons align-middle mr-1">edit</span> Modifier
                 </button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+};
+
+// Fonction pour recevoir un acompte sur un projet
+window.recevoirAcompteProjet = function(index) {
+    const montant = prompt('Montant de l\'acompte reçu (FCFA):');
+    if (!montant || isNaN(montant) || parseFloat(montant) <= 0) return;
+    
+    const projets = JSON.parse(localStorage.getItem('projets') || '[]');
+    const p = projets[index];
+    
+    projets[index].acompte = (projets[index].acompte || 0) + parseFloat(montant);
+    projets[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem('projets', JSON.stringify(projets));
+    
+    // 🔗 LIAISON FINANCES: Créer une recette pour l'acompte
+    autoAddTransaction({
+        type: 'recette',
+        montant: parseFloat(montant),
+        categorie: 'acomptes',
+        description: `Acompte projet ${p.nom} - Client: ${p.client || 'Non spécifié'}`,
+        reference: `${p.reference}_acompte_${Date.now()}`,
+        sourceModule: 'projets',
+        date: new Date().toISOString().split('T')[0]
+    });
+    
+    renderProjets();
+    updateProjetStats();
+    showNotification('💰 Acompte reçu', `${parseFloat(montant).toLocaleString('fr-FR')} FCFA enregistrés`, 'success');
+};
+
+// Fonction pour finaliser le paiement d'un projet terminé
+window.finaliserPaiementProjet = function(index) {
+    const projets = JSON.parse(localStorage.getItem('projets') || '[]');
+    const p = projets[index];
+    
+    const resteAPayer = (p.budget || 0) - (p.acompte || 0);
+    
+    if (resteAPayer <= 0) {
+        showNotification('Info', 'Le projet est déjà entièrement payé', 'info');
+        return;
+    }
+    
+    const montant = prompt(`Montant du paiement final (reste à payer: ${resteAPayer.toLocaleString('fr-FR')} FCFA):`, resteAPayer);
+    if (!montant || isNaN(montant) || parseFloat(montant) <= 0) return;
+    
+    projets[index].acompte = (projets[index].acompte || 0) + parseFloat(montant);
+    projets[index].updatedAt = new Date().toISOString();
+    
+    localStorage.setItem('projets', JSON.stringify(projets));
+    
+    // 🔗 LIAISON FINANCES: Créer une recette pour le paiement final
+    autoAddTransaction({
+        type: 'recette',
+        montant: parseFloat(montant),
+        categorie: 'ventes',
+        description: `Paiement final projet ${p.nom} - Client: ${p.client || 'Non spécifié'}`,
+        reference: `${p.reference}_final_${Date.now()}`,
+        sourceModule: 'projets',
+        date: new Date().toISOString().split('T')[0]
+    });
+    
+    renderProjets();
+    updateProjetStats();
+    showNotification('💰 Paiement enregistré', `${parseFloat(montant).toLocaleString('fr-FR')} FCFA finalisés`, 'success');
 };
 
 // ===================================================
@@ -3735,6 +7322,10 @@ function initEmployes() {
         if (dateEmbauche) dateEmbauche.value = new Date().toISOString().split('T')[0];
         document.getElementById('employe-conges').value = '24';
         document.getElementById('employe-nationalite').value = 'Sénégalaise';
+        
+        // Fermer la modale automatiquement
+        const modal = document.getElementById('employe-modal');
+        if (modal) modal.classList.add('hidden');
         
         renderEmployes();
         updateEmployeStats();
@@ -3926,19 +7517,18 @@ window.payerSalaire = function(index) {
     const moisActuel = moisNoms[now.getMonth()];
     
     if (confirm(`Enregistrer le paiement du salaire de ${e.prenom} ${e.nom} pour ${moisActuel} ${now.getFullYear()} ?\n\nMontant: ${e.salaire.toLocaleString('fr-FR')} FCFA`)) {
-        // Ajouter en comptabilité
-        const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
-        transactions.push({
+        // 🔗 LIAISON FINANCES: Enregistrer le paiement via la fonction utilitaire
+        autoAddTransaction({
             type: 'depense',
-            categorie: 'Salaires',
             montant: e.salaire,
-            description: `Salaire ${moisActuel} ${now.getFullYear()} - ${e.prenom} ${e.nom}`,
-            date: now.toISOString().split('T')[0],
-            createdAt: now.toISOString()
+            categorie: 'salaires',
+            description: `Salaire ${moisActuel} ${now.getFullYear()} - ${e.prenom} ${e.nom} (${e.matricule})`,
+            reference: `SAL_${e.matricule}_${moisActuel}_${now.getFullYear()}`,
+            sourceModule: 'employes',
+            date: now.toISOString().split('T')[0]
         });
-        localStorage.setItem('comptabilite', JSON.stringify(transactions));
         
-        showNotification('Salaire payé', `${e.salaire.toLocaleString('fr-FR')} FCFA pour ${e.prenom} ${e.nom}`, 'success');
+        showNotification('💰 Salaire payé', `${e.salaire.toLocaleString('fr-FR')} FCFA pour ${e.prenom} ${e.nom}`, 'success');
     }
 };
 
@@ -4119,11 +7709,30 @@ function initStocks() {
             });
             stocks.push(stock);
             showNotification('Article ajouté', `${stock.nom} ajouté au stock`, 'success');
+            
+            // 🔗 LIAISON FINANCES: Créer une dépense pour l'achat de stock
+            if (stock.prixAchat > 0 && stock.quantite > 0) {
+                const totalAchat = stock.prixAchat * stock.quantite;
+                autoAddTransaction({
+                    type: 'depense',
+                    montant: totalAchat,
+                    categorie: 'achats',
+                    description: `Achat stock: ${stock.nom} (${stock.quantite} ${stock.unite}) - ${stock.fournisseur || 'Fournisseur non spécifié'}`,
+                    reference: stock.reference,
+                    sourceModule: 'stocks',
+                    date: new Date().toISOString().split('T')[0]
+                });
+                showNotification('💰 Finances mises à jour', `Dépense de ${totalAchat.toLocaleString('fr-FR')} FCFA enregistrée`, 'info');
+            }
         }
         
         localStorage.setItem('stocks', JSON.stringify(stocks));
         form.reset();
         document.getElementById('stock-edit-index').value = '';
+        
+        // Fermer la modale automatiquement
+        const modal = document.getElementById('stock-modal');
+        if (modal) modal.classList.add('hidden');
         
         renderStocks();
         renderStockAlertes();
@@ -4353,6 +7962,10 @@ window.ajouterStock = function(index) {
     
     const motif = prompt('Motif (optionnel):', 'Réapprovisionnement') || 'Réapprovisionnement';
     
+    // Demander le coût d'achat pour les finances
+    const coutAchat = prompt('Coût total de cet achat (en FCFA, 0 si gratuit):', '0');
+    const montantAchat = parseFloat(coutAchat) || 0;
+    
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     stocks[index].quantite += parseInt(quantite);
     stocks[index].updatedAt = new Date().toISOString();
@@ -4362,10 +7975,26 @@ window.ajouterStock = function(index) {
         type: 'entree',
         quantite: parseInt(quantite),
         date: new Date().toISOString(),
-        motif: motif
+        motif: motif,
+        cout: montantAchat
     });
     
     localStorage.setItem('stocks', JSON.stringify(stocks));
+    
+    // 🔗 LIAISON FINANCES: Créer une dépense pour le réapprovisionnement
+    if (montantAchat > 0) {
+        autoAddTransaction({
+            type: 'depense',
+            montant: montantAchat,
+            categorie: 'achats',
+            description: `Réappro stock: ${stocks[index].nom} (+${quantite} ${stocks[index].unite}) - ${motif}`,
+            reference: `${stocks[index].reference}_reappro_${Date.now()}`,
+            sourceModule: 'stocks',
+            date: new Date().toISOString().split('T')[0]
+        });
+        showNotification('💰 Finances mises à jour', `Dépense de ${montantAchat.toLocaleString('fr-FR')} FCFA enregistrée`, 'info');
+    }
+    
     renderStocks();
     updateStockStats();
     showNotification('Stock ajouté', `+${quantite} ${stocks[index].unite} de ${stocks[index].nom}`, 'success');
@@ -4463,6 +8092,60 @@ window.viewStockHistory = function(index) {
 // MODULE: DOCUMENTS
 // ===================================================
 function initDocuments() {
+    // Ajout des modèles prédéfinis manquants
+    if (!localStorage.getItem('documentTemplates')) {
+        const defaultTemplates = [
+            {
+                nom: 'Devis professionnel BTP',
+                description: 'Modèle de devis professionnel pour travaux BTP',
+                type: 'devis',
+                createdAt: new Date().toISOString(),
+                predefini: true,
+                fields: [],
+                content: '<h1>Devis</h1>'
+            },
+            {
+                nom: 'Location courte durée',
+                description: 'Modèle de contrat pour location courte durée',
+                type: 'location-courte',
+                createdAt: new Date().toISOString(),
+                predefini: true,
+                fields: [],
+                content: '<h1>Location Courte Durée</h1>'
+            }
+        ];
+        localStorage.setItem('documentTemplates', JSON.stringify(defaultTemplates));
+    } else {
+        // Ajout si manquant (évite doublons)
+        let templates = JSON.parse(localStorage.getItem('documentTemplates'));
+        let changed = false;
+        if (!templates.some(t => t.type === 'devis')) {
+            templates.push({
+                nom: 'Devis professionnel BTP',
+                description: 'Modèle de devis professionnel pour travaux BTP',
+                type: 'devis',
+                createdAt: new Date().toISOString(),
+                predefini: true,
+                fields: [],
+                content: '<h1>Devis</h1>'
+            });
+            changed = true;
+        }
+        if (!templates.some(t => t.type === 'location-courte')) {
+            templates.push({
+                nom: 'Location courte durée',
+                description: 'Modèle de contrat pour location courte durée',
+                type: 'location-courte',
+                createdAt: new Date().toISOString(),
+                predefini: true,
+                fields: [],
+                content: '<h1>Location Courte Durée</h1>'
+            });
+            changed = true;
+        }
+        if (changed) localStorage.setItem('documentTemplates', JSON.stringify(templates));
+    }
+
     renderDocuments();
     renderCustomTemplates(); // Afficher les modèles personnalisés
     
@@ -5967,13 +9650,16 @@ document.getElementById('transaction-form')?.addEventListener('submit', function
     } else {
         transactions.push(transaction);
         const typeLabel = transaction.type === 'recette' ? 'Revenu' : 'Dépense';
-        showNotification(`${typeLabel} ajouté`, `${transaction.montantTTC.toLocaleString('fr-FR')} FCFA`, 'success');
+        showNotification(`${typeLabel} ajouté`, `${formatMontantDisplay(transaction.montantTTC)}`, 'success');
     }
     
     localStorage.setItem('comptabilite', JSON.stringify(transactions));
     closeTransactionModal();
-    renderComptabilite();
-    updateComptaDashboard();
+    
+    // Rafraîchir le module Finances unifié
+    if (typeof refreshFinances === 'function') {
+        refreshFinances();
+    }
 });
 
 function updateComptaDashboard() {
@@ -6438,14 +10124,16 @@ document.getElementById('ia-input')?.addEventListener('keypress', function(e) {
 function getCompanyInfo() {
     const settings = JSON.parse(localStorage.getItem('siteSettings') || '{}');
     return {
-        nom: settings.companyName || 'KFS BTP',
-        slogan: settings.companySlogan || 'Bâtir l\'avenir au Sénégal',
-        adresse: settings.companyAddress || 'Dakar, Sénégal',
-        telephone: settings.companyPhone || '+221 78 584 28 71',
-        email: settings.companyEmail || 'contact@kfs-btp.sn',
+        nom: settings.companyName || 'KFS BTP IMMO',
+        slogan: settings.companySlogan || 'Bâtiment - Travaux Publics - Immobilier',
+        adresse: settings.companyAddress || 'Villa 123 MC, Quartier Medinacoura, Tambacounda',
+        telephone: settings.companyPhone || '+221 78 584 28 71 / +33 6 05 84 68 07',
+        email: settings.companyEmail || 'kfsbtpproimmo@gmail.com',
         site: settings.companySite || 'www.kfs-btp.sn',
         capital: settings.companyCapital || '',
         banque: settings.companyBank || '',
+        ninea: '009468499',
+        rccm: 'SN TBC 2025 M 1361',
         logo: settings.companyLogo || 'assets/logo-kfs-btp.jpeg'
     };
 }
@@ -8223,12 +11911,44 @@ window.useCustomTemplate = function(index) {
     
     if (!template) return;
     
-    // Créer un modal avec le formulaire basé sur les champs du modèle
-    const modal = document.createElement('div');
-    modal.id = 'use-template-modal';
-    modal.className = 'fixed inset-0 z-50 overflow-y-auto';
-    modal.innerHTML = `
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeUseTemplateModal()"></div>
+    // Formulaire par défaut pour les modèles prédéfinis
+    let formHtml = '';
+    if (template.type === 'devis') {
+        formHtml = `
+            <form id="use-template-form" class="space-y-4">
+                <input type="hidden" id="use-template-index" value="${index}">
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Nom du client *</label><input type="text" id="tpl-field-clientNom" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Téléphone</label><input type="tel" id="tpl-field-clientTel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Email</label><input type="email" id="tpl-field-clientEmail" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Adresse</label><input type="text" id="tpl-field-clientAdresse" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Objet du devis *</label><input type="text" id="tpl-field-objetDevis" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Lieu des travaux</label><input type="text" id="tpl-field-lieuTravaux" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Validité (jours)</label><input type="number" id="tpl-field-validite" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value="30"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Référence</label><input type="text" id="tpl-field-reference" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Lignes de devis (tableau simplifié)</label><textarea id="tpl-field-lignes" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" rows="4" placeholder="Désignation;Quantité;Unité;Prix Unitaire\n...\nExemple :\nMaçonnerie;10;m2;5000"></textarea></div>
+            </form>
+        `;
+    } else if (template.type === 'location-courte') {
+        formHtml = `
+            <form id="use-template-form" class="space-y-4">
+                <input type="hidden" id="use-template-index" value="${index}">
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Nom du locataire *</label><input type="text" id="tpl-field-clientNom" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Téléphone</label><input type="tel" id="tpl-field-clientTel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Email</label><input type="email" id="tpl-field-clientEmail" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Adresse</label><input type="text" id="tpl-field-clientAdresse" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Date de début *</label><input type="date" id="tpl-field-dateDebut" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Date de fin *</label><input type="date" id="tpl-field-dateFin" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Montant du loyer *</label><input type="number" id="tpl-field-loyer" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" required></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Caution</label><input type="number" id="tpl-field-caution" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+                <div><label class="block text-sm font-semibold text-gray-700 mb-2">Adresse du bien</label><input type="text" id="tpl-field-adresseBien" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"></div>
+            </form>
+        `;
+    } else {
+        formHtml = `<form id="use-template-form" class="space-y-4"><input type="hidden" id="use-template-index" value="${index}">${template.fields.map(field => `<div><label class="block text-sm font-semibold text-gray-700 mb-2">${field.name} ${field.required ? '<span class="text-red-500">*</span>' : ''}</label>${field.type === 'textarea' ? `<textarea id="tpl-field-${field.name.replace(/\s+/g, '_')}" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} rows="3"></textarea>` : `<input type="${field.type}" id="tpl-field-${field.name.replace(/\s+/g, '_')}" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`}</div>`).join('')}</form>`;
+    }
+
+    window.openKFSModal(`
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="window.closeKFSModal('kfs-modal')"></div>
         <div class="relative min-h-screen flex items-center justify-center p-4">
             <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 <!-- Header -->
@@ -8238,55 +11958,27 @@ window.useCustomTemplate = function(index) {
                             <h2 class="text-xl font-bold">${template.nom}</h2>
                             <p class="text-blue-200 text-sm mt-1">Remplissez les informations pour générer le document</p>
                         </div>
-                        <button onclick="closeUseTemplateModal()" class="p-2 hover:bg-white/20 rounded-full transition">
+                        <button onclick="window.closeKFSModal('kfs-modal')" class="p-2 hover:bg-white/20 rounded-full transition">
                             <span class="material-icons">close</span>
                         </button>
                     </div>
                 </div>
-                
                 <!-- Content -->
                 <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 180px);">
-                    <form id="use-template-form" class="space-y-4">
-                        <input type="hidden" id="use-template-index" value="${index}">
-                        
-                        ${template.fields.map(field => `
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    ${field.name} ${field.required ? '<span class="text-red-500">*</span>' : ''}
-                                </label>
-                                ${field.type === 'textarea' ? 
-                                    `<textarea id="tpl-field-${field.name.replace(/\s+/g, '_')}" 
-                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition"
-                                        placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} rows="3"></textarea>` :
-                                    `<input type="${field.type}" id="tpl-field-${field.name.replace(/\s+/g, '_')}"
-                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 transition"
-                                        placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''}>`
-                                }
-                            </div>
-                        `).join('')}
-                    </form>
+                    ${formHtml}
                 </div>
-                
                 <!-- Footer -->
                 <div class="sticky bottom-0 bg-gray-50 border-t p-4 flex justify-end space-x-3">
-                    <button type="button" onclick="closeUseTemplateModal()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition">
-                        Annuler
-                    </button>
-                    <button type="button" onclick="generateFromTemplate(${index})" class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition font-semibold">
-                        <span class="material-icons align-middle text-sm mr-1">print</span>Générer le document
-                    </button>
+                    <button type="button" onclick="window.closeKFSModal('kfs-modal')" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition">Annuler</button>
+                    <button type="button" onclick="generateFromTemplate(${index})" class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition font-semibold"><span class="material-icons align-middle text-sm mr-1">print</span>Générer le document</button>
                 </div>
             </div>
         </div>
-    `;
-    
-    document.body.appendChild(modal);
+    `, 'kfs-modal');
 };
 
-window.closeUseTemplateModal = function() {
-    const modal = document.getElementById('use-template-modal');
-    if (modal) modal.remove();
-};
+// Obsolète : remplacé par closeKFSModal
+window.closeUseTemplateModal = function() { window.closeKFSModal('kfs-modal'); };
 
 // Générer le document à partir du modèle
 window.generateFromTemplate = function(index) {
@@ -8385,6 +12077,7 @@ function openDocumentCreationModal(type) {
     const titles = {
         'contrat': 'Nouveau Contrat de Prestation',
         'bail': 'Nouveau Contrat de Bail',
+        'location-courte': 'Contrat de Location Courte Durée',
         'devis': 'Nouveau Devis',
         'attestation': 'Nouvelle Attestation'
     };
@@ -8416,6 +12109,7 @@ function openDocumentCreationModal(type) {
                         
                         ${type === 'contrat' ? generateContratForm(clients, projets) : ''}
                         ${type === 'bail' ? generateBailForm(clients) : ''}
+                        ${type === 'location-courte' ? generateLocationCourteForm(clients) : ''}
                         ${type === 'devis' ? generateDevisForm(clients, projets) : ''}
                         ${type === 'attestation' ? generateAttestationForm(clients) : ''}
                     </form>
@@ -8451,139 +12145,108 @@ function openDocumentCreationModal(type) {
 // Formulaire Contrat
 function generateContratForm(clients, projets) {
     return `
-        <!-- Section Client -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-blue-600">person</span>Informations Client
+        <div class="bg-blue-50 rounded-xl p-6 border border-blue-100">
+            <h3 class="font-bold text-blue-800 mb-6 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">description</span>Informations du contrat
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Client existant</label>
-                    <select id="doc-client-select" onchange="fillClientInfo()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Client existant</label>
+                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                         <option value="">-- Nouveau client --</option>
-                        ${clients.map(c => `<option value="${c.id || c.nom}">${c.nom} ${c.type === 'entreprise' ? '(Entreprise)' : ''}</option>`).join('')}
+                        ${clients.map((c, i) => `<option value="${i}">${c.nom || c.raisonSociale || 'Client ' + (i+1)}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Type de client</label>
-                    <select id="doc-client-type" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Nom complet / Raison sociale *</label>
+                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Type de client</label>
+                    <select id="doc-client-type" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                         <option value="particulier">Particulier</option>
                         <option value="entreprise">Entreprise</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Nom complet / Raison sociale *</label>
-                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Téléphone *</label>
+                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Téléphone *</label>
-                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Email</label>
-                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Adresse</label>
+                    <input type="text" id="doc-client-adresse" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Adresse</label>
-                    <input type="text" id="doc-client-adresse" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">NINEA</label>
+                    <input type="text" id="doc-client-ninea" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
-                <div id="doc-client-ninea-container" class="hidden">
-                    <label class="block text-gray-700 text-sm font-medium mb-1">NINEA</label>
-                    <input type="text" id="doc-client-ninea" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
-                </div>
-            </div>
-        </div>
-        
-        <!-- Section Travaux -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-orange-600">construction</span>Description des Travaux
-            </h3>
-            <div class="grid grid-cols-1 gap-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Projet existant (optionnel)</label>
-                    <select id="doc-projet-select" onchange="fillProjetInfo()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Projet (optionnel)</label>
+                    <select id="doc-projet-select" onchange="fillProjetInfo()" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                         <option value="">-- Sélectionner un projet --</option>
                         ${projets.map(p => `<option value="${p.id || p.nom}">${p.nom}</option>`).join('')}
                     </select>
                 </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Description détaillée des travaux *</label>
-                    <textarea id="doc-description-travaux" required rows="4" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="• Démolition des cloisons existantes&#10;• Construction mur en parpaing&#10;• Revêtement carrelage 60x60&#10;• Peinture 2 couches"></textarea>
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Description détaillée des travaux *</label>
+                    <textarea id="doc-description-travaux" required rows="2" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500"></textarea>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Lieu d'exécution *</label>
-                    <input type="text" id="doc-lieu-travaux" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Adresse du chantier">
-                </div>
-            </div>
-        </div>
-        
-        <!-- Section Durée -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-purple-600">schedule</span>Durée & Délais
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Durée du contrat</label>
-                    <div class="flex">
-                        <input type="number" id="doc-duree" value="3" min="1" class="w-20 px-3 py-3 border-2 border-gray-200 rounded-l-xl text-gray-800">
-                        <select id="doc-unite-duree" class="px-3 py-3 border-2 border-l-0 border-gray-200 rounded-r-xl text-gray-800">
-                            <option value="mois">mois</option>
-                            <option value="semaines">semaines</option>
-                            <option value="jours">jours</option>
-                        </select>
-                    </div>
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Lieu d'exécution *</label>
+                    <input type="text" id="doc-lieu-travaux" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Date de début</label>
-                    <input type="date" id="doc-date-debut" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Durée du contrat</label>
+                    <input type="number" id="doc-duree" value="3" min="1" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Date de fin prévue</label>
-                    <input type="date" id="doc-date-fin" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
-                </div>
-            </div>
-        </div>
-        
-        <!-- Section Prix -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-green-600">payments</span>Montant & Paiement
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Montant HT (FCFA) *</label>
-                    <input type="number" id="doc-montant-ht" required min="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="0">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Unité durée</label>
+                    <select id="doc-unite-duree" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                        <option value="mois">mois</option>
+                        <option value="semaines">semaines</option>
+                        <option value="jours">jours</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">TVA</label>
-                    <select id="doc-avec-tva" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Date de début</label>
+                    <input type="date" id="doc-date-debut" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Date de fin prévue</label>
+                    <input type="date" id="doc-date-fin" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Montant HT (FCFA) *</label>
+                    <input type="number" id="doc-montant-ht" required min="0" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-blue-800 text-sm font-bold mb-2">TVA</label>
+                    <select id="doc-avec-tva" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                         <option value="non">Sans TVA</option>
                         <option value="oui">Avec TVA (18%)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Acompte à la signature (%)</label>
-                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Acompte à la signature (%)</label>
+                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Durée garantie (mois)</label>
-                    <input type="number" id="doc-garantie" value="12" min="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Durée garantie (mois)</label>
+                    <input type="number" id="doc-garantie" value="12" min="0" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Échéancier de paiement (optionnel)</label>
+                    <textarea id="doc-echeancier" rows="2" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500"></textarea>
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Clauses particulières (optionnel)</label>
+                    <textarea id="doc-clauses" rows="2" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500"></textarea>
                 </div>
             </div>
-            <div class="mt-4">
-                <label class="block text-gray-700 text-sm font-medium mb-1">Échéancier de paiement (optionnel)</label>
-                <textarea id="doc-echeancier" rows="2" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="40% à mi-parcours&#10;30% à la réception"></textarea>
-            </div>
-        </div>
-        
-        <!-- Section Clauses particulières -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-red-600">gavel</span>Clauses Particulières (optionnel)
-            </h3>
-            <textarea id="doc-clauses" rows="3" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ajoutez ici des clauses spécifiques au contrat..."></textarea>
         </div>
     `;
 }
@@ -8591,63 +12254,53 @@ function generateContratForm(clients, projets) {
 // Formulaire Bail
 function generateBailForm(clients) {
     return `
-        <!-- Section Locataire -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-amber-600">person</span>Informations Locataire
+        <div class="bg-blue-50 rounded-xl p-6 border border-blue-100">
+            <h3 class="font-bold text-blue-800 mb-6 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">home</span>Informations du bail
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Client existant</label>
-                    <select id="doc-client-select" onchange="fillClientInfo()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Client existant</label>
+                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
                         <option value="">-- Nouveau locataire --</option>
-                        ${clients.map(c => `<option value="${c.id || c.nom}">${c.nom}</option>`).join('')}
+                        ${clients.map((c, i) => `<option value="${i}">${c.nom || c.raisonSociale || 'Client ' + (i+1)}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Nom complet *</label>
-                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Nom complet *</label>
+                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Date de naissance</label>
-                    <input type="date" id="doc-locataire-naissance" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Date de naissance</label>
+                    <input type="date" id="doc-locataire-naissance" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">N° CNI / Passeport</label>
-                    <input type="text" id="doc-locataire-cni" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">N° CNI / Passeport</label>
+                    <input type="text" id="doc-locataire-cni" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Téléphone *</label>
-                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Téléphone *</label>
+                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Email</label>
-                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Email</label>
+                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Profession</label>
-                    <input type="text" id="doc-locataire-profession" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Profession</label>
+                    <input type="text" id="doc-locataire-profession" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
-            </div>
-        </div>
-        
-        <!-- Section Bien -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-green-600">home</span>Description du Bien
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Adresse complète du bien *</label>
-                    <input type="text" id="doc-adresse-bien" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Numéro, rue, quartier">
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Adresse complète du bien *</label>
+                    <input type="text" id="doc-adresse-bien" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Ville</label>
-                    <input type="text" id="doc-ville-bien" value="Dakar" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Ville</label>
+                    <input type="text" id="doc-ville-bien" value="Dakar" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Type de bien</label>
-                    <select id="doc-type-bien" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Type de bien</label>
+                    <select id="doc-type-bien" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                         <option value="Appartement">Appartement</option>
                         <option value="Villa">Villa</option>
                         <option value="Studio">Studio</option>
@@ -8658,218 +12311,249 @@ function generateBailForm(clients) {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Étage</label>
-                    <input type="text" id="doc-etage" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="RDC, 1er, 2ème...">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Étage</label>
+                    <input type="text" id="doc-etage" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Surface (m²)</label>
-                    <input type="number" id="doc-surface" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Surface (m²)</label>
+                    <input type="number" id="doc-surface" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Nombre de pièces</label>
-                    <input type="number" id="doc-nb-pieces" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Nombre de pièces</label>
+                    <input type="number" id="doc-nb-pieces" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Type de bail</label>
-                    <select id="doc-type-bail" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Type de bail</label>
+                    <select id="doc-type-bail" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                         <option value="habitation">Habitation</option>
                         <option value="meuble">Meublé</option>
                         <option value="commercial">Commercial</option>
                         <option value="professionnel">Professionnel</option>
                     </select>
                 </div>
-            </div>
-            <div class="mt-4">
-                <label class="block text-gray-700 text-sm font-medium mb-1">Composition du logement</label>
-                <textarea id="doc-composition" rows="3" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="• Salon/Séjour&#10;• 2 Chambres&#10;• Cuisine équipée&#10;• Salle de bain&#10;• Balcon"></textarea>
-            </div>
-        </div>
-        
-        <!-- Section Durée et Loyer -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-blue-600">payments</span>Durée & Conditions Financières
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Durée du bail (mois)</label>
-                    <input type="number" id="doc-duree-bail" value="12" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Composition du logement</label>
+                    <textarea id="doc-composition" rows="2" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500"></textarea>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Date d'entrée *</label>
-                    <input type="date" id="doc-date-entree" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Durée du bail (mois)</label>
+                    <input type="number" id="doc-duree-bail" value="12" min="1" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Renouvellement</label>
-                    <select id="doc-renouvellement" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Date d'entrée *</label>
+                    <input type="date" id="doc-date-entree" required class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Renouvellement</label>
+                    <select id="doc-renouvellement" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                         <option value="tacite">Tacite reconduction</option>
                         <option value="expresse">Renouvellement exprès</option>
                     </select>
                 </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Loyer mensuel (FCFA) *</label>
-                    <input type="number" id="doc-loyer" required min="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="150000">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Loyer mensuel (FCFA) *</label>
+                    <input type="number" id="doc-loyer" required min="0" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Charges mensuelles (FCFA)</label>
-                    <input type="number" id="doc-charges" value="0" min="0" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Charges mensuelles (FCFA)</label>
+                    <input type="number" id="doc-charges" value="0" min="0" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Dépôt de garantie (mois)</label>
-                    <input type="number" id="doc-depot-mois" value="2" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Dépôt de garantie (mois)</label>
+                    <input type="number" id="doc-depot-mois" value="2" min="1" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
-            </div>
-            <div class="mt-4">
-                <label class="block text-gray-700 text-sm font-medium mb-1">Détail des charges</label>
-                <input type="text" id="doc-detail-charges" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Eau, électricité parties communes, gardiennage...">
-            </div>
-        </div>
-        
-        <!-- Options -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4">Options du bail</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <label class="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" id="doc-animaux" class="w-5 h-5 text-green-600 rounded">
-                    <span class="text-sm">Animaux autorisés</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" id="doc-fumeur" class="w-5 h-5 text-green-600 rounded">
-                    <span class="text-sm">Fumeur autorisé</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" id="doc-activite-pro" class="w-5 h-5 text-green-600 rounded">
-                    <span class="text-sm">Activité pro</span>
-                </label>
-                <label class="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" id="doc-revision-loyer" class="w-5 h-5 text-green-600 rounded">
-                    <span class="text-sm">Révision loyer</span>
-                </label>
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Détail des charges</label>
+                    <input type="text" id="doc-detail-charges" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-blue-800 text-sm font-bold mb-2">Options du bail</label>
+                    <div class="flex flex-wrap gap-4 mt-2">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="doc-animaux" class="w-5 h-5 text-green-600 rounded">
+                            <span class="text-sm">Animaux autorisés</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="doc-fumeur" class="w-5 h-5 text-green-600 rounded">
+                            <span class="text-sm">Fumeur autorisé</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="doc-activite-pro" class="w-5 h-5 text-green-600 rounded">
+                            <span class="text-sm">Activité pro</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="doc-revision-loyer" class="w-5 h-5 text-green-600 rounded">
+                            <span class="text-sm">Révision loyer</span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 }
 
-// Formulaire Devis
-function generateDevisForm(clients, projets) {
+// Formulaire Location Courte Durée (similaire au bail classique)
+function generateLocationCourteForm(clients) {
     return `
-        <!-- Section Client -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-blue-600">person</span>Client
+        <!-- Section Locataire -->
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-100">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">person</span>Informations Locataire
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Client existant</label>
-                    <select id="doc-client-select" onchange="fillClientInfo()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
-                        <option value="">-- Nouveau client --</option>
-                        ${clients.map(c => `<option value="${c.id || c.nom}">${c.nom}</option>`).join('')}
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Client existant</label>
+                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                        <option value="">-- Nouveau locataire --</option>
+                        ${clients.map((c, i) => `<option value="${i}">${c.nom || c.raisonSociale || 'Client ' + (i+1)}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Nom / Raison sociale *</label>
-                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Nom complet *</label>
+                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Téléphone</label>
-                    <input type="tel" id="doc-client-tel" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Date de naissance</label>
+                    <input type="date" id="doc-locataire-naissance" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Email</label>
-                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">N° CNI / Passeport</label>
+                    <input type="text" id="doc-locataire-cni" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Adresse</label>
-                    <input type="text" id="doc-client-adresse" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Téléphone *</label>
+                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Nationalité</label>
+                    <input type="text" id="doc-locataire-nationalite" value="Sénégalaise" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Profession</label>
+                    <input type="text" id="doc-locataire-profession" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
                 </div>
             </div>
         </div>
         
-        <!-- Objet du devis -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-orange-600">description</span>Objet du Devis
+        <!-- Section Bien -->
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-100">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">hotel</span>Description du Bien Loué
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Objet *</label>
-                    <input type="text" id="doc-objet-devis" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Travaux de rénovation appartement T3">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Adresse complète du bien *</label>
+                    <input type="text" id="doc-adresse-bien" required class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white" placeholder="Numéro, rue, quartier">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Lieu d'exécution</label>
-                    <input type="text" id="doc-lieu-travaux" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Ville</label>
+                    <input type="text" id="doc-ville-bien" value="Dakar" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Référence</label>
-                    <input type="text" id="doc-reference" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="REF-2026-001">
-                </div>
-            </div>
-        </div>
-        
-        <!-- Lignes du devis -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-green-600">list_alt</span>Détail des Prestations
-            </h3>
-            <div id="devis-lignes-container" class="space-y-3">
-                <!-- Lignes dynamiques -->
-            </div>
-            <button type="button" onclick="addDevisLigne()" class="mt-4 w-full py-3 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 hover:bg-blue-50 transition flex items-center justify-center">
-                <span class="material-icons mr-2">add</span>Ajouter une ligne
-            </button>
-        </div>
-        
-        <!-- Options financières -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-purple-600">settings</span>Options
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">TVA</label>
-                    <select id="doc-avec-tva" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
-                        <option value="non">Sans TVA</option>
-                        <option value="oui">Avec TVA (18%)</option>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Type de bien</label>
+                    <select id="doc-type-bien" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                        <option value="appartement-meuble">Appartement meublé</option>
+                        <option value="studio-meuble">Studio meublé</option>
+                        <option value="chambre-meublee">Chambre meublée</option>
+                        <option value="villa-meublee">Villa meublée</option>
+                        <option value="residence">Résidence</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Remise (%)</label>
-                    <input type="number" id="doc-remise" value="0" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Nombre de pièces</label>
+                    <input type="number" id="doc-nb-pieces" min="1" value="2" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Validité (jours)</label>
-                    <input type="number" id="doc-validite" value="30" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Surface (m²)</label>
+                    <input type="number" id="doc-surface" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: 45">
                 </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Acompte (%)</label>
-                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Délai d'exécution</label>
-                    <div class="flex">
-                        <input type="number" id="doc-delai" value="15" class="w-20 px-3 py-3 border-2 border-gray-200 rounded-l-xl text-gray-800">
-                        <select id="doc-unite-delai" class="px-3 py-3 border-2 border-l-0 border-gray-200 rounded-r-xl text-gray-800">
-                            <option value="jours ouvrés">jours ouvrés</option>
-                            <option value="jours">jours</option>
-                            <option value="semaines">semaines</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Date de début prévue</label>
-                    <input type="date" id="doc-date-debut" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                <div class="md:col-span-2">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Équipements inclus</label>
+                    <textarea id="doc-equipements" rows="2" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: Climatisation, TV, WiFi, Cuisine équipée..."></textarea>
                 </div>
             </div>
         </div>
         
-        <!-- Notes -->
-        <div class="bg-gray-50 rounded-xl p-5">
-            <label class="block text-gray-700 text-sm font-medium mb-1">Notes / Commentaires</label>
-            <textarea id="doc-notes" rows="2" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Informations complémentaires..."></textarea>
+        <!-- Section Durée et Tarifs -->
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-100">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">event</span>Durée et Tarification
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Date d'entrée *</label>
+                    <input type="date" id="doc-date-entree" required class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Date de sortie *</label>
+                    <input type="date" id="doc-date-sortie" required class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Durée (calculée)</label>
+                    <input type="text" id="doc-duree-sejour" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-500 bg-gray-100" placeholder="Auto">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Tarif journalier (FCFA) *</label>
+                    <input type="number" id="doc-tarif-jour" required class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: 25000">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Caution (FCFA)</label>
+                    <input type="number" id="doc-caution" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: 50000">
+                </div>
+                <div>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Total estimé (FCFA)</label>
+                    <input type="text" id="doc-total-estime" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-500 bg-gray-100 font-bold" placeholder="Auto">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Services inclus -->
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-100">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">room_service</span>Services Inclus
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-wifi" checked class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">WiFi</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-electricite" checked class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Électricité</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-eau" checked class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Eau</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-menage" class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Ménage</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-gardien" class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Gardiennage</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-parking" class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Parking</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-linge" class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Linge de maison</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="doc-service-clim" checked class="w-5 h-5 text-yellow-600 rounded">
+                    <span class="text-gray-700">Climatisation</span>
+                </label>
+            </div>
+            <div class="mt-4">
+                <label class="block text-yellow-800 text-sm font-medium mb-1">Conditions particulières</label>
+                <textarea id="doc-conditions" rows="2" class="w-full px-4 py-3 border-2 border-yellow-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: Heure d'arrivée 14h, départ 12h..."></textarea>
+            </div>
         </div>
     `;
 }
@@ -8884,9 +12568,9 @@ function generateAttestationForm(clients) {
             <div class="grid grid-cols-1 gap-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-medium mb-1">Bénéficiaire</label>
-                    <select id="doc-client-select" onchange="fillClientInfo()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
                         <option value="">-- Sélectionner --</option>
-                        ${clients.map(c => `<option value="${c.id || c.nom}">${c.nom}</option>`).join('')}
+                        ${clients.map((c, i) => `<option value="${i}">${c.nom || c.raisonSociale || 'Client ' + (i+1)}</option>`).join('')}
                     </select>
                 </div>
                 <div>
@@ -8916,8 +12600,1121 @@ function generateAttestationForm(clients) {
     `;
 }
 
-// Note: L'ancienne fonction fillClientInfo a été déplacée vers la section AUTO-REMPLISSAGE CLIENT (ligne ~5159)
-// Elle prend maintenant (clientIndex, prefix) en paramètres pour supporter tous les formulaires
+// ===================================================
+// FORMULAIRE DEVIS PROFESSIONNEL
+// ===================================================
+function generateDevisForm(clients, projets) {
+    return `
+        <!-- Section Client -->
+        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
+            <h3 class="font-bold text-orange-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-orange-600">person</span>Informations Client
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Client existant</label>
+                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                        <option value="">-- Nouveau client --</option>
+                        ${clients.map((c, i) => `<option value="${i}">${c.nom || c.raisonSociale || 'Client ' + (i+1)}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Nom / Raison sociale *</label>
+                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Type</label>
+                    <select id="doc-client-type" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                        <option value="particulier">Particulier</option>
+                        <option value="entreprise">Entreprise</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Téléphone *</label>
+                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Adresse</label>
+                    <input type="text" id="doc-client-adresse" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">NINEA (entreprise)</label>
+                    <input type="text" id="doc-client-ninea" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Projet lié</label>
+                    <select id="doc-projet-select" onchange="fillProjetInfo()" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                        <option value="">-- Aucun --</option>
+                        ${projets.map((p, i) => `<option value="${i}">${p.nom || 'Projet ' + (i+1)}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section Devis -->
+        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
+            <h3 class="font-bold text-orange-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-orange-600">request_quote</span>Détails du Devis
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Objet du devis *</label>
+                    <input type="text" id="doc-objet-devis" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: Travaux de rénovation appartement">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Référence</label>
+                    <input type="text" id="doc-reference" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Auto-générée">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Lieu des travaux *</label>
+                    <input type="text" id="doc-lieu-travaux" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Adresse du chantier">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lignes du devis -->
+        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-orange-800 flex items-center">
+                    <span class="material-icons mr-2 text-orange-600">list</span>Prestations / Articles
+                </h3>
+                <button type="button" onclick="addDevisLigne()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                    <span class="material-icons align-middle text-sm">add</span> Ajouter une ligne
+                </button>
+            </div>
+            <div id="devis-lignes-container" class="space-y-2">
+                <!-- Lignes ajoutées dynamiquement -->
+            </div>
+        </div>
+        
+        <!-- Totaux et conditions -->
+        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
+            <h3 class="font-bold text-orange-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-orange-600">calculate</span>Montants et Conditions
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">TVA</label>
+                    <select id="doc-avec-tva" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                        <option value="non">Sans TVA</option>
+                        <option value="oui">Avec TVA (18%)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Remise (%)</label>
+                    <input type="number" id="doc-remise" value="0" min="0" max="100" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Validité (jours)</label>
+                    <input type="number" id="doc-validite" value="30" min="1" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Acompte (%)</label>
+                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Délai d'exécution</label>
+                    <input type="number" id="doc-delai" min="1" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: 15">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Unité délai</label>
+                    <select id="doc-unite-delai" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                        <option value="jours ouvrés">Jours ouvrés</option>
+                        <option value="jours">Jours</option>
+                        <option value="semaines">Semaines</option>
+                        <option value="mois">Mois</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Date début prévue</label>
+                    <input type="date" id="doc-date-debut" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                </div>
+                <div>
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Total HT</label>
+                    <input type="text" id="doc-total-ht-display" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-500 bg-gray-100 font-bold">
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-orange-800 text-sm font-medium mb-1">Notes / Conditions particulières</label>
+                    <textarea id="doc-notes" rows="2" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Conditions de paiement, garanties, etc."></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ===================================================
+// FONCTIONS MODAL CRÉATION DOCUMENTS
+// ===================================================
+
+// Fermer le modal de création de document
+window.closeDocCreationModal = function() {
+    const modal = document.getElementById('doc-creation-modal');
+    if (modal) modal.remove();
+};
+
+// Aperçu du document avant génération
+window.previewDocument = function() {
+    const type = document.getElementById('doc-type')?.value;
+    if (!type) {
+        showNotification('Erreur', 'Type de document non défini', 'error');
+        return;
+    }
+    
+    const data = collectFormData();
+    if (!data) return;
+    
+    const content = generateDocumentHTML(type, data, true);
+    
+    const previewWindow = window.open('', '_blank', 'width=900,height=700');
+    previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Aperçu - ${type.toUpperCase()}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+                .preview-banner { background: #fbbf24; color: #92400e; padding: 10px 20px; text-align: center; font-weight: bold; margin-bottom: 20px; border-radius: 8px; }
+                .document-container { background: white; max-width: 210mm; margin: 0 auto; padding: 20mm; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+            </style>
+        </head>
+        <body>
+            <div class="preview-banner">⚠️ APERÇU - Document non enregistré</div>
+            <div class="document-container">${content}</div>
+        </body>
+        </html>
+    `);
+    previewWindow.document.close();
+};
+
+// Sauvegarder et générer le document final
+window.saveAndGenerateDocument = function() {
+    const type = document.getElementById('doc-type')?.value;
+    if (!type) {
+        showNotification('Erreur', 'Type de document non défini', 'error');
+        return;
+    }
+    
+    const data = collectFormData();
+    if (!data) return;
+    
+    // Générer le numéro de document
+    const prefix = {
+        'contrat': 'CTR',
+        'bail': 'BAIL',
+        'location-courte': 'LCD',
+        'devis': 'DEV',
+        'attestation': 'ATT'
+    }[type] || 'DOC';
+    
+    const documents = JSON.parse(localStorage.getItem('documents') || '[]');
+    const numero = `${prefix}-${new Date().getFullYear()}-${String(documents.length + 1).padStart(4, '0')}`;
+    
+    // Générer le contenu HTML du document
+    const contenuHTML = generateDocumentHTML(type, data, false);
+    
+    // Créer l'objet document
+    const newDoc = {
+        numero: numero,
+        type: type,
+        nom: `${prefix} - ${data.clientNom || 'Client'}`,
+        categorie: type,
+        clientNom: data.clientNom,
+        clientTel: data.clientTel,
+        clientEmail: data.clientEmail,
+        contenuHTML: contenuHTML,
+        data: data,
+        createdAt: new Date().toISOString(),
+        statut: 'genere'
+    };
+    
+    // Sauvegarder
+    documents.push(newDoc);
+    localStorage.setItem('documents', JSON.stringify(documents));
+    
+    // Fermer le modal
+    closeDocCreationModal();
+    
+    // Rafraîchir la liste
+    if (typeof renderDocuments === 'function') renderDocuments();
+    if (typeof updateDocumentStats === 'function') updateDocumentStats();
+    
+    // Afficher le document généré
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${newDoc.nom} - ${numero}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }
+                .document-container { background: white; max-width: 210mm; margin: 0 auto; padding: 20mm; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+                .no-print { margin-top: 20px; text-align: center; }
+                .no-print button { padding: 12px 30px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+                .btn-print { background: #3b82f6; color: white; }
+                .btn-print:hover { background: #2563eb; }
+                @media print { 
+                    body { background: white; padding: 0; }
+                    .document-container { box-shadow: none; padding: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="document-container">${contenuHTML}</div>
+            <div class="no-print">
+                <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    
+    showNotification('Document généré !', `${newDoc.nom} (${numero})`, 'success');
+};
+
+// Fonction auto-remplissage client pour les formulaires documents
+window.fillDocClientInfo = function() {
+    const select = document.getElementById('doc-client-select');
+    const clientIndex = select?.value;
+    
+    if (clientIndex === '' || clientIndex === null || clientIndex === undefined) return;
+    
+    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const client = clients[clientIndex];
+    
+    if (!client) return;
+    
+    // Remplir les champs du formulaire
+    const nom = client.type === 'entreprise' 
+        ? (client.raisonSociale || client.nom) 
+        : `${client.civilite || ''} ${client.prenom || ''} ${client.nom || ''}`.trim();
+    
+    if (document.getElementById('doc-client-nom')) document.getElementById('doc-client-nom').value = nom;
+    if (document.getElementById('doc-client-tel')) document.getElementById('doc-client-tel').value = client.telephone || '';
+    if (document.getElementById('doc-client-email')) document.getElementById('doc-client-email').value = client.email || '';
+    if (document.getElementById('doc-client-adresse')) document.getElementById('doc-client-adresse').value = client.adresse || '';
+    if (document.getElementById('doc-client-type')) document.getElementById('doc-client-type').value = client.type || 'particulier';
+    if (document.getElementById('doc-client-ninea')) document.getElementById('doc-client-ninea').value = client.ninea || '';
+    if (document.getElementById('doc-locataire-cni')) document.getElementById('doc-locataire-cni').value = client.cni || '';
+    if (document.getElementById('doc-locataire-profession')) document.getElementById('doc-locataire-profession').value = client.profession || '';
+    
+    // Animation visuelle
+    ['doc-client-nom', 'doc-client-tel', 'doc-client-email', 'doc-client-adresse'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value) {
+            el.classList.add('bg-green-50');
+            setTimeout(() => el.classList.remove('bg-green-50'), 1500);
+        }
+    });
+};
+
+// Générer le HTML du document selon le type - Style professionnel KFS BTP
+function generateDocumentHTML(type, data, isPreview) {
+    const now = new Date();
+    const dateJour = now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const dateHeure = now.toLocaleString('fr-FR');
+    const documents = JSON.parse(localStorage.getItem('documents') || '[]');
+    
+    // Préfixes par type de document
+    const prefixes = {
+        'contrat': 'CTR',
+        'bail': 'BAIL',
+        'location-courte': 'LCD',
+        'devis': 'DEV',
+        'attestation': 'ATT'
+    };
+    const prefix = prefixes[type] || 'DOC';
+    const numero = isPreview ? 'APERÇU' : `${prefix}-${now.getFullYear()}-${String(documents.length + 1).padStart(4, '0')}`;
+    
+    // Titres des documents
+    const titres = {
+        'contrat': 'Contrat de Prestation de Services',
+        'bail': 'Contrat de Bail',
+        'location-courte': 'Contrat de Location Courte Durée',
+        'devis': 'Devis',
+        'attestation': 'Attestation'
+    };
+    
+    // Fonction pour convertir un montant en lettres (simplifié)
+    function montantEnLettres(montant) {
+        const unites = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+        const dizaines = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+        
+        if (montant === 0) return 'zéro';
+        if (montant >= 1000000) {
+            const millions = Math.floor(montant / 1000000);
+            const reste = montant % 1000000;
+            return (millions === 1 ? 'un million' : montantEnLettres(millions) + ' millions') + (reste > 0 ? ' ' + montantEnLettres(reste) : '');
+        }
+        if (montant >= 1000) {
+            const milliers = Math.floor(montant / 1000);
+            const reste = montant % 1000;
+            return (milliers === 1 ? 'mille' : montantEnLettres(milliers) + ' mille') + (reste > 0 ? ' ' + montantEnLettres(reste) : '');
+        }
+        if (montant >= 100) {
+            const centaines = Math.floor(montant / 100);
+            const reste = montant % 100;
+            return (centaines === 1 ? 'cent' : montantEnLettres(centaines) + ' cent') + (reste > 0 ? ' ' + montantEnLettres(reste) : '');
+        }
+        if (montant >= 20) {
+            const dizaine = Math.floor(montant / 10);
+            const unite = montant % 10;
+            if (dizaine === 7 || dizaine === 9) {
+                return dizaines[dizaine] + '-' + unites[10 + unite];
+            }
+            return dizaines[dizaine] + (unite > 0 ? '-' + unites[unite] : '');
+        }
+        return unites[montant];
+    }
+    
+    // Structure HTML complète du document professionnel
+    let html = `
+<div class="document-professionnel" style="font-family: 'Times New Roman', serif; max-width: 210mm; margin: 0 auto; padding: 20mm; background: white; color: #333; line-height: 1.6;">
+    
+    <!-- EN-TÊTE -->
+    <div style="border-bottom: 3px double #1e3a8a; padding-bottom: 20px; margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h1 style="color: #1e3a8a; font-size: 28px; margin: 0; font-weight: bold;">KFS BTP IMMO</h1>
+                <p style="color: #666; font-style: italic; margin: 5px 0;">Bâtiment - Travaux Publics - Immobilier</p>
+                <p style="font-size: 12px; color: #555; margin: 10px 0 0 0;">
+                    Villa 123 MC, Quartier Medinacoura, Tambacounda<br>
+                    Tél: +221 78 584 28 71 / +33 6 05 84 68 07<br>
+                    Email: kfsbtpproimmo@gmail.com<br>
+                    <strong>NINEA:</strong> 009468499 | <strong>RCCM:</strong> SN TBC 2025 M 1361
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <div style="background: #1e3a8a; color: white; padding: 15px 25px; border-radius: 8px;">
+                    <p style="margin: 0; font-size: 12px; opacity: 0.9;">${type.toUpperCase().replace('-', ' ')} N°</p>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold;">${numero}</p>
+                </div>
+                <p style="margin-top: 10px; font-size: 12px; color: #666;">Date: ${dateJour}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TITRE DU DOCUMENT -->
+    <div style="text-align: center; margin: 40px 0; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 10px;">
+        <h2 style="color: #1e3a8a; font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 2px;">
+            ${titres[type] || 'Document'}
+        </h2>
+        <p style="color: #64748b; margin: 10px 0 0 0; font-size: 14px;">Secteur Bâtiment et Travaux Publics</p>
+    </div>`;
+
+    // PARTIES CONTRACTANTES (pour contrat, bail, location-courte)
+    if (type === 'contrat' || type === 'bail' || type === 'location-courte') {
+        html += `
+    <!-- PARTIES CONTRACTANTES -->
+    <div style="margin: 30px 0;">
+        <h3 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 16px;">
+            ENTRE LES SOUSSIGNÉS
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+            <!-- LE PRESTATAIRE / BAILLEUR -->
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #1e3a8a;">
+                <h4 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">${type === 'bail' || type === 'location-courte' ? 'Le Bailleur' : 'Le Prestataire'}</h4>
+                <p style="margin: 5px 0;"><strong>KFS BTP IMMO</strong></p>
+                <p style="margin: 5px 0; font-size: 13px;">Villa 123 MC, Quartier Medinacoura, Tambacounda</p>
+                <p style="margin: 5px 0; font-size: 13px;">Tél: +221 78 584 28 71 / +33 6 05 84 68 07</p>
+                <p style="margin: 5px 0; font-size: 13px;">Email: kfsbtpproimmo@gmail.com</p>
+                <p style="margin: 5px 0; font-size: 13px;">NINEA: 009468499 | RCCM: SN TBC 2025 M 1361</p>
+                <p style="margin: 10px 0 0 0; font-size: 13px;">
+                    Représenté par: <strong>Le Directeur Général</strong>
+                </p>
+                <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 12px;">Ci-après dénommé "${type === 'bail' || type === 'location-courte' ? 'LE BAILLEUR' : 'LE PRESTATAIRE'}"</p>
+            </div>
+            
+            <!-- LE CLIENT / LOCATAIRE -->
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+                <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">${type === 'bail' || type === 'location-courte' ? 'Le Locataire' : 'Le Client'}</h4>
+                <p style="margin: 5px 0;"><strong>${data.clientNom || '___________________'}</strong></p>
+                ${data.clientAdresse ? `<p style="margin: 5px 0; font-size: 13px;">Adresse: ${data.clientAdresse}</p>` : ''}
+                ${data.clientTel ? `<p style="margin: 5px 0; font-size: 13px;">Téléphone: ${data.clientTel}</p>` : ''}
+                ${data.clientEmail ? `<p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail}</p>` : ''}
+                ${data.clientNinea ? `<p style="margin: 5px 0; font-size: 13px;">NINEA: ${data.clientNinea}</p>` : '<p style="margin: 5px 0; font-size: 13px;">NINEA: ___________________</p>'}
+                <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 12px;">Ci-après dénommé "${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : 'LE CLIENT'}"</p>
+            </div>
+        </div>
+        
+        <p style="text-align: center; margin-top: 20px; font-style: italic; color: #666;">
+            Ci-après désignés ensemble "Les Parties" ou individuellement "La Partie"
+        </p>
+    </div>
+
+    <!-- PRÉAMBULE -->
+    <div style="margin: 30px 0; padding: 20px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <h3 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Préambule</h3>
+        <p style="text-align: justify; font-size: 13px; margin: 0;">
+            ${type === 'contrat' ? 'Le Client souhaite faire réaliser des travaux de construction/rénovation et a sollicité le Prestataire, entreprise spécialisée dans le secteur du Bâtiment et des Travaux Publics, pour l\'exécution desdits travaux. Le Prestataire a accepté cette mission aux conditions définies ci-après.' : ''}
+            ${type === 'bail' ? 'Le Bailleur est propriétaire d\'un bien immobilier qu\'il souhaite donner en location. Le Locataire souhaite prendre ce bien en location aux conditions définies ci-après.' : ''}
+            ${type === 'location-courte' ? 'Le Bailleur met à disposition du Locataire un logement meublé pour une courte durée, aux conditions définies ci-après.' : ''}
+        </p>
+    </div>
+
+    <!-- IL A ÉTÉ CONVENU CE QUI SUIT -->
+    <div style="text-align: center; margin: 30px 0; padding: 15px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+        <p style="font-weight: bold; font-size: 16px; color: #1e3a8a; margin: 0; letter-spacing: 3px;">IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT</p>
+    </div>`;
+    }
+
+    // Corps du document selon le type
+    if (type === 'contrat') {
+        const montantHT = parseFloat(data.montantHT) || 0;
+        const tva = data.avecTVA ? montantHT * 0.18 : 0;
+        const montantTTC = montantHT + tva;
+        const pourcentageAcompte = parseFloat(data.pourcentageAcompte) || 30;
+        const acompte = montantTTC * pourcentageAcompte / 100;
+        const solde = montantTTC - acompte;
+        const dureeGarantie = data.dureeGarantie || 12;
+        
+        html += `
+    <!-- ARTICLE 1: OBJET -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 1</span>
+            OBJET DU CONTRAT
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            Le présent contrat a pour objet de définir les conditions dans lesquelles le Prestataire s'engage à réaliser 
+            pour le compte du Client les travaux suivants:
+        </p>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <p style="font-weight: bold; margin: 0 0 10px 0;">Nature des travaux:</p>
+            <p style="margin: 0; white-space: pre-line;">${data.descriptionTravaux || 'À définir'}</p>
+        </div>
+        <p style="font-size: 13px;">
+            <strong>Lieu d'exécution:</strong> ${data.lieuTravaux || 'À définir'}
+        </p>
+    </div>
+
+    <!-- ARTICLE 2: DURÉE -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 2</span>
+            DURÉE ET DÉLAIS D'EXÉCUTION
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.1.</strong> Le présent contrat est conclu pour une durée de <strong>${data.dureeContrat || '___'} ${data.uniteDuree || 'mois'}</strong> 
+            à compter de la date de signature des présentes.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.2.</strong> Date prévisionnelle de début des travaux: <strong>${data.dateDebut ? new Date(data.dateDebut).toLocaleDateString('fr-FR') : '___/___/______'}</strong>
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.3.</strong> Date prévisionnelle de fin des travaux: <strong>${data.dateFin ? new Date(data.dateFin).toLocaleDateString('fr-FR') : '___/___/______'}</strong>
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.4.</strong> En cas de retard non imputable au Prestataire (intempéries, modifications demandées par le Client, 
+            cas de force majeure), les délais seront prolongés d'une durée équivalente au retard subi.
+        </p>
+    </div>
+
+    <!-- ARTICLE 3: PRIX ET PAIEMENT -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 3</span>
+            PRIX ET CONDITIONS DE PAIEMENT
+        </h3>
+        
+        <p style="text-align: justify; font-size: 13px;"><strong>3.1. Montant des travaux</strong></p>
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 15px 0; border: 1px solid #bbf7d0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                    <td style="padding: 8px 0;">Montant Hors Taxes (HT)</td>
+                    <td style="text-align: right; font-weight: bold;">${montantHT.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                ${data.avecTVA ? `
+                <tr>
+                    <td style="padding: 8px 0;">TVA (18%)</td>
+                    <td style="text-align: right;">${tva.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                ` : ''}
+                <tr style="border-top: 2px solid #10b981;">
+                    <td style="padding: 12px 0; font-weight: bold; font-size: 15px;">MONTANT TOTAL ${data.avecTVA ? 'TTC' : 'HT'}</td>
+                    <td style="text-align: right; font-weight: bold; font-size: 15px; color: #059669;">${montantTTC.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+            </table>
+            <p style="margin: 15px 0 0 0; font-style: italic; font-size: 12px; color: #666;">
+                Arrêté le présent montant à la somme de: <strong>${montantEnLettres(Math.round(montantTTC))} francs CFA</strong>
+            </p>
+        </div>
+        
+        <p style="text-align: justify; font-size: 13px;"><strong>3.2. Modalités de paiement</strong></p>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <table style="width: 100%; font-size: 13px;">
+                <tr>
+                    <td style="padding: 8px 0;">▸ Acompte à la signature (${pourcentageAcompte}%)</td>
+                    <td style="text-align: right; font-weight: bold;">${acompte.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;">▸ Solde à la réception des travaux (${100 - pourcentageAcompte}%)</td>
+                    <td style="text-align: right; font-weight: bold;">${solde.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+            </table>
+        </div>
+        
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>3.3.</strong> Les paiements seront effectués par virement bancaire, chèque ou espèces.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>3.4.</strong> En cas de retard de paiement, des pénalités de retard au taux de 1,5% par mois 
+            seront appliquées de plein droit.
+        </p>
+    </div>
+
+    <!-- ARTICLE 4: OBLIGATIONS DU PRESTATAIRE -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 4</span>
+            OBLIGATIONS DU PRESTATAIRE
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">Le Prestataire s'engage à:</p>
+        <ul style="font-size: 13px; line-height: 1.8;">
+            <li>Exécuter les travaux conformément aux règles de l'art et aux normes en vigueur au Sénégal</li>
+            <li>Fournir la main d'œuvre qualifiée nécessaire à la bonne réalisation des travaux</li>
+            <li>Respecter les délais convenus sauf cas de force majeure</li>
+            <li>Informer le Client de l'avancement des travaux et de toute difficulté rencontrée</li>
+            <li>Livrer un ouvrage conforme aux spécifications techniques convenues</li>
+            <li>Garantir la conformité des travaux pendant une durée de ${dureeGarantie} mois après réception</li>
+            <li>Souscrire et maintenir une assurance responsabilité civile professionnelle</li>
+        </ul>
+    </div>
+
+    <!-- ARTICLE 5: OBLIGATIONS DU CLIENT -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 5</span>
+            OBLIGATIONS DU CLIENT
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">Le Client s'engage à:</p>
+        <ul style="font-size: 13px; line-height: 1.8;">
+            <li>Permettre l'accès au site de réalisation des travaux</li>
+            <li>Fournir les informations et documents nécessaires à la réalisation des travaux</li>
+            <li>Régler les sommes dues aux échéances prévues</li>
+            <li>Réceptionner les travaux à leur achèvement</li>
+            <li>Signaler tout désaccord ou réserve dans les meilleurs délais</li>
+        </ul>
+    </div>
+
+    <!-- ARTICLE 6: RÉCEPTION DES TRAVAUX -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 6</span>
+            RÉCEPTION DES TRAVAUX
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>6.1.</strong> À l'achèvement des travaux, une réception contradictoire sera organisée en présence des deux Parties.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>6.2.</strong> Un procès-verbal de réception sera établi, mentionnant soit la réception sans réserve, 
+            soit la réception avec réserves à lever dans un délai convenu.
+        </p>
+    </div>
+
+    <!-- ARTICLE 7: GARANTIES -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 7</span>
+            GARANTIES
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>7.1.</strong> Le Prestataire accorde au Client une garantie de parfait achèvement d'une durée de 
+            <strong>${dureeGarantie} mois</strong> à compter de la réception.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>7.2.</strong> Cette garantie couvre les désordres signalés par le Client pendant cette période, 
+            à l'exception de ceux résultant d'un usage anormal ou d'un défaut d'entretien.
+        </p>
+    </div>
+
+    <!-- ARTICLE 8: RÉSILIATION -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 8</span>
+            RÉSILIATION
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>8.1.</strong> En cas de manquement grave d'une Partie à ses obligations, l'autre Partie pourra résilier 
+            le présent contrat de plein droit, après mise en demeure restée infructueuse pendant 15 jours.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>8.2.</strong> En cas de résiliation du fait du Client, celui-ci devra régler au Prestataire les travaux 
+            déjà réalisés majorés d'une indemnité de 10%.
+        </p>
+    </div>
+
+    <!-- ARTICLE 9: LITIGES -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 9</span>
+            RÈGLEMENT DES LITIGES
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>9.1.</strong> Les Parties s'efforceront de résoudre à l'amiable tout différend né de l'interprétation 
+            ou de l'exécution du présent contrat.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>9.2.</strong> À défaut d'accord amiable dans un délai de 30 jours, 
+            le litige sera soumis aux tribunaux compétents de Dakar, Sénégal.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>9.3.</strong> Le présent contrat est soumis au droit sénégalais et aux Actes Uniformes OHADA.
+        </p>
+    </div>
+
+    ${data.clausesParticulieres ? `
+    <!-- CLAUSES PARTICULIÈRES -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 10</span>
+            CLAUSES PARTICULIÈRES
+        </h3>
+        <p style="text-align: justify; font-size: 13px; white-space: pre-line;">${data.clausesParticulieres}</p>
+    </div>
+    ` : ''}`;
+    }
+    
+    // BAIL
+    if (type === 'bail') {
+        const loyer = parseFloat(data.loyer) || 0;
+        const charges = parseFloat(data.charges) || 0;
+        const moisGarantie = parseFloat(data.moisGarantie) || 2;
+        const depotGarantie = loyer * moisGarantie;
+        
+        html += `
+    <!-- ARTICLE 1: DÉSIGNATION DU BIEN -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 1</span>
+            DÉSIGNATION DU BIEN LOUÉ
+        </h3>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <p style="margin: 5px 0;"><strong>Type de bien:</strong> ${data.typeBien || 'Appartement'}</p>
+            <p style="margin: 5px 0;"><strong>Adresse:</strong> ${data.adresseBien || '___________________'}, ${data.villeBien || 'Dakar'}</p>
+            ${data.surface ? `<p style="margin: 5px 0;"><strong>Surface:</strong> ${data.surface} m²</p>` : ''}
+            ${data.nombrePieces ? `<p style="margin: 5px 0;"><strong>Nombre de pièces:</strong> ${data.nombrePieces}</p>` : ''}
+            ${data.etage ? `<p style="margin: 5px 0;"><strong>Étage:</strong> ${data.etage}</p>` : ''}
+            ${data.compositionLogement ? `<p style="margin: 5px 0;"><strong>Composition:</strong> ${data.compositionLogement}</p>` : ''}
+        </div>
+    </div>
+
+    <!-- ARTICLE 2: DURÉE -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 2</span>
+            DURÉE DU BAIL
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.1.</strong> Le présent bail est consenti pour une durée de <strong>${data.dureeBail || 12} mois</strong>.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.2.</strong> Date d'effet: <strong>${data.dateEntree ? new Date(data.dateEntree).toLocaleDateString('fr-FR') : '___/___/______'}</strong>
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            <strong>2.3.</strong> Renouvellement: ${data.renouvellement === 'tacite' ? 'Par tacite reconduction' : 'Par accord exprès des parties'}
+        </p>
+    </div>
+
+    <!-- ARTICLE 3: LOYER ET CHARGES -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 3</span>
+            LOYER ET CHARGES
+        </h3>
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 15px 0; border: 1px solid #bbf7d0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                    <td style="padding: 8px 0;">Loyer mensuel</td>
+                    <td style="text-align: right; font-weight: bold;">${loyer.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;">Charges mensuelles</td>
+                    <td style="text-align: right;">${charges.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                <tr style="border-top: 2px solid #10b981;">
+                    <td style="padding: 12px 0; font-weight: bold;">TOTAL MENSUEL</td>
+                    <td style="text-align: right; font-weight: bold; font-size: 15px; color: #059669;">${(loyer + charges).toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+            </table>
+        </div>
+        <p style="text-align: justify; font-size: 13px;">
+            Le loyer est payable d'avance, au plus tard le 5 de chaque mois.
+        </p>
+    </div>
+
+    <!-- ARTICLE 4: DÉPÔT DE GARANTIE -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 4</span>
+            DÉPÔT DE GARANTIE
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">
+            Le Locataire verse au Bailleur un dépôt de garantie équivalent à <strong>${moisGarantie} mois</strong> de loyer, 
+            soit la somme de <strong>${depotGarantie.toLocaleString('fr-FR')} FCFA</strong>.
+        </p>
+        <p style="text-align: justify; font-size: 13px;">
+            Ce dépôt sera restitué au Locataire dans un délai de deux mois après la remise des clés, 
+            déduction faite des sommes dues au Bailleur.
+        </p>
+    </div>
+
+    <!-- ARTICLE 5: OBLIGATIONS -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 5</span>
+            OBLIGATIONS DES PARTIES
+        </h3>
+        <p style="text-align: justify; font-size: 13px;"><strong>Le Bailleur s'engage à:</strong></p>
+        <ul style="font-size: 13px; line-height: 1.8;">
+            <li>Délivrer un logement en bon état</li>
+            <li>Assurer la jouissance paisible du logement</li>
+            <li>Entretenir les locaux et effectuer les réparations nécessaires</li>
+        </ul>
+        <p style="text-align: justify; font-size: 13px;"><strong>Le Locataire s'engage à:</strong></p>
+        <ul style="font-size: 13px; line-height: 1.8;">
+            <li>Payer le loyer et les charges aux termes convenus</li>
+            <li>User paisiblement des locaux loués</li>
+            <li>Répondre des dégradations survenant pendant la location</li>
+            <li>Ne pas sous-louer sans accord écrit du Bailleur</li>
+        </ul>
+    </div>
+
+    <!-- ARTICLE 6: CONDITIONS -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 6</span>
+            CONDITIONS PARTICULIÈRES
+        </h3>
+        <ul style="font-size: 13px; line-height: 1.8;">
+            <li>Animaux: ${data.animauxAutorises ? 'Autorisés' : 'Non autorisés'}</li>
+            <li>Activité professionnelle: ${data.activiteProfessionnelle ? 'Autorisée' : 'Non autorisée'}</li>
+            ${data.revisionLoyer ? '<li>Révision annuelle du loyer selon l\'indice de référence</li>' : ''}
+        </ul>
+    </div>`;
+    }
+    
+    // LOCATION COURTE DURÉE
+    if (type === 'location-courte') {
+        const tarifJour = parseFloat(data.tarifJour) || 0;
+        const caution = parseFloat(data.caution) || 0;
+        const dateEntree = data.dateEntree ? new Date(data.dateEntree) : null;
+        const dateSortie = data.dateSortie ? new Date(data.dateSortie) : null;
+        const nbJours = dateEntree && dateSortie ? Math.ceil((dateSortie - dateEntree) / (1000 * 60 * 60 * 24)) : 0;
+        const totalLocation = tarifJour * nbJours;
+        
+        // Services inclus
+        const services = [];
+        if (data.serviceWifi) services.push('WiFi');
+        if (data.serviceElectricite) services.push('Électricité');
+        if (data.serviceEau) services.push('Eau');
+        if (data.serviceMenage) services.push('Ménage');
+        if (data.serviceGardien) services.push('Gardiennage');
+        if (data.serviceParking) services.push('Parking');
+        if (data.serviceLinge) services.push('Linge de maison');
+        if (data.serviceClim) services.push('Climatisation');
+        
+        html += `
+    <!-- ARTICLE 1: DÉSIGNATION DU BIEN -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 1</span>
+            DÉSIGNATION DU BIEN LOUÉ
+        </h3>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <p style="margin: 5px 0;"><strong>Type de bien:</strong> ${data.typeBien || 'Appartement meublé'}</p>
+            <p style="margin: 5px 0;"><strong>Adresse:</strong> ${data.adresseBien || '___________________'}, ${data.villeBien || 'Dakar'}</p>
+            ${data.surface ? `<p style="margin: 5px 0;"><strong>Surface:</strong> ${data.surface} m²</p>` : ''}
+            ${data.nombrePieces ? `<p style="margin: 5px 0;"><strong>Nombre de pièces:</strong> ${data.nombrePieces}</p>` : ''}
+            ${data.equipements ? `<p style="margin: 5px 0;"><strong>Équipements:</strong> ${data.equipements}</p>` : ''}
+        </div>
+    </div>
+
+    <!-- ARTICLE 2: DURÉE DU SÉJOUR -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 2</span>
+            DURÉE DU SÉJOUR
+        </h3>
+        <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #fcd34d;">
+            <p style="margin: 5px 0;"><strong>Date d'arrivée:</strong> ${dateEntree ? dateEntree.toLocaleDateString('fr-FR') : '___/___/______'}</p>
+            <p style="margin: 5px 0;"><strong>Date de départ:</strong> ${dateSortie ? dateSortie.toLocaleDateString('fr-FR') : '___/___/______'}</p>
+            <p style="margin: 5px 0;"><strong>Durée:</strong> ${nbJours} jour(s)</p>
+        </div>
+        <p style="font-size: 13px;">Heure d'arrivée: 14h00 | Heure de départ: 12h00</p>
+    </div>
+
+    <!-- ARTICLE 3: TARIFICATION -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 3</span>
+            TARIFICATION
+        </h3>
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 15px 0; border: 1px solid #bbf7d0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                    <td style="padding: 8px 0;">Tarif journalier</td>
+                    <td style="text-align: right;">${tarifJour.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;">Nombre de jours</td>
+                    <td style="text-align: right;">${nbJours} jour(s)</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;">Sous-total location</td>
+                    <td style="text-align: right; font-weight: bold;">${totalLocation.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0;">Caution (restituable)</td>
+                    <td style="text-align: right;">${caution.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                <tr style="border-top: 2px solid #10b981;">
+                    <td style="padding: 12px 0; font-weight: bold; font-size: 15px;">TOTAL À PAYER</td>
+                    <td style="text-align: right; font-weight: bold; font-size: 15px; color: #059669;">${(totalLocation + caution).toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ARTICLE 4: SERVICES INCLUS -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 4</span>
+            SERVICES INCLUS
+        </h3>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+            <p style="margin: 0;">${services.length > 0 ? services.join(' • ') : 'Aucun service spécifié'}</p>
+        </div>
+    </div>
+
+    ${data.conditions ? `
+    <!-- CONDITIONS PARTICULIÈRES -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">
+            <span style="background: #1e3a8a; color: white; padding: 3px 10px; border-radius: 4px; margin-right: 10px;">ARTICLE 5</span>
+            CONDITIONS PARTICULIÈRES
+        </h3>
+        <p style="text-align: justify; font-size: 13px;">${data.conditions}</p>
+    </div>
+    ` : ''}`;
+    }
+    
+    // DEVIS
+    if (type === 'devis') {
+        const lignes = window.devisLignes || [];
+        let totalHT = 0;
+        
+        let lignesHTML = lignes.map(l => {
+            const total = (parseFloat(l.quantite) || 0) * (parseFloat(l.prixUnit) || 0);
+            totalHT += total;
+            return `<tr>
+                <td style="padding: 10px; border: 1px solid #e2e8f0;">${l.designation || '-'}</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">${l.quantite || 0}</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">${l.unite || 'u'}</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: right;">${(parseFloat(l.prixUnit) || 0).toLocaleString('fr-FR')}</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; text-align: right; font-weight: bold;">${total.toLocaleString('fr-FR')}</td>
+            </tr>`;
+        }).join('');
+        
+        const remise = totalHT * (parseFloat(data.remise) || 0) / 100;
+        const totalApresRemise = totalHT - remise;
+        const tva = data.avecTVA ? totalApresRemise * 0.18 : 0;
+        const totalTTC = totalApresRemise + tva;
+        const acompte = totalTTC * (parseFloat(data.acompte) || 30) / 100;
+        
+        html += `
+    <!-- INFORMATIONS CLIENT -->
+    <div style="margin: 30px 0;">
+        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+            <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Client</h4>
+            <p style="margin: 5px 0;"><strong>${data.clientNom || '___________________'}</strong></p>
+            ${data.clientAdresse ? `<p style="margin: 5px 0; font-size: 13px;">${data.clientAdresse}</p>` : ''}
+            ${data.clientTel ? `<p style="margin: 5px 0; font-size: 13px;">Tél: ${data.clientTel}</p>` : ''}
+            ${data.clientEmail ? `<p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail}</p>` : ''}
+        </div>
+    </div>
+
+    <!-- OBJET DU DEVIS -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">OBJET DU DEVIS</h3>
+        <p style="font-size: 13px;"><strong>${data.objetDevis || 'À définir'}</strong></p>
+        ${data.lieuTravaux ? `<p style="font-size: 13px;">Lieu d'intervention: ${data.lieuTravaux}</p>` : ''}
+    </div>
+
+    <!-- TABLEAU DES PRESTATIONS -->
+    <div style="margin: 25px 0;">
+        <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">DÉTAIL DES PRESTATIONS</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <thead>
+                <tr style="background: #1e3a8a; color: white;">
+                    <th style="padding: 12px; text-align: left; border: 1px solid #1e3a8a;">Désignation</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #1e3a8a; width: 60px;">Qté</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #1e3a8a; width: 60px;">Unité</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #1e3a8a; width: 100px;">P.U. (FCFA)</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #1e3a8a; width: 120px;">Total (FCFA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${lignesHTML || '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999; border: 1px solid #e2e8f0;">Aucune prestation</td></tr>'}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TOTAUX -->
+    <div style="display: flex; justify-content: flex-end; margin: 25px 0;">
+        <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; border: 1px solid #bbf7d0; width: 350px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                    <td style="padding: 8px 0;">Total HT</td>
+                    <td style="text-align: right;">${totalHT.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                ${remise > 0 ? `
+                <tr>
+                    <td style="padding: 8px 0;">Remise (${data.remise}%)</td>
+                    <td style="text-align: right; color: #dc2626;">-${remise.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                ` : ''}
+                ${data.avecTVA ? `
+                <tr>
+                    <td style="padding: 8px 0;">TVA (18%)</td>
+                    <td style="text-align: right;">${tva.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+                ` : ''}
+                <tr style="border-top: 2px solid #10b981;">
+                    <td style="padding: 12px 0; font-weight: bold; font-size: 16px;">TOTAL ${data.avecTVA ? 'TTC' : 'HT'}</td>
+                    <td style="text-align: right; font-weight: bold; font-size: 16px; color: #059669;">${totalTTC.toLocaleString('fr-FR')} FCFA</td>
+                </tr>
+            </table>
+            <p style="margin: 15px 0 0 0; font-style: italic; font-size: 11px; color: #666;">
+                Soit: ${montantEnLettres(Math.round(totalTTC))} francs CFA
+            </p>
+        </div>
+    </div>
+
+    <!-- CONDITIONS -->
+    <div style="margin: 25px 0; padding: 20px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <h4 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px;">CONDITIONS</h4>
+        <ul style="font-size: 13px; margin: 0; padding-left: 20px;">
+            <li>Validité du devis: <strong>${data.validite || 30} jours</strong></li>
+            <li>Acompte à la commande: <strong>${data.acompte || 30}%</strong> soit ${acompte.toLocaleString('fr-FR')} FCFA</li>
+            ${data.delaiExecution ? `<li>Délai d'exécution: <strong>${data.delaiExecution} ${data.uniteDelai || 'jours ouvrés'}</strong></li>` : ''}
+            ${data.dateDebut ? `<li>Date de début prévue: <strong>${new Date(data.dateDebut).toLocaleDateString('fr-FR')}</strong></li>` : ''}
+        </ul>
+    </div>
+
+    ${data.notes ? `
+    <div style="margin: 25px 0;">
+        <h4 style="color: #1e3a8a; font-size: 14px; margin-bottom: 10px;">Notes</h4>
+        <p style="font-size: 13px; color: #666;">${data.notes}</p>
+    </div>
+    ` : ''}
+
+    <!-- MENTION ACCEPTATION -->
+    <div style="margin: 30px 0; padding: 15px; background: #f8fafc; border-radius: 8px; text-align: center;">
+        <p style="font-size: 12px; color: #666; margin: 0;">
+            Devis reçu avant l'exécution des travaux. Bon pour accord et exécution des travaux.
+        </p>
+    </div>`;
+    }
+    
+    // ATTESTATION
+    if (type === 'attestation') {
+        const typeAttestation = {
+            'travail': 'Attestation de Travail',
+            'domicile': 'Attestation de Domicile',
+            'bonne-execution': 'Attestation de Bonne Exécution',
+            'paiement': 'Attestation de Paiement',
+            'autre': 'Attestation'
+        };
+        
+        html += `
+    <!-- INFORMATIONS BÉNÉFICIAIRE -->
+    <div style="margin: 30px 0;">
+        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
+            <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Bénéficiaire</h4>
+            <p style="margin: 5px 0; font-size: 16px;"><strong>${data.clientNom || '___________________'}</strong></p>
+        </div>
+    </div>
+
+    <!-- CORPS DE L'ATTESTATION -->
+    <div style="margin: 40px 0;">
+        <p style="text-align: justify; font-size: 14px; line-height: 2;">
+            Je soussigné, <strong>Le Directeur Général de KFS BTP IMMO</strong>, entreprise spécialisée dans le secteur 
+            du Bâtiment, des Travaux Publics et de l'Immobilier, dont le siège social est situé à Villa 123 MC, Quartier Medinacoura, Tambacounda,
+            immatriculée au RCCM sous le numéro <strong>SN TBC 2025 M 1361</strong>, NINEA <strong>009468499</strong>,
+        </p>
+        
+        <p style="text-align: center; font-size: 16px; font-weight: bold; color: #1e3a8a; margin: 30px 0; padding: 15px; background: #f8fafc; border-radius: 8px;">
+            ATTESTE PAR LA PRÉSENTE QUE
+        </p>
+        
+        <div style="background: #f0fdf4; padding: 25px; border-radius: 8px; border-left: 4px solid #10b981; margin: 30px 0;">
+            <p style="text-align: justify; font-size: 14px; line-height: 1.8; margin: 0;">
+                ${data.contenuAttestation || '[Contenu de l\'attestation à compléter]'}
+            </p>
+        </div>
+        
+        <p style="text-align: justify; font-size: 14px; line-height: 2; margin-top: 30px;">
+            Cette attestation est délivrée à <strong>${data.clientNom || '___________________'}</strong> 
+            pour servir et valoir ce que de droit.
+        </p>
+        
+        ${data.motif ? `<p style="text-align: justify; font-size: 14px; line-height: 2;">Motif: ${data.motif}</p>` : ''}
+    </div>`;
+    }
+
+    // SIGNATURES (commun à tous)
+    html += `
+    <!-- SIGNATURES -->
+    <div style="margin-top: 50px; page-break-inside: avoid;">
+        <p style="text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 13px;">
+            Fait à Dakar, le ${dateJour}, en deux (2) exemplaires originaux.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px;">
+            <div style="text-align: center;">
+                <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE BAILLEUR' : type === 'attestation' ? 'L\'ÉMETTEUR' : 'LE PRESTATAIRE'}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">KFS BTP IMMO</p>
+                <p style="font-size: 12px; margin-bottom: 80px;">___________________</p>
+                <div style="border-top: 1px solid #333; padding-top: 10px;">
+                    <p style="font-size: 11px; color: #666; margin: 0;">Signature et cachet</p>
+                    <p style="font-size: 11px; color: #666; margin: 5px 0 0 0;">(Précédé de la mention "Lu et approuvé")</p>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <p style="font-weight: bold; color: #10b981; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : type === 'attestation' ? 'LE BÉNÉFICIAIRE' : type === 'devis' ? 'BON POUR ACCORD' : 'LE CLIENT'}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${data.clientNom || '___________________'}</p>
+                <p style="font-size: 12px; margin-bottom: 80px;">&nbsp;</p>
+                <div style="border-top: 1px solid #333; padding-top: 10px;">
+                    <p style="font-size: 11px; color: #666; margin: 0;">Signature</p>
+                    <p style="font-size: 11px; color: #666; margin: 5px 0 0 0;">(Précédé de la mention "Lu et approuvé")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIED DE PAGE -->
+    <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 10px; color: #999;">
+        <p style="margin: 0;">
+            KFS BTP IMMO - Villa 123 MC, Quartier Medinacoura, Tambacounda | Tél: +221 78 584 28 71 / +33 6 05 84 68 07 | Email: kfsbtpproimmo@gmail.com
+        </p>
+        <p style="margin: 5px 0 0 0;">
+            NINEA: 009468499 | RCCM: SN TBC 2025 M 1361
+        </p>
+        <p style="margin: 10px 0 0 0; font-style: italic;">
+            Document généré le ${dateHeure} - ${isPreview ? 'APERÇU' : numero}
+        </p>
+    </div>
+
+</div>`;
+    
+    return html;
+}
 
 // Remplir les infos du projet sélectionné
 window.fillProjetInfo = function() {
@@ -8966,177 +13763,27 @@ window.updateDevisLigne = function(index, field, value) {
 function renderDevisLignes() {
     const container = document.getElementById('devis-lignes-container');
     if (!container) return;
-    
+
     const totalHT = devisLignes.reduce((sum, l) => sum + ((parseFloat(l.quantite) || 0) * (parseFloat(l.prixUnit) || 0)), 0);
-    
+
+    if (devisLignes.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-4">Aucune ligne de devis</p>';
+        return;
+    }
+
     container.innerHTML = devisLignes.map((ligne, i) => `
-        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <div class="flex justify-between items-start mb-3">
-                <span class="text-xs font-medium text-gray-500">Ligne ${i + 1}</span>
-                <button type="button" onclick="removeDevisLigne(${i})" class="text-red-500 hover:text-red-700">
-                    <span class="material-icons text-sm">delete</span>
-                </button>
-            </div>
-            <div class="grid grid-cols-12 gap-2">
-                <div class="col-span-5">
-                    <input type="text" placeholder="Désignation" value="${ligne.designation}" 
-                        onchange="updateDevisLigne(${i}, 'designation', this.value)"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm">
-                </div>
-                <div class="col-span-2">
-                    <input type="number" placeholder="Qté" value="${ligne.quantite}" min="0" step="0.01"
-                        onchange="updateDevisLigne(${i}, 'quantite', this.value)"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-center">
-                </div>
-                <div class="col-span-2">
-                    <select onchange="updateDevisLigne(${i}, 'unite', this.value)" class="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm">
-                        <option value="u" ${ligne.unite === 'u' ? 'selected' : ''}>Unité</option>
-                        <option value="m²" ${ligne.unite === 'm²' ? 'selected' : ''}>m²</option>
-                        <option value="ml" ${ligne.unite === 'ml' ? 'selected' : ''}>ml</option>
-                        <option value="m³" ${ligne.unite === 'm³' ? 'selected' : ''}>m³</option>
-                        <option value="kg" ${ligne.unite === 'kg' ? 'selected' : ''}>kg</option>
-                        <option value="h" ${ligne.unite === 'h' ? 'selected' : ''}>heure</option>
-                        <option value="j" ${ligne.unite === 'j' ? 'selected' : ''}>jour</option>
-                        <option value="fft" ${ligne.unite === 'fft' ? 'selected' : ''}>forfait</option>
-                    </select>
-                </div>
-                <div class="col-span-3">
-                    <input type="number" placeholder="Prix unit." value="${ligne.prixUnit}" min="0"
-                        onchange="updateDevisLigne(${i}, 'prixUnit', this.value)"
-                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-right">
-                </div>
-            </div>
-            <div class="flex justify-between items-center mt-2">
-                <input type="text" placeholder="Détails (optionnel)" value="${ligne.detail || ''}" 
-                    onchange="updateDevisLigne(${i}, 'detail', this.value)"
-                    class="flex-1 mr-2 px-3 py-1 border border-gray-200 rounded-lg text-xs text-gray-600">
-                <span class="text-sm font-semibold text-blue-600">
-                    ${formatMontant((parseFloat(ligne.quantite) || 0) * (parseFloat(ligne.prixUnit) || 0))}
-                </span>
-            </div>
+        <div class="flex items-center space-x-2 py-1 border-b">
+            <input type="text" class="input input-sm w-32" placeholder="Désignation" value="${ligne.designation}" onchange="updateDevisLigne(${i}, 'designation', this.value)">
+            <input type="number" class="input input-sm w-16" min="0" value="${ligne.quantite}" onchange="updateDevisLigne(${i}, 'quantite', this.value)">
+            <input type="text" class="input input-sm w-12" value="${ligne.unite}" onchange="updateDevisLigne(${i}, 'unite', this.value)">
+            <input type="number" class="input input-sm w-20" min="0" value="${ligne.prixUnit}" onchange="updateDevisLigne(${i}, 'prixUnit', this.value)">
+            <input type="text" class="input input-sm w-24" value="${ligne.categorie}" onchange="updateDevisLigne(${i}, 'categorie', this.value)">
+            <input type="text" class="input input-sm w-32" placeholder="Détail" value="${ligne.detail}" onchange="updateDevisLigne(${i}, 'detail', this.value)">
+            <button class="btn btn-xs btn-error" onclick="removeDevisLigne(${i})">Supprimer</button>
         </div>
-    `).join('');
-    
-    // Ajouter le total
-    container.innerHTML += `
-        <div class="bg-blue-50 p-4 rounded-xl border-2 border-blue-200 mt-4">
-            <div class="flex justify-between items-center">
-                <span class="font-bold text-blue-800">Total HT</span>
-                <span class="text-xl font-bold text-blue-600">${formatMontant(totalHT)}</span>
-            </div>
-        </div>
-    `;
+    `).join('') +
+    `<div class="text-right font-bold mt-2">Total HT : <span id="devis-total-ht">${totalHT.toFixed(2)} €</span></div>`;
 }
-
-// Fermer le modal
-window.closeDocCreationModal = function() {
-    const modal = document.getElementById('doc-creation-modal');
-    if (modal) modal.remove();
-};
-
-// Prévisualiser le document
-window.previewDocument = function() {
-    const formData = collectFormData();
-    if (!formData) return;
-    
-    const type = document.getElementById('doc-type').value;
-    let doc;
-    
-    switch(type) {
-        case 'contrat':
-            doc = generateContratPrestation(formData);
-            break;
-        case 'bail':
-            doc = generateContratBail(formData);
-            break;
-        case 'devis':
-            formData.lignes = devisLignes;
-            doc = generateDevisProfessionnel(formData);
-            break;
-        default:
-            showNotification('Erreur', 'Type de document non supporté', 'error');
-            return;
-    }
-    
-    // Ouvrir la prévisualisation
-    const previewWindow = window.open('', '_blank', 'width=900,height=700');
-    previewWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>${doc.titre}</title>
-            <style>
-                body { margin: 0; padding: 20px; background: #f0f0f0; }
-                .document-professionnel { box-shadow: 0 0 20px rgba(0,0,0,0.1); }
-                @media print { body { background: white; padding: 0; } .document-professionnel { box-shadow: none; } }
-            </style>
-        </head>
-        <body>
-            ${doc.contenuHTML}
-            <div style="text-align: center; margin-top: 20px; padding: 10px;">
-                <button onclick="window.print()" style="padding: 10px 30px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                    🖨️ Imprimer
-                </button>
-            </div>
-        </body>
-        </html>
-    `);
-};
-
-// Sauvegarder et générer le document
-window.saveAndGenerateDocument = function() {
-    const formData = collectFormData();
-    if (!formData) return;
-    
-    const type = document.getElementById('doc-type').value;
-    let doc;
-    
-    switch(type) {
-        case 'contrat':
-            doc = generateContratPrestation(formData);
-            break;
-        case 'bail':
-            doc = generateContratBail(formData);
-            break;
-        case 'devis':
-            formData.lignes = devisLignes;
-            doc = generateDevisProfessionnel(formData);
-            break;
-        default:
-            showNotification('Erreur', 'Type de document non supporté', 'error');
-            return;
-    }
-    
-    // Sauvegarder dans localStorage
-    const documents = JSON.parse(localStorage.getItem('documents') || '[]');
-    documents.push({
-        id: Date.now(),
-        numero: doc.numero,
-        nom: doc.titre,
-        type: doc.type,
-        categorie: doc.categorie,
-        client: doc.client,
-        montant: doc.montant,
-        contenuHTML: doc.contenuHTML,
-        data: doc.data,
-        dateCreation: doc.dateCreation,
-        statut: 'brouillon'
-    });
-    localStorage.setItem('documents', JSON.stringify(documents));
-    
-    // Fermer le modal
-    closeDocCreationModal();
-    
-    // Rafraîchir la liste
-    if (typeof renderDocuments === 'function') renderDocuments();
-    if (typeof updateDocumentStats === 'function') updateDocumentStats();
-    
-    // Notification
-    showNotification('Document créé', `${doc.titre} a été généré avec succès`, 'success');
-    
-    // Ouvrir la prévisualisation
-    viewDocumentByNumero(doc.numero);
-};
 
 // Voir un document par son numéro
 window.viewDocumentByNumero = function(numero) {
@@ -9398,7 +14045,7 @@ function deleteUpdateNote(id) {
     location.reload();
 }
 
-function clearAllCaches() {
+window.clearAllCaches = function() {
     if ('caches' in window) {
         caches.keys().then(names => {
             names.forEach(name => caches.delete(name));
@@ -9410,9 +14057,9 @@ function clearAllCaches() {
     
     showNotification('Cache vidé ! Rechargez la page.', 'success');
     setTimeout(() => location.reload(true), 1500);
-}
+};
 
-function updateServiceWorker() {
+window.updateServiceWorker = function() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistration().then(reg => {
             if (reg) {
@@ -9426,7 +14073,7 @@ function updateServiceWorker() {
     } else {
         showNotification('Service Worker non supporté', 'error');
     }
-}
+};
 
 // ===================================================
 // MODULE: MAINTENANCE ET MONITORING
@@ -9696,3 +14343,176 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ===================================================
+// EXPOSITION GLOBALE - Toutes les fonctions onclick
+// ===================================================
+// Catalogue
+window.editAnnonce = typeof editAnnonce !== 'undefined' ? editAnnonce : function(i) { if (typeof openCatalogueModal === 'function') openCatalogueModal(i); };
+window.deleteAnnonce = typeof deleteAnnonce !== 'undefined' ? deleteAnnonce : function() {};
+window.openImageGallery = window.openImageGallery || function() {};
+window.removeCatalogueTempImage = window.removeCatalogueTempImage || function() {};
+window.removeCatalogueExistingImage = window.removeCatalogueExistingImage || function() {};
+
+// Carrousel
+window.editSlide = typeof editSlide !== 'undefined' ? editSlide : function(i) { if (typeof openCarouselModal === 'function') openCarouselModal(i); };
+window.deleteSlide = typeof deleteSlide !== 'undefined' ? deleteSlide : function() {};
+
+// Témoignages
+window.editTemoignage = typeof editTemoignage !== 'undefined' ? editTemoignage : function(i) { if (typeof openTemoignageModal === 'function') openTemoignageModal(i); };
+window.toggleTemoignage = typeof toggleTemoignage !== 'undefined' ? toggleTemoignage : function() {};
+window.deleteTemoignage = typeof deleteTemoignage !== 'undefined' ? deleteTemoignage : function() {};
+
+// FAQ
+window.editFaq = typeof editFaq !== 'undefined' ? editFaq : function(i) { if (typeof openFaqModal === 'function') openFaqModal(i); };
+window.toggleFaq = typeof toggleFaq !== 'undefined' ? toggleFaq : function() {};
+window.deleteFaq = typeof deleteFaq !== 'undefined' ? deleteFaq : function() {};
+
+// Médias
+window.deleteMedia = typeof deleteMedia !== 'undefined' ? deleteMedia : function() {};
+
+// Messages
+window.markAsRead = typeof markAsRead !== 'undefined' ? markAsRead : function() {};
+window.deleteMessage = typeof deleteMessage !== 'undefined' ? deleteMessage : function() {};
+
+// RDV
+window.editRdv = window.editRdv || function() {};
+window.deleteRdv = window.deleteRdv || function() {};
+window.selectCalendarDay = window.selectCalendarDay || function() {};
+window.goToToday = window.goToToday || function() { window.selectCalendarDay(new Date().toISOString().split('T')[0]); };
+
+// Comptabilité
+window.editCompta = typeof editCompta !== 'undefined' ? editCompta : function() {};
+window.deleteCompta = typeof deleteCompta !== 'undefined' ? deleteCompta : function() {};
+
+// Factures
+window.viewFacture = typeof viewFacture !== 'undefined' ? viewFacture : function() {};
+window.printFacture = typeof printFacture !== 'undefined' ? printFacture : function() {};
+window.changeFactureStatus = typeof changeFactureStatus !== 'undefined' ? changeFactureStatus : function() {};
+window.deleteFacture = typeof deleteFacture !== 'undefined' ? deleteFacture : function() {};
+window.removeFactureLine = typeof removeFactureLine !== 'undefined' ? removeFactureLine : function() {};
+
+// Clients
+window.editClient = typeof editClient !== 'undefined' ? editClient : function() {};
+window.viewClientHistory = typeof viewClientHistory !== 'undefined' ? viewClientHistory : function() {};
+window.addClientInteraction = typeof addClientInteraction !== 'undefined' ? addClientInteraction : function() {};
+window.deleteClient = typeof deleteClient !== 'undefined' ? deleteClient : function() {};
+
+// Projets
+window.viewProjet = typeof viewProjet !== 'undefined' ? viewProjet : function() {};
+window.editProjet = typeof editProjet !== 'undefined' ? editProjet : function() {};
+window.addProjetDepense = typeof addProjetDepense !== 'undefined' ? addProjetDepense : function() {};
+window.deleteProjet = typeof deleteProjet !== 'undefined' ? deleteProjet : function() {};
+
+// Employés
+window.editEmploye = typeof editEmploye !== 'undefined' ? editEmploye : function() {};
+window.deleteEmploye = typeof deleteEmploye !== 'undefined' ? deleteEmploye : function() {};
+window.viewEmployeFiche = typeof viewEmployeFiche !== 'undefined' ? viewEmployeFiche : function() {};
+
+// Stocks
+window.editStock = typeof editStock !== 'undefined' ? editStock : function() {};
+window.deleteStock = typeof deleteStock !== 'undefined' ? deleteStock : function() {};
+window.adjustStock = typeof adjustStock !== 'undefined' ? adjustStock : function() {};
+
+// Documents
+window.editDocument = typeof editDocument !== 'undefined' ? editDocument : function() {};
+window.deleteDocument = typeof deleteDocument !== 'undefined' ? deleteDocument : function() {};
+window.downloadDocument = typeof downloadDocument !== 'undefined' ? downloadDocument : function() {};
+
+// Fiche de paie - Aperçu modale
+window.fermerApercuFichePaie = typeof fermerApercuFichePaie !== 'undefined' ? fermerApercuFichePaie : function() {
+    const modal = document.getElementById('modal-apercu-fiche-paie');
+    if (modal) { modal.remove(); document.body.style.overflow = ''; }
+};
+
+// Modals (déjà exposées mais on renforce)
+window.openCatalogueModal = window.openCatalogueModal || function() { console.warn('openCatalogueModal non définie'); };
+window.closeCatalogueModal = window.closeCatalogueModal || function() { const m = document.getElementById('catalogue-modal'); if (m) m.classList.add('hidden'); };
+window.openCarouselModal = window.openCarouselModal || function() { console.warn('openCarouselModal non définie'); };
+window.closeCarouselModal = window.closeCarouselModal || function() { const m = document.getElementById('carousel-modal'); if (m) m.classList.add('hidden'); };
+window.openTemoignageModal = window.openTemoignageModal || function() { console.warn('openTemoignageModal non définie'); };
+window.closeTemoignageModal = window.closeTemoignageModal || function() { const m = document.getElementById('temoignage-modal'); if (m) m.classList.add('hidden'); };
+window.openFaqModal = window.openFaqModal || function() { console.warn('openFaqModal non définie'); };
+window.closeFaqModal = window.closeFaqModal || function() { const m = document.getElementById('faq-modal'); if (m) m.classList.add('hidden'); };
+window.openMediaModal = window.openMediaModal || function() { console.warn('openMediaModal non définie'); };
+window.closeMediaModal = window.closeMediaModal || function() { const m = document.getElementById('media-modal'); if (m) m.classList.add('hidden'); };
+window.openRdvModal = window.openRdvModal || function() { console.warn('openRdvModal non définie'); };
+window.closeRdvModal = window.closeRdvModal || function() { const m = document.getElementById('rdv-modal'); if (m) m.classList.add('hidden'); };
+window.openClientModal = window.openClientModal || function() { console.warn('openClientModal non définie'); };
+window.closeClientModal = window.closeClientModal || function() { const m = document.getElementById('client-modal'); if (m) m.classList.add('hidden'); };
+window.openProjetModal = window.openProjetModal || function() { console.warn('openProjetModal non définie'); };
+window.closeProjetModal = window.closeProjetModal || function() { const m = document.getElementById('projet-modal'); if (m) m.classList.add('hidden'); };
+window.openEmployeModal = window.openEmployeModal || function() { console.warn('openEmployeModal non définie'); };
+window.closeEmployeModal = window.closeEmployeModal || function() { const m = document.getElementById('employe-modal'); if (m) m.classList.add('hidden'); };
+window.openStockModal = window.openStockModal || function() { console.warn('openStockModal non définie'); };
+window.closeStockModal = window.closeStockModal || function() { const m = document.getElementById('stock-modal'); if (m) m.classList.add('hidden'); };
+window.openDocumentModal = window.openDocumentModal || function() { console.warn('openDocumentModal non définie'); };
+window.closeDocumentModal = window.closeDocumentModal || function() { const m = document.getElementById('document-modal'); if (m) m.classList.add('hidden'); };
+window.openTransactionModal = window.openTransactionModal || function() { console.warn('openTransactionModal non définie'); };
+window.closeTransactionModal = window.closeTransactionModal || function() { const m = document.getElementById('transaction-modal'); if (m) m.classList.add('hidden'); };
+window.openFactureModal = window.openFactureModal || function() { console.warn('openFactureModal non définie'); };
+window.closeFactureModal = window.closeFactureModal || function() { const m = document.getElementById('facture-modal'); if (m) m.classList.add('hidden'); };
+
+// Notifications
+window.showNotification = window.showNotification || function(title, message, type) { console.log(`[${type || 'info'}] ${title}: ${message}`); };
+
+// Utilitaires - fonctions réellement implémentées
+window.updateStats = typeof updateStats !== 'undefined' ? updateStats : function() {};
+window.renderRecentMessages = typeof renderRecentMessages !== 'undefined' ? renderRecentMessages : function() {};
+window.renderMessages = typeof renderMessages !== 'undefined' ? renderMessages : function() {};
+window.markAsRead = typeof markAsRead !== 'undefined' ? markAsRead : function() {};
+window.deleteMessage = typeof deleteMessage !== 'undefined' ? deleteMessage : function() {};
+
+// Fonctions de rendu principales
+window.renderCatalogue = typeof renderCatalogue !== 'undefined' ? renderCatalogue : function() {};
+window.renderCarousel = typeof renderCarousel !== 'undefined' ? renderCarousel : function() {};
+window.renderTemoignages = typeof renderTemoignages !== 'undefined' ? renderTemoignages : function() {};
+window.renderFaq = typeof renderFaq !== 'undefined' ? renderFaq : function() {};
+window.renderMedia = typeof renderMedia !== 'undefined' ? renderMedia : function() {};
+window.renderComptabilite = typeof renderComptabilite !== 'undefined' ? renderComptabilite : function() {};
+window.renderFactures = typeof renderFactures !== 'undefined' ? renderFactures : function() {};
+window.renderClients = typeof renderClients !== 'undefined' ? renderClients : function() {};
+window.renderProjets = typeof renderProjets !== 'undefined' ? renderProjets : function() {};
+window.renderEmployes = typeof renderEmployes !== 'undefined' ? renderEmployes : function() {};
+window.renderStocks = typeof renderStocks !== 'undefined' ? renderStocks : function() {};
+window.renderDocuments = typeof renderDocuments !== 'undefined' ? renderDocuments : function() {};
+
+// Fonction pour aller au module Fiche de Paie
+window.gotoFichePaieModule = function() {
+    // Masquer toutes les sections
+    const allSections = document.querySelectorAll('.module-section');
+    allSections.forEach(s => s.classList.remove('active'));
+    
+    // Afficher la section fiche de paie
+    const fichePaieSection = document.getElementById('module-fiche-paie');
+    if (fichePaieSection) {
+        fichePaieSection.classList.add('active');
+        
+        // Initialiser le module si nécessaire
+        if (typeof initFicheDePaieModule === 'function') {
+            initFicheDePaieModule();
+        }
+        
+        // Mettre à jour le titre de la page
+        const pageTitle = document.getElementById('page-title');
+        if (pageTitle) {
+            pageTitle.innerHTML = '<span class="material-icons mr-3 text-2xl">payments</span>Fiche de Paie';
+        }
+        
+        // Mettre à jour la navigation active
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    } else {
+        console.warn('Module fiche-paie non trouvé');
+        showNotification('Module non disponible', 'Le module Fiche de paie n\'est pas disponible', 'warning');
+    }
+};
+
+// Exposer les fonctions fiche de paie
+window.initFicheDePaieModule = typeof initFicheDePaieModule !== 'undefined' ? initFicheDePaieModule : function() {};
+window.genererFicheDePaiePDF = typeof genererFicheDePaiePDF !== 'undefined' ? genererFicheDePaiePDF : function() {};
+window.apercuFicheDePaie = typeof apercuFicheDePaie !== 'undefined' ? apercuFicheDePaie : function() {};
+window.enregistrerFicheDePaie = typeof enregistrerFicheDePaie !== 'undefined' ? enregistrerFicheDePaie : function() {};
+
+console.log('✅ KFS BTP Admin: Toutes les fonctions exposées globalement');
+
+// Fin du script principal

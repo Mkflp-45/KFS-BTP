@@ -10,23 +10,24 @@
 const SITE_CONFIG = {
     // === INFORMATIONS ENTREPRISE ===
     entreprise: {
-        nom: "KFS BTP",
-        slogan: "Bâtir l'avenir au Sénégal",
-        description: "Entreprise de BTP et immobilier au Sénégal. Vente, location, rénovation à Dakar.",
-        anneeCreation: 2014,
-        gerant: "El Hadji Bacheikhou Kanté",
-        ninea: "En cours d'obtention",
-        rc: "En cours d'obtention"
+        nom: "KFS BTP IMMO",
+        slogan: "Bâtiment - Travaux Publics - Immobilier",
+        description: "Entreprise de BTP et immobilier au Sénégal. Vente, location, rénovation.",
+        anneeCreation: 2025,
+        gerant: "Directeur Général",
+        ninea: "009468499",
+        rccm: "SN TBC 2025 M 1361"
     },
     
     // === CONTACT ===
     contact: {
         telephone: "+221 78 584 28 71",
+        telephoneFrance: "+33 6 05 84 68 07",
         telephoneWhatsApp: "+221785842871",
-        email: "contact@kfs-btp.sn",
+        email: "kfsbtpproimmo@gmail.com",
         adresse: {
-            rue: "Fann Hock",
-            ville: "Dakar",
+            rue: "Villa 123 MC, Quartier Medinacoura",
+            ville: "Tambacounda",
             pays: "Sénégal"
         }
     },
@@ -118,12 +119,35 @@ function checkConfiguration() {
     return warnings;
 }
 
+// Fonction pour obtenir une configuration avec fallback
+function getConfig(path, fallback = null) {
+    try {
+        const keys = path.split('.');
+        let value = SITE_CONFIG;
+        for (const key of keys) {
+            value = value[key];
+            if (value === undefined) return fallback;
+        }
+        return value;
+    } catch (e) {
+        return fallback;
+    }
+}
+
 // Exécuter la vérification au chargement
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', checkConfiguration);
 }
 
-// Export pour utilisation dans d'autres scripts
+// Exposer globalement pour usage dans d'autres scripts
+if (typeof window !== 'undefined') {
+    window.SITE_CONFIG = SITE_CONFIG;
+    window.getConfig = getConfig;
+    window.isEmailJSConfigured = isEmailJSConfigured;
+    window.isGoogleAnalyticsConfigured = isGoogleAnalyticsConfigured;
+}
+
+// Export pour utilisation dans d'autres scripts (Node.js)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SITE_CONFIG;
 }
