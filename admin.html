@@ -91,7 +91,7 @@
                     Connexion
                 </button>
                 <p id="login-error" class="text-red-500 text-center hidden">Mot de passe incorrect</p>
-                <button type="button" id="reset-password-btn" class="w-full mt-2 bg-yellow-100 text-yellow-800 py-2 rounded-xl font-semibold shadow hover:bg-yellow-200 transition duration-200">
+                <button type="button" id="reset-password-btn" class="w-full mt-2 bg-yellow-400 text-yellow-900 py-2 rounded-xl font-semibold shadow hover:bg-yellow-500 transition duration-200">
                     Réinitialiser mot de passe (admin123)
                 </button>
             </form>
@@ -280,7 +280,7 @@
                     </div>
                     <div class="flex items-center space-x-4">
                         <span class="text-gray-400" id="current-date"></span>
-                        <a href="index.html" target="_blank" class="flex items-center px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white transition">
+                        <a href="index.html" target="_blank" class="flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded-xl text-gray-900 font-semibold transition shadow-lg">
                             <span class="material-icons mr-2">visibility</span>Voir le site
                         </a>
                     </div>
@@ -391,10 +391,10 @@
                                 <span class="material-icons mr-2 text-blue-600">inbox</span>Boîte de réception
                             </h3>
                             <div class="flex space-x-2">
-                                <button id="mark-all-read" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition">
+                                <button id="mark-all-read" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition shadow">
                                     <span class="material-icons align-middle text-sm mr-1">done_all</span>Tout marquer lu
                                 </button>
-                                <button id="clear-messages" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">
+                                <button id="clear-messages" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition shadow">
                                     <span class="material-icons align-middle text-sm mr-1">delete_sweep</span>Vider
                                 </button>
                             </div>
@@ -466,7 +466,7 @@
                             <div class="glass-card rounded-2xl p-6 shadow-xl">
                                 <div class="flex items-center justify-between mb-6">
                                     <h3 class="text-xl font-bold text-gray-800">Questions fréquentes</h3>
-                                    <button onclick="openFaqModal()" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-orange-800 transition shadow-lg">
+                                    <button onclick="openFaqModal()" class="px-4 py-2 bg-yellow-500 text-gray-900 rounded-xl font-semibold hover:bg-yellow-600 transition shadow-lg">
                                         <span class="material-icons align-middle mr-1 text-sm">add</span>Nouvelle question
                                     </button>
                                 </div>
@@ -505,11 +505,11 @@
                                     <p class="text-slate-300 mt-1">Configurez les informations affichées sur le site public</p>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="previewSettingsChanges()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition flex items-center gap-2">
+                                    <button onclick="previewSettingsChanges()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-xl transition flex items-center gap-2 text-white font-semibold shadow-lg">
                                         <span class="material-icons">visibility</span>
                                         Prévisualiser
                                     </button>
-                                    <button onclick="resetSettingsToDefault()" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition flex items-center gap-2">
+                                    <button onclick="resetSettingsToDefault()" class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-xl transition flex items-center gap-2 text-white font-semibold shadow-lg">
                                         <span class="material-icons">restart_alt</span>
                                         Réinitialiser
                                     </button>
@@ -1013,7 +1013,7 @@
                                     Vider le Cache
                                 </h4>
                                 <p class="text-gray-600 text-sm mb-4">Force le rechargement des ressources pour voir les dernières modifications</p>
-                                <button onclick="clearAllCaches()" class="w-full bg-blue-100 text-blue-700 py-3 rounded-xl font-semibold hover:bg-blue-200 transition">
+                                <button onclick="clearAllCaches()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition shadow">
                                     Vider le cache navigateur
                                 </button>
                             </div>
@@ -1023,7 +1023,7 @@
                                     Service Worker
                                 </h4>
                                 <p class="text-gray-600 text-sm mb-4">Met à jour le service worker pour la dernière version du site</p>
-                                <button onclick="updateServiceWorker()" class="w-full bg-green-100 text-green-700 py-3 rounded-xl font-semibold hover:bg-green-200 transition">
+                                <button onclick="updateServiceWorker()" class="w-full bg-green-500 text-white py-3 rounded-xl font-semibold hover:bg-green-600 transition shadow">
                                     Mettre à jour le SW
                                 </button>
                             </div>
@@ -1098,13 +1098,13 @@
                                     Logs d'Erreurs
                                 </h3>
                                 <div class="flex gap-2">
-                                    <button onclick="refreshErrorLogs()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition" title="Actualiser">
+                                    <button onclick="refreshErrorLogs()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition shadow" title="Actualiser">
                                         <span class="material-icons text-sm">refresh</span>
                                     </button>
-                                    <button onclick="exportErrorLogs()" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition" title="Exporter">
+                                    <button onclick="exportErrorLogs()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition shadow" title="Exporter">
                                         <span class="material-icons text-sm">download</span>
                                     </button>
-                                    <button onclick="clearErrorLogs()" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition" title="Supprimer">
+                                    <button onclick="clearErrorLogs()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition shadow" title="Supprimer">
                                         <span class="material-icons text-sm">delete</span>
                                     </button>
                                 </div>
@@ -1159,7 +1159,7 @@
                                 Prévisualiser la page de maintenance
                             </h3>
                             <p class="text-amber-100 mb-4">Voir ce que les visiteurs verront pendant la maintenance</p>
-                            <a href="maintenance.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-white text-amber-700 font-semibold rounded-xl hover:bg-amber-50 transition">
+                            <a href="maintenance.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-yellow-400 text-amber-900 font-bold rounded-xl hover:bg-yellow-300 transition shadow-lg">
                                 <span class="material-icons mr-2">open_in_new</span>
                                 Ouvrir maintenance.html
                             </a>
@@ -1391,7 +1391,7 @@
                                             <span class="material-icons text-sm">warning</span> Zone dangereuse
                                         </h4>
                                         <p class="text-sm text-red-700 mb-3">Réinitialiser le mot de passe au défaut. À utiliser uniquement en cas d'urgence.</p>
-                                        <button id="security-reset" class="w-full bg-red-100 text-red-700 py-3 rounded-xl font-semibold hover:bg-red-200 transition">
+                                        <button id="security-reset" class="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition shadow">
                                             Réinitialiser à "admin123"
                                         </button>
                                     </div>
@@ -1414,10 +1414,10 @@
                                         <option value="failed">Échecs</option>
                                         <option value="action">Actions</option>
                                     </select>
-                                    <button onclick="clearSecurityLogs()" class="px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition text-sm">
+                                    <button onclick="clearSecurityLogs()" class="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition text-sm shadow">
                                         Effacer les logs
                                     </button>
-                                    <button onclick="exportSecurityLogs()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition text-sm">
+                                    <button onclick="exportSecurityLogs()" class="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition text-sm shadow">
                                         Exporter
                                     </button>
                                 </div>
@@ -1623,7 +1623,7 @@
                                     <span class="material-icons text-gray-600">chevron_right</span>
                                 </button>
                             </div>
-                            <button onclick="goToToday()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium">
+                            <button onclick="goToToday()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium shadow">
                                 <span class="material-icons align-middle text-sm mr-1">today</span>Aujourd'hui
                             </button>
                         </div>
@@ -2176,7 +2176,7 @@
                                     <span class="text-gray-500" id="projets-count">0 projets</span>
                                 </div>
                             </div>
-                            <button onclick="openProjetModal()" class="flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl font-bold hover:from-orange-600 hover:to-orange-800 transition shadow-lg">
+                            <button onclick="openProjetModal()" class="flex items-center px-6 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
                                 <span class="material-icons mr-2">add_task</span>
                                 Nouveau projet
                             </button>
@@ -2282,7 +2282,7 @@
                                     <span class="text-gray-500" id="stocks-count">0 articles</span>
                                 </div>
                             </div>
-                            <button onclick="openStockModal()" class="flex items-center px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-700 text-white rounded-xl font-bold hover:from-teal-600 hover:to-teal-800 transition shadow-lg">
+                            <button onclick="openStockModal()" class="flex items-center px-6 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
                                 <span class="material-icons mr-2">add_box</span>
                                 Nouvel article
                             </button>
@@ -2380,10 +2380,10 @@
                                     <span class="text-yellow-900 text-sm font-semibold">Location Courte Durée</span>
                                     <span class="text-xs text-yellow-700 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
-                                <button onclick="generateDocTemplate('devis')" class="flex flex-col items-center p-4 bg-orange-50 hover:bg-orange-100 rounded-xl transition group">
-                                    <span class="material-icons text-orange-600 text-2xl mb-2">request_quote</span>
-                                    <span class="text-orange-800 text-sm font-medium">Devis</span>
-                                    <span class="text-xs text-orange-500 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                                <button onclick="generateDocTemplate('devis')" class="flex flex-col items-center p-4 bg-yellow-500 hover:bg-yellow-600 rounded-xl transition group shadow-lg">
+                                    <span class="material-icons text-white text-2xl mb-2">request_quote</span>
+                                    <span class="text-white text-sm font-bold">Devis</span>
+                                    <span class="text-xs text-orange-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
                                 <button onclick="generateDocTemplate('attestation')" class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-xl transition group">
                                     <span class="material-icons text-purple-600 text-2xl mb-2">verified</span>
@@ -2866,11 +2866,11 @@
         <div class="relative min-h-screen flex items-center justify-center p-4">
             <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate__animated animate__fadeInUp animate__faster">
                 <!-- Header -->
-                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-gradient-to-r from-teal-500 to-teal-700">
+                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-yellow-500">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 id="stock-modal-title" class="text-xl font-bold text-white">Nouvel article</h3>
-                            <p class="text-teal-100 text-sm mt-1">Ajoutez un article à l'inventaire</p>
+                            <p class="text-orange-100 text-sm mt-1">Ajoutez un article à l'inventaire</p>
                         </div>
                         <button onclick="closeStockModal()" class="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition">
                             <span class="material-icons">close</span>
@@ -3018,7 +3018,7 @@
                             <button type="button" onclick="closeStockModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                                 Annuler
                             </button>
-                            <button type="submit" class="px-8 py-3 bg-gradient-to-r from-teal-500 to-teal-700 text-white rounded-xl font-bold hover:from-teal-600 hover:to-teal-800 transition shadow-lg">
+                            <button type="submit" class="px-8 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
                                 <span class="material-icons align-middle mr-1">save</span>Enregistrer
                             </button>
                         </div>
@@ -3258,7 +3258,7 @@
                         <button type="button" onclick="closeProjetModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                             Annuler
                         </button>
-                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl font-bold hover:from-orange-600 hover:to-orange-800 transition shadow-lg">
+                        <button type="submit" class="px-8 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
                             <span class="material-icons align-middle mr-1">save</span>Enregistrer
                         </button>
                     </div>
@@ -3955,7 +3955,7 @@
                                 <label class="block text-gray-700 text-sm font-medium mb-1">Mot de passe *</label>
                                 <div class="relative">
                                     <input type="password" id="emp-access-password" placeholder="Min. 8 caractères" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-800 pr-20" minlength="8" required>
-                                    <button type="button" onclick="generateRandomPassword()" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200">
+                                    <button type="button" onclick="generateRandomPassword()" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 font-semibold shadow">
                                         Générer
                                     </button>
                                 </div>
@@ -4009,8 +4009,8 @@
                                 <span class="material-icons text-indigo-600 text-sm">key</span> Modules accessibles
                             </h4>
                             <div class="flex gap-2">
-                                <button type="button" onclick="selectAllModules()" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Tout sélectionner</button>
-                                <button type="button" onclick="deselectAllModules()" class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Tout désélectionner</button>
+                                <button type="button" onclick="selectAllModules()" class="text-xs px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 font-semibold shadow">Tout sélectionner</button>
+                                <button type="button" onclick="deselectAllModules()" class="text-xs px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 font-semibold shadow">Tout désélectionner</button>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -4182,7 +4182,7 @@
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeFaqModal()"></div>
             <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all animate__animated animate__fadeInUp animate__faster">
                 <!-- Header -->
-                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-gradient-to-r from-orange-500 to-orange-700 rounded-t-3xl">
+                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-yellow-500 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <h3 id="faq-modal-title" class="text-xl font-bold text-white flex items-center">
                             <span class="material-icons mr-2">help_outline</span>Nouvelle question FAQ
@@ -4221,7 +4221,7 @@
                         <button type="button" onclick="closeFaqModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                             Annuler
                         </button>
-                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl font-bold hover:from-orange-600 hover:to-orange-800 transition shadow-lg">
+                        <button type="submit" class="px-8 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
                             <span class="material-icons align-middle mr-1">save</span>Enregistrer
                         </button>
                     </div>

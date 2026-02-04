@@ -1672,7 +1672,7 @@ function initSecurity() {
                 const msg = document.getElementById('security-message');
                 if (msg) {
                     msg.textContent = 'Mot de passe réinitialisé à "admin123"';
-                    msg.className = 'text-sm text-orange-600';
+                    msg.className = 'text-sm text-yellow-600';
                 }
                 showNotification('Sécurité', 'Mot de passe réinitialisé', 'warning');
             }
@@ -1751,7 +1751,7 @@ function checkPasswordStrength(password) {
     if (/[0-9]/.test(password)) strength++;
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
     
-    const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+    const colors = ['bg-red-500', 'bg-yellow-500', 'bg-yellow-500', 'bg-green-500'];
     const texts = ['Très faible', 'Faible', 'Moyen', 'Fort'];
     
     for (let i = 0; i < strength; i++) {
@@ -2810,13 +2810,65 @@ function exportToCSV(data, filename, columns) {
     });
 }
 
-// === Module Fiche de Paie Employé (global) ===
+// === Module Fiche de Paie Employé - CONFORME CODE DU TRAVAIL SÉNÉGALAIS ===
+// Référence: CLEISS, IPRES, CSS - Cotisations sociales Sénégal 2024
+// IPRES Régime général: 8,4% patronal + 5,6% salarial = 14% (plafond 432 000 FCFA)
+// IPRES Retraite complémentaire cadres: 3,6% patronal + 2,4% salarial = 6% (tranche 432 000 - 1 296 000)
+// Prestations familiales CSS: 7% patronal (plafond 63 000 FCFA)
+// Accidents du travail CSS: 1%, 3% ou 5% selon risques (plafond 63 000 FCFA)
+// IPM Maladie: ~3% patronal + ~3% salarial (plafond 250 000 FCFA)
+
 function initFicheDePaieModule() {
     const section = document.getElementById('module-fiche-paie');
     if (!section) return;
 
     renderFicheDePaieForm();
 }
+
+// Constantes des cotisations sociales sénégalaises (taux 2024)
+const COTISATIONS_SN = {
+    // IPRES - Retraite Régime Général
+    IPRES_RG: {
+        tauxPatronal: 8.4,
+        tauxSalarial: 5.6,
+        plafond: 432000
+    },
+    // IPRES - Retraite Complémentaire Cadres
+    IPRES_RC: {
+        tauxPatronal: 3.6,
+        tauxSalarial: 2.4,
+        plafondMin: 432000,
+        plafondMax: 1296000
+    },
+    // CSS - Prestations Familiales
+    PRESTATIONS_FAMILIALES: {
+        tauxPatronal: 7,
+        tauxSalarial: 0,
+        plafond: 63000
+    },
+    // CSS - Accidents du Travail
+    ACCIDENTS_TRAVAIL: {
+        tauxFaible: 1,    // Bureaux, commerces
+        tauxMoyen: 3,     // Industrie légère
+        tauxEleve: 5,     // BTP, industries lourdes
+        plafond: 63000
+    },
+    // IPM - Maladie
+    IPM: {
+        tauxPatronal: 3,
+        tauxSalarial: 3,
+        plafond: 250000
+    },
+    // CFE - Contribution Forfaitaire à la charge de l'Employeur
+    CFE: {
+        taux: 3,
+        applicable: true
+    },
+    // TRIMF - Taxe Représentative de l'Impôt Minimum Forfaitaire
+    TRIMF: {
+        mensuel: 3000  // Forfait mensuel
+    }
+};
 
 function renderFicheDePaieForm() {
     const section = document.getElementById('module-fiche-paie');
@@ -2830,15 +2882,15 @@ function renderFicheDePaieForm() {
     const currentMonth = now.toISOString().slice(0, 7);
     
     section.innerHTML = `
-        <div class="max-w-4xl mx-auto">
+        <div class="max-w-5xl mx-auto">
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <!-- Header -->
-                <div class="bg-gradient-to-r from-yellow-500 to-orange-500 px-6 py-4">
+                <div class="bg-gradient-to-r from-blue-800 to-blue-900 px-6 py-4">
                     <h2 class="text-2xl font-bold text-white flex items-center">
                         <span class="material-icons mr-3">payments</span>
-                        Génération de Fiche de Paie
+                        Bulletin de Paie - Conforme Code du Travail Sénégalais
                     </h2>
-                    <p class="text-yellow-100 text-sm mt-1">Sélectionnez un employé pour générer sa fiche de paie</p>
+                    <p class="text-blue-200 text-sm mt-1">Avec cotisations IPRES, CSS, IPM - Calcul automatique selon les plafonds légaux</p>
                 </div>
                 
                 <!-- Formulaire -->
@@ -2854,126 +2906,351 @@ function renderFicheDePaieForm() {
                             </button>
                         </div>
                     ` : `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Sélection employé -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 align-middle">person</span> Employé *
-                                </label>
-                                <select id="fiche-paie-employe" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" required>
-                                    <option value="">-- Sélectionner un employé --</option>
-                                    ${employesActifs.map(emp => `
-                                        <option value="${emp.matricule}" 
-                                            data-nom="${emp.nom || ''}" 
-                                            data-prenom="${emp.prenom || ''}"
-                                            data-poste="${emp.poste || ''}"
-                                            data-salaire="${emp.salaire || 0}"
-                                            data-departement="${emp.departement || ''}">
-                                            ${emp.prenom || ''} ${emp.nom || ''} - ${emp.poste || 'N/A'} (${emp.matricule})
-                                        </option>
-                                    `).join('')}
-                                </select>
-                            </div>
-                            
-                            <!-- Infos employé sélectionné -->
-                            <div id="employe-info-card" class="md:col-span-2 hidden">
-                                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg" id="employe-avatar">--</div>
-                                        <div>
-                                            <p class="font-bold text-gray-800" id="employe-fullname">-</p>
-                                            <p class="text-sm text-gray-600" id="employe-poste-info">-</p>
-                                        </div>
-                                        <div class="ml-auto text-right">
-                                            <p class="text-xs text-gray-500">Matricule</p>
-                                            <p class="font-mono font-bold text-blue-600" id="employe-matricule-info">-</p>
-                                        </div>
-                                    </div>
+                        <!-- Section 1: Identification Employé -->
+                        <div class="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                            <h3 class="font-bold text-blue-800 mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-blue-600">badge</span>
+                                Identification du Salarié
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Employé *</label>
+                                    <select id="fiche-paie-employe" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" required>
+                                        <option value="">-- Sélectionner un employé --</option>
+                                        ${employesActifs.map(emp => `
+                                            <option value="${emp.matricule}" 
+                                                data-nom="${emp.nom || ''}" 
+                                                data-prenom="${emp.prenom || ''}"
+                                                data-poste="${emp.poste || ''}"
+                                                data-salaire="${emp.salaire || 0}"
+                                                data-departement="${emp.departement || ''}"
+                                                data-categorie="${emp.categorie || ''}"
+                                                data-dateembauche="${emp.dateEmbauche || ''}">
+                                                ${emp.prenom || ''} ${emp.nom || ''} - ${emp.poste || 'N/A'} (${emp.matricule})
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Période *</label>
+                                    <input type="month" id="fiche-paie-mois" value="${currentMonth}" 
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition" required>
                                 </div>
                             </div>
                             
-                            <!-- Mois -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 align-middle">calendar_month</span> Période *
-                                </label>
-                                <input type="month" id="fiche-paie-mois" value="${currentMonth}" 
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" required>
-                            </div>
-                            
-                            <!-- Salaire de base -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 align-middle">account_balance_wallet</span> Salaire de base (FCFA) *
-                                </label>
-                                <input type="number" id="fiche-paie-salaire" min="0" step="1000" 
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" 
-                                    placeholder="Ex: 350000" required>
-                            </div>
-                            
-                            <!-- Primes -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 align-middle">add_circle</span> Primes (FCFA)
-                                </label>
-                                <input type="number" id="fiche-paie-primes" min="0" step="1000" value="0"
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 transition" 
-                                    placeholder="0">
-                            </div>
-                            
-                            <!-- Retenues -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 align-middle">remove_circle</span> Retenues (FCFA)
-                                </label>
-                                <input type="number" id="fiche-paie-retenues" min="0" step="1000" value="0"
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-red-400 focus:border-red-400 transition" 
-                                    placeholder="0">
-                            </div>
-                            
-                            <!-- Mode de paiement -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    <span class="material-icons text-sm mr-1 align-middle">payments</span> Mode de paiement *
-                                </label>
-                                <select id="fiche-paie-mode-paiement" 
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition" required>
-                                    <option value="">-- Sélectionner --</option>
-                                    <option value="Virement bancaire">Virement bancaire</option>
-                                    <option value="Espèces">Espèces</option>
-                                    <option value="Chèque">Chèque</option>
-                                    <option value="Mobile Money">Mobile Money (Orange/Wave/Free)</option>
-                                </select>
-                            </div>
-                            
-                            <!-- Calcul en temps réel -->
-                            <div class="md:col-span-2">
-                                <div class="bg-gray-50 rounded-xl p-4 border-2 border-dashed border-gray-200">
-                                    <p class="text-sm text-gray-600 mb-2">Récapitulatif</p>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-700">Salaire de base :</span>
-                                        <span id="recap-salaire" class="font-mono">0 FCFA</span>
+                            <!-- Infos employé -->
+                            <div id="employe-info-card" class="mt-4 hidden">
+                                <div class="bg-white rounded-xl p-4 border border-blue-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Matricule</p>
+                                        <p class="font-mono font-bold text-blue-700" id="info-matricule">-</p>
                                     </div>
-                                    <div class="flex justify-between items-center text-green-600">
-                                        <span>+ Primes :</span>
-                                        <span id="recap-primes" class="font-mono">0 FCFA</span>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Poste</p>
+                                        <p class="font-semibold text-gray-800" id="info-poste">-</p>
                                     </div>
-                                    <div class="flex justify-between items-center text-red-600">
-                                        <span>- Retenues :</span>
-                                        <span id="recap-retenues" class="font-mono">0 FCFA</span>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Catégorie</p>
+                                        <p class="font-semibold text-gray-800" id="info-categorie">-</p>
                                     </div>
-                                    <hr class="my-2 border-gray-300">
-                                    <div class="flex justify-between items-center text-lg font-bold">
-                                        <span class="text-gray-800">Net à payer :</span>
-                                        <span id="recap-net" class="text-blue-600 font-mono">0 FCFA</span>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Date d'embauche</p>
+                                        <p class="font-semibold text-gray-800" id="info-embauche">-</p>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Section 2: Classification -->
+                        <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-gray-600">category</span>
+                                Classification Professionnelle
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
+                                    <select id="fiche-paie-categorie" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" required>
+                                        <option value="1">1 - Manœuvre</option>
+                                        <option value="2">2 - Ouvrier spécialisé</option>
+                                        <option value="3">3 - Ouvrier qualifié</option>
+                                        <option value="4">4 - Ouvrier hautement qualifié</option>
+                                        <option value="5">5 - Employé</option>
+                                        <option value="6">6 - Agent de maîtrise</option>
+                                        <option value="7" selected>7 - Technicien</option>
+                                        <option value="8">8 - Technicien supérieur</option>
+                                        <option value="9">9 - Cadre</option>
+                                        <option value="10">10 - Cadre supérieur</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Échelon</label>
+                                    <select id="fiche-paie-echelon" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg">
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Convention collective</label>
+                                    <select id="fiche-paie-convention" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg">
+                                        <option value="BTP">BTP - Bâtiment et Travaux Publics</option>
+                                        <option value="Commerce">Commerce</option>
+                                        <option value="Industrie">Industrie</option>
+                                        <option value="Services">Services</option>
+                                        <option value="Autre">Autre</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                                    <select id="fiche-paie-statut-salarie" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="updateCotisationsAffichage()">
+                                        <option value="non-cadre">Non-cadre</option>
+                                        <option value="cadre">Cadre</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Section 3: Rémunération -->
+                        <div class="bg-green-50 rounded-xl p-5 border border-green-200">
+                            <h3 class="font-bold text-green-800 mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-green-600">account_balance_wallet</span>
+                                Éléments de Rémunération
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Salaire de base (FCFA) *</label>
+                                    <input type="number" id="fiche-paie-salaire" min="0" step="1000" 
+                                        class="w-full px-4 py-3 border-2 border-green-300 rounded-xl bg-white" 
+                                        placeholder="Ex: 350000" required onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Heures travaillées</label>
+                                    <input type="number" id="fiche-paie-heures" value="173.33" step="0.01" 
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white">
+                                    <p class="text-xs text-gray-500 mt-1">Base légale: 173,33h (40h/sem)</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Heures supplémentaires</label>
+                                    <input type="number" id="fiche-paie-heures-sup" value="0" min="0" step="1" 
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white" onchange="calculerToutesCotisations()">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prime d'ancienneté</label>
+                                    <input type="number" id="fiche-paie-prime-anciennete" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prime de rendement</label>
+                                    <input type="number" id="fiche-paie-prime-rendement" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prime de transport</label>
+                                    <input type="number" id="fiche-paie-prime-transport" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Indemnité de logement</label>
+                                    <input type="number" id="fiche-paie-indemnite-logement" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Autres primes</label>
+                                    <input type="number" id="fiche-paie-autres-primes" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Avantages en nature</label>
+                                    <input type="number" id="fiche-paie-avantages-nature" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Description avantages</label>
+                                    <input type="text" id="fiche-paie-desc-avantages" placeholder="Véhicule, téléphone..."
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Section 4: Cotisations sociales -->
+                        <div class="bg-blue-50 rounded-xl p-5 border border-blue-200">
+                            <h3 class="font-bold text-blue-800 mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-blue-600">security</span>
+                                Cotisations Sociales - Taux Sénégal
+                            </h3>
+                            
+                            <!-- Toggles pour activer/désactiver les cotisations -->
+                            <div class="bg-white rounded-lg p-4 mb-4 border">
+                                <p class="text-sm font-medium text-gray-700 mb-3">Activer / Désactiver les cotisations :</p>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-ipres-rg" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">IPRES Retraite</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-ipres-rc" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">IPRES Compl. (Cadres)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-ipm" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">IPM Maladie</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-trimf" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">TRIMF</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-pf" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">Prest. Familiales</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-at" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">Accidents Travail</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="toggle-cfe" checked class="w-4 h-4 text-blue-600 rounded" onchange="calculerToutesCotisations()">
+                                        <span class="text-sm">CFE</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Taux AT -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Taux Accidents du Travail (CSS)</label>
+                                    <select id="fiche-paie-taux-at" class="w-full px-3 py-2 border-2 border-blue-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                        <option value="1">1% - Bureaux, commerces</option>
+                                        <option value="3">3% - Industrie légère</option>
+                                        <option value="5" selected>5% - BTP, industries lourdes</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre d'enfants à charge</label>
+                                    <input type="number" id="fiche-paie-enfants" value="0" min="0" max="10" 
+                                        class="w-full px-3 py-2 border-2 border-blue-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                            </div>
+                            
+                            <!-- Tableau récapitulatif cotisations -->
+                            <div class="mt-4 bg-white rounded-lg border overflow-hidden">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-blue-100">
+                                        <tr>
+                                            <th class="text-left p-2">Cotisation</th>
+                                            <th class="text-center p-2">Base</th>
+                                            <th class="text-center p-2">Part Salariale</th>
+                                            <th class="text-center p-2">Part Patronale</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cotisations-tableau">
+                                        <tr class="border-b"><td colspan="4" class="p-2 text-center text-gray-400">Sélectionnez un employé...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Section 5: Retenues diverses -->
+                        <div class="bg-red-50 rounded-xl p-5 border border-red-200">
+                            <h3 class="font-bold text-red-800 mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-red-600">remove_circle</span>
+                                Retenues Diverses
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Avance sur salaire</label>
+                                    <input type="number" id="fiche-paie-avance" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-red-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Acompte</label>
+                                    <input type="number" id="fiche-paie-acompte" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-red-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Prêt employeur</label>
+                                    <input type="number" id="fiche-paie-pret" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-red-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Autres retenues</label>
+                                    <input type="number" id="fiche-paie-autres-retenues" value="0" min="0" step="1000" 
+                                        class="w-full px-3 py-2 border-2 border-red-200 rounded-lg" onchange="calculerToutesCotisations()">
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Motif autres retenues</label>
+                                <input type="text" id="fiche-paie-motif-retenues" placeholder="Précisez le motif..."
+                                    class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg">
+                            </div>
+                        </div>
+                        
+                        <!-- Section 6: Mode de paiement -->
+                        <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                            <h3 class="font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-gray-600">payments</span>
+                                Mode de Paiement
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mode *</label>
+                                    <select id="fiche-paie-mode-paiement" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg" required>
+                                        <option value="">-- Sélectionner --</option>
+                                        <option value="Virement bancaire">Virement bancaire</option>
+                                        <option value="Espèces">Espèces</option>
+                                        <option value="Chèque">Chèque</option>
+                                        <option value="Mobile Money">Mobile Money (Orange/Wave/Free)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Banque / Opérateur</label>
+                                    <input type="text" id="fiche-paie-banque" placeholder="Ex: CBAO, Wave..."
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">N° Compte / Téléphone</label>
+                                    <input type="text" id="fiche-paie-numero-compte" placeholder="IBAN ou N° téléphone"
+                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Récapitulatif en temps réel -->
+                        <div class="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl p-5 text-white">
+                            <h3 class="font-bold mb-4 flex items-center">
+                                <span class="material-icons mr-2 text-yellow-400">calculate</span>
+                                Récapitulatif du Bulletin
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div class="bg-white/10 rounded-lg p-3">
+                                    <p class="text-blue-200 text-xs">Salaire Brut</p>
+                                    <p id="recap-brut" class="font-mono font-bold text-lg">0 FCFA</p>
+                                </div>
+                                <div class="bg-white/10 rounded-lg p-3">
+                                    <p class="text-blue-200 text-xs">Cotisations Salariales</p>
+                                    <p id="recap-cotis-sal" class="font-mono font-bold text-lg text-red-300">- 0 FCFA</p>
+                                </div>
+                                <div class="bg-white/10 rounded-lg p-3">
+                                    <p class="text-blue-200 text-xs">Cotisations Patronales</p>
+                                    <p id="recap-cotis-pat" class="font-mono font-bold text-lg text-blue-300">0 FCFA</p>
+                                </div>
+                                <div class="bg-yellow-400 rounded-lg p-3">
+                                    <p class="text-blue-900 text-xs font-bold">NET À PAYER</p>
+                                    <p id="recap-net" class="font-mono font-bold text-xl text-blue-900">0 FCFA</p>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Boutons -->
                         <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-                            <button type="button" id="btn-apercu-fiche" class="flex-1 min-w-[150px] px-6 py-3 bg-yellow-500 text-white rounded-xl font-semibold hover:bg-yellow-600 transition flex items-center justify-center gap-2">
+                            <button type="button" id="btn-apercu-fiche" class="flex-1 min-w-[150px] px-6 py-3 bg-yellow-500 text-gray-900 rounded-xl font-semibold hover:bg-yellow-600 transition flex items-center justify-center gap-2">
                                 <span class="material-icons">preview</span> Aperçu
                             </button>
                             <button type="button" id="btn-generer-pdf" class="flex-1 min-w-[150px] px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition flex items-center justify-center gap-2">
@@ -2985,16 +3262,13 @@ function renderFicheDePaieForm() {
                         </div>
                     `}
                 </form>
-                
-                <!-- Zone d'aperçu -->
-                <div id="fiche-paie-apercu" class="p-6 border-t border-gray-200 hidden"></div>
             </div>
             
             <!-- Historique des fiches -->
             <div class="mt-6 bg-white rounded-2xl shadow-xl p-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                     <span class="material-icons mr-2 text-yellow-500">history</span>
-                    Historique des fiches de paie
+                    Historique des Bulletins de Paie
                 </h3>
                 <div id="fiches-paie-historique"></div>
             </div>
@@ -3009,8 +3283,6 @@ function renderFicheDePaieForm() {
 function initFichePaieEvents() {
     const selectEmploye = document.getElementById('fiche-paie-employe');
     const inputSalaire = document.getElementById('fiche-paie-salaire');
-    const inputPrimes = document.getElementById('fiche-paie-primes');
-    const inputRetenues = document.getElementById('fiche-paie-retenues');
     const btnApercu = document.getElementById('btn-apercu-fiche');
     const btnPDF = document.getElementById('btn-generer-pdf');
     const form = document.getElementById('fiche-paie-form');
@@ -3027,29 +3299,41 @@ function initFichePaieEvents() {
             const nom = option.dataset.nom || '';
             const poste = option.dataset.poste || 'N/A';
             const salaire = option.dataset.salaire || 0;
+            const categorie = option.dataset.categorie || '';
+            const dateEmbauche = option.dataset.dateembauche || '';
             
             // Afficher la carte info
             if (infoCard) infoCard.classList.remove('hidden');
             
-            document.getElementById('employe-avatar').textContent = (prenom.charAt(0) + nom.charAt(0)).toUpperCase();
-            document.getElementById('employe-fullname').textContent = `${prenom} ${nom}`;
-            document.getElementById('employe-poste-info').textContent = poste;
-            document.getElementById('employe-matricule-info').textContent = this.value;
+            document.getElementById('info-matricule').textContent = this.value;
+            document.getElementById('info-poste').textContent = poste;
+            document.getElementById('info-categorie').textContent = categorie || 'Non définie';
+            document.getElementById('info-embauche').textContent = dateEmbauche || 'Non définie';
             
             // Remplir le salaire
             if (inputSalaire) inputSalaire.value = salaire;
             
-            updateRecapFiche();
+            // Calculer les cotisations
+            calculerToutesCotisations();
         } else {
             if (infoCard) infoCard.classList.add('hidden');
             if (inputSalaire) inputSalaire.value = '';
         }
     });
     
-    // Mise à jour du récapitulatif en temps réel
-    [inputSalaire, inputPrimes, inputRetenues].forEach(input => {
+    // Mise à jour du récapitulatif en temps réel sur tous les champs numériques
+    const champsNumeriques = [
+        'fiche-paie-salaire', 'fiche-paie-heures-sup', 'fiche-paie-prime-anciennete',
+        'fiche-paie-prime-rendement', 'fiche-paie-prime-transport', 'fiche-paie-indemnite-logement',
+        'fiche-paie-autres-primes', 'fiche-paie-avantages-nature', 'fiche-paie-avance',
+        'fiche-paie-acompte', 'fiche-paie-pret', 'fiche-paie-autres-retenues', 'fiche-paie-enfants'
+    ];
+    
+    champsNumeriques.forEach(id => {
+        const input = document.getElementById(id);
         if (input) {
-            input.addEventListener('input', updateRecapFiche);
+            input.addEventListener('input', calculerToutesCotisations);
+            input.addEventListener('change', calculerToutesCotisations);
         }
     });
     
@@ -3076,23 +3360,256 @@ function initFichePaieEvents() {
     }
 }
 
-function updateRecapFiche() {
-    const salaire = parseFloat(document.getElementById('fiche-paie-salaire')?.value) || 0;
-    const primes = parseFloat(document.getElementById('fiche-paie-primes')?.value) || 0;
-    const retenues = parseFloat(document.getElementById('fiche-paie-retenues')?.value) || 0;
-    const net = salaire + primes - retenues;
+// Récupérer l'état des toggles de cotisations
+function getTogglesEtat() {
+    return {
+        ipresRG: document.getElementById('toggle-ipres-rg')?.checked ?? true,
+        ipresRC: document.getElementById('toggle-ipres-rc')?.checked ?? true,
+        ipm: document.getElementById('toggle-ipm')?.checked ?? true,
+        trimf: document.getElementById('toggle-trimf')?.checked ?? true,
+        pf: document.getElementById('toggle-pf')?.checked ?? true,
+        at: document.getElementById('toggle-at')?.checked ?? true,
+        cfe: document.getElementById('toggle-cfe')?.checked ?? true
+    };
+}
+
+// Calcul des cotisations sociales conformes au Sénégal
+function calculerCotisationsSN(salaireBrut, isCadre = false, tauxAT = 5, toggles = null) {
+    const plafondIPRES_RG = 432000;
+    const plafondIPRES_RC_Max = 1296000;
+    const plafondCSS = 63000;
+    const plafondIPM = 250000;
     
+    // Récupérer l'état des toggles si non fourni
+    if (!toggles) {
+        toggles = getTogglesEtat();
+    }
+    
+    // Bases de calcul avec plafonds
+    const baseIPRES_RG = Math.min(salaireBrut, plafondIPRES_RG);
+    const baseCSS = Math.min(salaireBrut, plafondCSS);
+    const baseIPM = Math.min(salaireBrut, plafondIPM);
+    
+    // Base IPRES Retraite Complémentaire (uniquement pour cadres, entre 432k et 1296k)
+    let baseIPRES_RC = 0;
+    if (isCadre && salaireBrut > plafondIPRES_RG) {
+        baseIPRES_RC = Math.min(salaireBrut, plafondIPRES_RC_Max) - plafondIPRES_RG;
+    }
+    
+    // Cotisations salariales (selon toggles actifs)
+    const salariales = {
+        ipresRG: toggles.ipresRG ? Math.round(baseIPRES_RG * 5.6 / 100) : 0,
+        ipresRC: (toggles.ipresRC && isCadre) ? Math.round(baseIPRES_RC * 2.4 / 100) : 0,
+        ipm: toggles.ipm ? Math.round(baseIPM * 3 / 100) : 0,
+        trimf: toggles.trimf ? 3000 : 0  // Forfait mensuel
+    };
+    salariales.total = salariales.ipresRG + salariales.ipresRC + salariales.ipm + salariales.trimf;
+    
+    // Cotisations patronales (selon toggles actifs)
+    const patronales = {
+        ipresRG: toggles.ipresRG ? Math.round(baseIPRES_RG * 8.4 / 100) : 0,
+        ipresRC: (toggles.ipresRC && isCadre) ? Math.round(baseIPRES_RC * 3.6 / 100) : 0,
+        prestationsFamiliales: toggles.pf ? Math.round(baseCSS * 7 / 100) : 0,
+        accidentsTravail: toggles.at ? Math.round(baseCSS * tauxAT / 100) : 0,
+        ipm: toggles.ipm ? Math.round(baseIPM * 3 / 100) : 0,
+        cfe: toggles.cfe ? Math.round(salaireBrut * 3 / 100) : 0
+    };
+    patronales.total = patronales.ipresRG + patronales.ipresRC + patronales.prestationsFamiliales + 
+                        patronales.accidentsTravail + patronales.ipm + patronales.cfe;
+    
+    return {
+        bases: {
+            ipresRG: baseIPRES_RG,
+            ipresRC: baseIPRES_RC,
+            css: baseCSS,
+            ipm: baseIPM
+        },
+        salariales,
+        patronales,
+        totalSalarial: salariales.total,
+        totalPatronal: patronales.total,
+        toggles  // Sauvegarder l'état des toggles
+    };
+}
+
+function calculerToutesCotisations() {
+    // Récupérer les valeurs
+    const salaireBase = parseFloat(document.getElementById('fiche-paie-salaire')?.value) || 0;
+    const heuresSup = parseFloat(document.getElementById('fiche-paie-heures-sup')?.value) || 0;
+    const primeAnciennete = parseFloat(document.getElementById('fiche-paie-prime-anciennete')?.value) || 0;
+    const primeRendement = parseFloat(document.getElementById('fiche-paie-prime-rendement')?.value) || 0;
+    const primeTransport = parseFloat(document.getElementById('fiche-paie-prime-transport')?.value) || 0;
+    const indemniteLogement = parseFloat(document.getElementById('fiche-paie-indemnite-logement')?.value) || 0;
+    const autresPrimes = parseFloat(document.getElementById('fiche-paie-autres-primes')?.value) || 0;
+    const avantagesNature = parseFloat(document.getElementById('fiche-paie-avantages-nature')?.value) || 0;
+    
+    // Retenues diverses
+    const avance = parseFloat(document.getElementById('fiche-paie-avance')?.value) || 0;
+    const acompte = parseFloat(document.getElementById('fiche-paie-acompte')?.value) || 0;
+    const pret = parseFloat(document.getElementById('fiche-paie-pret')?.value) || 0;
+    const autresRetenues = parseFloat(document.getElementById('fiche-paie-autres-retenues')?.value) || 0;
+    
+    // Paramètres
+    const isCadre = document.getElementById('fiche-paie-statut-salarie')?.value === 'cadre';
+    const tauxAT = parseFloat(document.getElementById('fiche-paie-taux-at')?.value) || 5;
+    
+    // Calcul heures supplémentaires (majoration 15% pour les 8 premières, 40% au-delà)
+    const tauxHoraire = salaireBase / 173.33;
+    let montantHeuresSup = 0;
+    if (heuresSup <= 8) {
+        montantHeuresSup = heuresSup * tauxHoraire * 1.15;
+    } else {
+        montantHeuresSup = (8 * tauxHoraire * 1.15) + ((heuresSup - 8) * tauxHoraire * 1.40);
+    }
+    montantHeuresSup = Math.round(montantHeuresSup);
+    
+    // Total des primes
+    const totalPrimes = primeAnciennete + primeRendement + autresPrimes + avantagesNature;
+    
+    // Indemnités non soumises à cotisations (transport, logement plafonné)
+    const indemnitesNonSoumises = primeTransport + Math.min(indemniteLogement, 100000);
+    
+    // Salaire brut soumis à cotisations
+    const salaireBrutSoumis = salaireBase + montantHeuresSup + totalPrimes;
+    
+    // Salaire brut total
+    const salaireBrutTotal = salaireBrutSoumis + primeTransport + indemniteLogement;
+    
+    // Calculer les cotisations
+    const cotisations = calculerCotisationsSN(salaireBrutSoumis, isCadre, tauxAT);
+    
+    // Retenues diverses totales
+    const totalRetenuesDiverses = avance + acompte + pret + autresRetenues;
+    
+    // Salaire net
+    const salaireNet = salaireBrutTotal - cotisations.totalSalarial - totalRetenuesDiverses;
+    
+    // Afficher le tableau des cotisations
+    afficherTableauCotisations(cotisations, salaireBrutSoumis, isCadre);
+    
+    // Mettre à jour le récapitulatif
     const format = (n) => n.toLocaleString('fr-FR') + ' FCFA';
     
-    const recapSalaire = document.getElementById('recap-salaire');
-    const recapPrimes = document.getElementById('recap-primes');
-    const recapRetenues = document.getElementById('recap-retenues');
+    const recapBrut = document.getElementById('recap-brut');
+    const recapCotisSal = document.getElementById('recap-cotis-sal');
+    const recapCotisPat = document.getElementById('recap-cotis-pat');
     const recapNet = document.getElementById('recap-net');
     
-    if (recapSalaire) recapSalaire.textContent = format(salaire);
-    if (recapPrimes) recapPrimes.textContent = format(primes);
-    if (recapRetenues) recapRetenues.textContent = format(retenues);
-    if (recapNet) recapNet.textContent = format(net);
+    if (recapBrut) recapBrut.textContent = format(salaireBrutTotal);
+    if (recapCotisSal) recapCotisSal.textContent = '- ' + format(cotisations.totalSalarial);
+    if (recapCotisPat) recapCotisPat.textContent = format(cotisations.totalPatronal);
+    if (recapNet) recapNet.textContent = format(salaireNet);
+    
+    return {
+        salaireBase,
+        montantHeuresSup,
+        heuresSup,
+        primeAnciennete,
+        primeRendement,
+        primeTransport,
+        indemniteLogement,
+        autresPrimes,
+        avantagesNature,
+        totalPrimes,
+        salaireBrutSoumis,
+        salaireBrutTotal,
+        cotisations,
+        avance,
+        acompte,
+        pret,
+        autresRetenues,
+        totalRetenuesDiverses,
+        salaireNet,
+        isCadre,
+        tauxAT
+    };
+}
+
+function afficherTableauCotisations(cotisations, salaireBrut, isCadre) {
+    const tableau = document.getElementById('cotisations-tableau');
+    if (!tableau) return;
+    
+    const format = (n) => n.toLocaleString('fr-FR');
+    const toggles = cotisations.toggles || getTogglesEtat();
+    
+    // Fonction pour style selon activation
+    const rowClass = (active) => active ? 'border-b hover:bg-blue-50' : 'border-b bg-gray-100 opacity-50';
+    const valClass = (active, type) => active ? (type === 'sal' ? 'text-red-600' : 'text-blue-600') : 'text-gray-400';
+    
+    let html = '';
+    
+    // IPRES Régime Général
+    html += `<tr class="${rowClass(toggles.ipresRG)}">
+        <td class="p-2 font-medium">${!toggles.ipresRG ? '<span class="line-through">IPRES Retraite (RG)</span> ❌' : 'IPRES Retraite (RG)'}</td>
+        <td class="p-2 text-center text-xs">${format(cotisations.bases.ipresRG)} <span class="text-gray-400">(plafond 432k)</span></td>
+        <td class="p-2 text-center ${valClass(toggles.ipresRG, 'sal')} font-mono">${format(cotisations.salariales.ipresRG)} <span class="text-gray-400">(5,6%)</span></td>
+        <td class="p-2 text-center ${valClass(toggles.ipresRG, 'pat')} font-mono">${format(cotisations.patronales.ipresRG)} <span class="text-gray-400">(8,4%)</span></td>
+    </tr>`;
+    
+    // IPRES RC (si cadre)
+    if (isCadre) {
+        html += `<tr class="${rowClass(toggles.ipresRC)} ${toggles.ipresRC ? 'bg-purple-50' : ''}">
+            <td class="p-2 font-medium">${!toggles.ipresRC ? '<span class="line-through">IPRES Complémentaire</span> ❌' : 'IPRES Complémentaire (Cadres)'}</td>
+            <td class="p-2 text-center text-xs">${format(cotisations.bases.ipresRC)}</td>
+            <td class="p-2 text-center ${valClass(toggles.ipresRC, 'sal')} font-mono">${format(cotisations.salariales.ipresRC)} <span class="text-gray-400">(2,4%)</span></td>
+            <td class="p-2 text-center ${valClass(toggles.ipresRC, 'pat')} font-mono">${format(cotisations.patronales.ipresRC)} <span class="text-gray-400">(3,6%)</span></td>
+        </tr>`;
+    }
+    
+    // IPM Maladie
+    html += `<tr class="${rowClass(toggles.ipm)}">
+        <td class="p-2 font-medium">${!toggles.ipm ? '<span class="line-through">IPM Maladie</span> ❌' : 'IPM Maladie'}</td>
+        <td class="p-2 text-center text-xs">${format(cotisations.bases.ipm)} <span class="text-gray-400">(plafond 250k)</span></td>
+        <td class="p-2 text-center ${valClass(toggles.ipm, 'sal')} font-mono">${format(cotisations.salariales.ipm)} <span class="text-gray-400">(3%)</span></td>
+        <td class="p-2 text-center ${valClass(toggles.ipm, 'pat')} font-mono">${format(cotisations.patronales.ipm)} <span class="text-gray-400">(3%)</span></td>
+    </tr>`;
+    
+    // TRIMF
+    html += `<tr class="${rowClass(toggles.trimf)}">
+        <td class="p-2 font-medium">${!toggles.trimf ? '<span class="line-through">TRIMF</span> ❌' : 'TRIMF'}</td>
+        <td class="p-2 text-center text-xs">Forfait mensuel</td>
+        <td class="p-2 text-center ${valClass(toggles.trimf, 'sal')} font-mono">${format(cotisations.salariales.trimf)}</td>
+        <td class="p-2 text-center text-gray-400">-</td>
+    </tr>`;
+    
+    // Prestations Familiales (CSS)
+    html += `<tr class="${rowClass(toggles.pf)}">
+        <td class="p-2 font-medium">${!toggles.pf ? '<span class="line-through">Prestations Familiales</span> ❌' : 'Prestations Familiales (CSS)'}</td>
+        <td class="p-2 text-center text-xs">${format(cotisations.bases.css)} <span class="text-gray-400">(plafond 63k)</span></td>
+        <td class="p-2 text-center text-gray-400">-</td>
+        <td class="p-2 text-center ${valClass(toggles.pf, 'pat')} font-mono">${format(cotisations.patronales.prestationsFamiliales)} <span class="text-gray-400">(7%)</span></td>
+    </tr>`;
+    
+    // Accidents du Travail (CSS)
+    const tauxAT = parseFloat(document.getElementById('fiche-paie-taux-at')?.value) || 5;
+    html += `<tr class="${rowClass(toggles.at)}">
+        <td class="p-2 font-medium">${!toggles.at ? '<span class="line-through">Accidents du Travail</span> ❌' : 'Accidents du Travail (CSS)'}</td>
+        <td class="p-2 text-center text-xs">${format(cotisations.bases.css)}</td>
+        <td class="p-2 text-center text-gray-400">-</td>
+        <td class="p-2 text-center ${valClass(toggles.at, 'pat')} font-mono">${format(cotisations.patronales.accidentsTravail)} <span class="text-gray-400">(${tauxAT}%)</span></td>
+    </tr>`;
+    
+    // CFE
+    html += `<tr class="${rowClass(toggles.cfe)}">
+        <td class="p-2 font-medium">${!toggles.cfe ? '<span class="line-through">CFE</span> ❌' : 'CFE (Contribution Forfaitaire)'}</td>
+        <td class="p-2 text-center text-xs">${format(salaireBrut)}</td>
+        <td class="p-2 text-center text-gray-400">-</td>
+        <td class="p-2 text-center ${valClass(toggles.cfe, 'pat')} font-mono">${format(cotisations.patronales.cfe)} <span class="text-gray-400">(3%)</span></td>
+    </tr>`;
+    
+    // TOTAUX
+    html += `<tr class="bg-gray-100 font-bold">
+        <td class="p-2">TOTAL COTISATIONS</td>
+        <td class="p-2 text-center"></td>
+        <td class="p-2 text-center text-red-700 font-mono">${format(cotisations.totalSalarial)}</td>
+        <td class="p-2 text-center text-blue-700 font-mono">${format(cotisations.totalPatronal)}</td>
+    </tr>`;
+    
+    tableau.innerHTML = html;
+}
+
+function updateCotisationsAffichage() {
+    calculerToutesCotisations();
 }
 
 function getFichePaieData() {
@@ -3104,18 +3621,10 @@ function getFichePaieData() {
     
     const option = selectEmploye.options[selectEmploye.selectedIndex];
     const mois = document.getElementById('fiche-paie-mois')?.value;
-    const salaire = parseFloat(document.getElementById('fiche-paie-salaire')?.value) || 0;
-    const primes = parseFloat(document.getElementById('fiche-paie-primes')?.value) || 0;
-    const retenues = parseFloat(document.getElementById('fiche-paie-retenues')?.value) || 0;
     const modePaiement = document.getElementById('fiche-paie-mode-paiement')?.value;
     
     if (!mois) {
         showNotification('Erreur', 'Veuillez sélectionner une période', 'error');
-        return null;
-    }
-    
-    if (salaire <= 0) {
-        showNotification('Erreur', 'Le salaire doit être supérieur à 0', 'error');
         return null;
     }
     
@@ -3124,28 +3633,87 @@ function getFichePaieData() {
         return null;
     }
     
+    // Calculer toutes les données
+    const calcul = calculerToutesCotisations();
+    
+    if (calcul.salaireBase <= 0) {
+        showNotification('Erreur', 'Le salaire doit être supérieur à 0', 'error');
+        return null;
+    }
+    
     // Récupérer les infos complètes de l'employé
     const employes = JSON.parse(localStorage.getItem('employes') || '[]');
     const employe = employes.find(e => e.matricule === selectEmploye.value);
     
     return {
+        // Identification
         matricule: selectEmploye.value,
         nom: option.dataset.nom || employe?.nom || '',
         prenom: option.dataset.prenom || employe?.prenom || '',
         poste: option.dataset.poste || employe?.poste || '',
         departement: option.dataset.departement || employe?.departement || '',
+        dateEmbauche: option.dataset.dateembauche || employe?.dateEmbauche || '',
+        
+        // Classification
+        categorie: document.getElementById('fiche-paie-categorie')?.value || '7',
+        echelon: document.getElementById('fiche-paie-echelon')?.value || 'A',
+        convention: document.getElementById('fiche-paie-convention')?.value || 'BTP',
+        statutSalarie: document.getElementById('fiche-paie-statut-salarie')?.value || 'non-cadre',
+        isCadre: calcul.isCadre,
+        
+        // Période
         mois,
-        salaire,
-        primes,
-        retenues,
+        
+        // Rémunération
+        salaireBase: calcul.salaireBase,
+        heuresTravaillees: parseFloat(document.getElementById('fiche-paie-heures')?.value) || 173.33,
+        heuresSup: calcul.heuresSup,
+        montantHeuresSup: calcul.montantHeuresSup,
+        primeAnciennete: calcul.primeAnciennete,
+        primeRendement: calcul.primeRendement,
+        primeTransport: calcul.primeTransport,
+        indemniteLogement: calcul.indemniteLogement,
+        autresPrimes: calcul.autresPrimes,
+        avantagesNature: calcul.avantagesNature,
+        descAvantages: document.getElementById('fiche-paie-desc-avantages')?.value || '',
+        totalPrimes: calcul.totalPrimes,
+        salaireBrutSoumis: calcul.salaireBrutSoumis,
+        salaireBrut: calcul.salaireBrutTotal,
+        
+        // Cotisations
+        cotisations: calcul.cotisations,
+        tauxAT: calcul.tauxAT,
+        nbEnfants: parseFloat(document.getElementById('fiche-paie-enfants')?.value) || 0,
+        
+        // Retenues diverses
+        avance: calcul.avance,
+        acompte: calcul.acompte,
+        pret: calcul.pret,
+        autresRetenues: calcul.autresRetenues,
+        motifRetenues: document.getElementById('fiche-paie-motif-retenues')?.value || '',
+        totalRetenuesDiverses: calcul.totalRetenuesDiverses,
+        
+        // Paiement
         modePaiement,
-        net: salaire + primes - retenues,
+        banque: document.getElementById('fiche-paie-banque')?.value || '',
+        numeroCompte: document.getElementById('fiche-paie-numero-compte')?.value || '',
+        
+        // Totaux
+        totalCotisationsSalariales: calcul.cotisations.totalSalarial,
+        totalCotisationsPatronales: calcul.cotisations.totalPatronal,
+        net: calcul.salaireNet,
+        
+        // Métadonnées
         date: new Date().toISOString(),
+        
         // Infos entreprise
         entreprise: 'KFS BTP IMMO',
-        adresse: 'Villa 123 MC, Quartier Medinacoura, Tambacounda, Senegal',
-        telephone: '+221 78 584 28 71',
-        email: 'kfsbtpproimmo@gmail.com'
+        adresseEntreprise: 'Villa 123 MC, Quartier Medinacoura, Tambacounda, Sénégal',
+        telephoneEntreprise: '+221 78 584 28 71',
+        emailEntreprise: 'kfsbtpproimmo@gmail.com',
+        nineaEntreprise: '009468499',
+        rccmEntreprise: 'SN TBC 2025 M 1361',
+        ipresEntreprise: 'À compléter'
     };
 }
 
@@ -3155,7 +3723,7 @@ function apercuFicheDePaie() {
     
     const moisFormate = new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
     const dateEmission = new Date().toLocaleDateString('fr-FR');
-    const heureEmission = new Date().toLocaleTimeString('fr-FR');
+    const format = (n) => (n || 0).toLocaleString('fr-FR');
     
     // Créer la modale
     const modal = document.createElement('div');
@@ -3166,13 +3734,13 @@ function apercuFicheDePaie() {
     };
     
     modal.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate__animated animate__zoomIn">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden animate__animated animate__zoomIn">
             <!-- Header de la modale -->
-            <div class="bg-gradient-to-r from-blue-700 to-blue-900 px-6 py-4 flex justify-between items-center">
+            <div class="bg-gradient-to-r from-blue-800 to-blue-900 px-6 py-4 flex justify-between items-center">
                 <div class="flex items-center gap-3">
                     <span class="material-icons text-yellow-400 text-2xl">receipt_long</span>
                     <div>
-                        <h2 class="text-xl font-bold text-white">Aperçu du Bulletin de Paie</h2>
+                        <h2 class="text-xl font-bold text-white">Bulletin de Paie - Conforme Sénégal</h2>
                         <p class="text-blue-200 text-sm">${fiche.prenom} ${fiche.nom} - ${moisFormate}</p>
                     </div>
                 </div>
@@ -3181,19 +3749,32 @@ function apercuFicheDePaie() {
                 </button>
             </div>
             
-            <!-- Contenu scrollable -->
-            <div class="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
+            <!-- Contenu scrollable avec scrollbar toujours visible -->
+            <div class="overflow-y-scroll max-h-[calc(95vh-180px)] p-6" style="scrollbar-width: auto; scrollbar-color: #3b82f6 #e5e7eb;">
+                <style>
+                    .overflow-y-scroll::-webkit-scrollbar {
+                        width: 12px;
+                    }
+                    .overflow-y-scroll::-webkit-scrollbar-track {
+                        background: #e5e7eb;
+                        border-radius: 6px;
+                    }
+                    .overflow-y-scroll::-webkit-scrollbar-thumb {
+                        background: #3b82f6;
+                        border-radius: 6px;
+                        border: 2px solid #e5e7eb;
+                    }
+                    .overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+                        background: #1e3a8a;
+                    }
+                </style>
                 <!-- En-tête entreprise -->
-                <div class="flex flex-col md:flex-row justify-between items-start gap-4 border-b-2 border-blue-600 pb-4 mb-6">
-                    <div class="flex items-center gap-4">
-                        <div class="w-16 h-16 bg-blue-900 rounded-xl flex items-center justify-center">
-                            <span class="text-yellow-400 font-bold text-xl">KFS</span>
-                        </div>
-                        <div>
-                            <h1 class="text-2xl font-bold text-blue-800">${fiche.entreprise}</h1>
-                            <p class="text-sm text-gray-600">${fiche.adresse}</p>
-                            <p class="text-sm text-gray-600">Tél: ${fiche.telephone} | ${fiche.email}</p>
-                        </div>
+                <div class="flex flex-col md:flex-row justify-between items-start gap-4 border-b-2 border-blue-600 pb-4 mb-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-blue-800">KFS BTP IMMO</h1>
+                        <p class="text-sm text-gray-600">Villa 123 MC, Medinacoura, Tambacounda</p>
+                        <p class="text-sm text-gray-600">NINEA: ${fiche.nineaEntreprise} | RCCM: ${fiche.rccmEntreprise}</p>
+                        <p class="text-sm text-gray-600">Tél: ${fiche.telephoneEntreprise}</p>
                     </div>
                     <div class="text-right">
                         <div class="bg-gradient-to-br from-blue-600 to-blue-800 text-white px-5 py-3 rounded-xl shadow-lg">
@@ -3205,85 +3786,148 @@ function apercuFicheDePaie() {
                 </div>
                 
                 <!-- Infos employé -->
-                <div class="bg-gradient-to-r from-blue-50 to-gray-50 rounded-xl p-5 mb-6 border-l-4 border-blue-600">
-                    <h3 class="font-bold text-blue-800 mb-3 flex items-center gap-2">
-                        <span class="material-icons text-blue-600">badge</span>
-                        Identification du Salarié
-                    </h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                            <p class="text-gray-500 text-xs">Nom complet</p>
-                            <p class="font-bold text-gray-800">${fiche.prenom} ${fiche.nom}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Matricule</p>
-                            <p class="font-bold font-mono text-blue-700 bg-blue-100 inline-block px-2 py-1 rounded">${fiche.matricule}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Poste occupé</p>
-                            <p class="font-bold text-gray-800">${fiche.poste || 'Non défini'}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-500 text-xs">Département</p>
-                            <p class="font-bold text-gray-800">${fiche.departement || 'Non défini'}</p>
-                        </div>
+                <div class="bg-blue-50 rounded-xl p-4 mb-4 border-l-4 border-blue-600">
+                    <h3 class="font-bold text-blue-800 mb-2">Identification du Salarié</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div><p class="text-gray-500 text-xs">Nom complet</p><p class="font-bold">${fiche.prenom} ${fiche.nom}</p></div>
+                        <div><p class="text-gray-500 text-xs">Matricule</p><p class="font-mono font-bold text-blue-700">${fiche.matricule}</p></div>
+                        <div><p class="text-gray-500 text-xs">Poste</p><p class="font-bold">${fiche.poste || 'N/D'}</p></div>
+                        <div><p class="text-gray-500 text-xs">Catégorie/Échelon</p><p class="font-bold">${fiche.categorie}-${fiche.echelon}</p></div>
+                        <div><p class="text-gray-500 text-xs">Convention</p><p class="font-bold">${fiche.convention}</p></div>
+                        <div><p class="text-gray-500 text-xs">Statut</p><p class="font-bold">${fiche.isCadre ? 'Cadre' : 'Non-cadre'}</p></div>
+                        <div><p class="text-gray-500 text-xs">Date embauche</p><p class="font-bold">${fiche.dateEmbauche || 'N/D'}</p></div>
+                        <div><p class="text-gray-500 text-xs">Heures travaillées</p><p class="font-bold">${fiche.heuresTravaillees}h</p></div>
                     </div>
                 </div>
                 
-                <!-- Tableau détail salaire -->
-                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <!-- GAINS ET COTISATIONS -->
+                <div class="grid md:grid-cols-2 gap-4 mb-4">
                     <!-- Colonne GAINS -->
                     <div class="border rounded-xl overflow-hidden">
                         <div class="bg-green-600 text-white px-4 py-2 font-bold flex items-center gap-2">
                             <span class="material-icons">add_circle</span> GAINS
                         </div>
-                        <div class="p-4 space-y-3">
-                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
-                                <span class="text-gray-700">Salaire de base</span>
-                                <span class="font-mono font-bold">${fiche.salaire.toLocaleString('fr-FR')}</span>
+                        <div class="p-3 space-y-2 text-sm">
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Salaire de base</span>
+                                <span class="font-mono font-bold">${format(fiche.salaireBase)}</span>
                             </div>
-                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
-                                <span class="text-gray-700">Primes et indemnités</span>
-                                <span class="font-mono font-bold text-green-600">+ ${fiche.primes.toLocaleString('fr-FR')}</span>
-                            </div>
-                            <div class="flex justify-between items-center pt-2 bg-green-50 -mx-4 px-4 py-2">
-                                <span class="font-bold text-green-700">TOTAL GAINS</span>
-                                <span class="font-mono font-bold text-green-700">${(fiche.salaire + fiche.primes).toLocaleString('fr-FR')}</span>
+                            ${fiche.montantHeuresSup > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Heures sup. (${fiche.heuresSup}h)</span>
+                                <span class="font-mono text-green-600">${format(fiche.montantHeuresSup)}</span>
+                            </div>` : ''}
+                            ${fiche.primeAnciennete > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Prime d'ancienneté</span>
+                                <span class="font-mono text-green-600">${format(fiche.primeAnciennete)}</span>
+                            </div>` : ''}
+                            ${fiche.primeRendement > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Prime de rendement</span>
+                                <span class="font-mono text-green-600">${format(fiche.primeRendement)}</span>
+                            </div>` : ''}
+                            ${fiche.primeTransport > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Prime de transport</span>
+                                <span class="font-mono text-green-600">${format(fiche.primeTransport)}</span>
+                            </div>` : ''}
+                            ${fiche.indemniteLogement > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Indemnité de logement</span>
+                                <span class="font-mono text-green-600">${format(fiche.indemniteLogement)}</span>
+                            </div>` : ''}
+                            ${fiche.autresPrimes > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Autres primes</span>
+                                <span class="font-mono text-green-600">${format(fiche.autresPrimes)}</span>
+                            </div>` : ''}
+                            ${fiche.avantagesNature > 0 ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>Avantages en nature</span>
+                                <span class="font-mono text-green-600">${format(fiche.avantagesNature)}</span>
+                            </div>` : ''}
+                            <div class="flex justify-between pt-2 bg-green-50 -mx-3 px-3 py-2 mt-2 font-bold">
+                                <span class="text-green-700">SALAIRE BRUT</span>
+                                <span class="text-green-700 font-mono">${format(fiche.salaireBrut)}</span>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Colonne RETENUES -->
+                    <!-- Colonne COTISATIONS SALARIALES -->
                     <div class="border rounded-xl overflow-hidden">
                         <div class="bg-red-600 text-white px-4 py-2 font-bold flex items-center gap-2">
-                            <span class="material-icons">remove_circle</span> RETENUES
+                            <span class="material-icons">remove_circle</span> COTISATIONS SALARIALES
                         </div>
-                        <div class="p-4 space-y-3">
-                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
-                                <span class="text-gray-700">Retenues sur salaire</span>
-                                <span class="font-mono font-bold text-red-600">- ${fiche.retenues.toLocaleString('fr-FR')}</span>
+                        <div class="p-3 space-y-2 text-sm">
+                            <div class="flex justify-between border-b pb-1">
+                                <span>IPRES Retraite (5,6%)</span>
+                                <span class="font-mono text-red-600">-${format(fiche.cotisations.salariales.ipresRG)}</span>
                             </div>
-                            <div class="flex justify-between items-center pb-2 border-b border-gray-200">
-                                <span class="text-gray-400 italic">Autres retenues</span>
-                                <span class="font-mono text-gray-400">Néant</span>
+                            ${fiche.isCadre ? `
+                            <div class="flex justify-between border-b pb-1">
+                                <span>IPRES Complémentaire (2,4%)</span>
+                                <span class="font-mono text-red-600">-${format(fiche.cotisations.salariales.ipresRC)}</span>
+                            </div>` : ''}
+                            <div class="flex justify-between border-b pb-1">
+                                <span>IPM Maladie (3%)</span>
+                                <span class="font-mono text-red-600">-${format(fiche.cotisations.salariales.ipm)}</span>
                             </div>
-                            <div class="flex justify-between items-center pt-2 bg-red-50 -mx-4 px-4 py-2">
-                                <span class="font-bold text-red-700">TOTAL RETENUES</span>
-                                <span class="font-mono font-bold text-red-700">${fiche.retenues.toLocaleString('fr-FR')}</span>
+                            <div class="flex justify-between border-b pb-1">
+                                <span>TRIMF</span>
+                                <span class="font-mono text-red-600">-${format(fiche.cotisations.salariales.trimf)}</span>
+                            </div>
+                            ${fiche.avance > 0 ? `
+                            <div class="flex justify-between border-b pb-1 bg-yellow-50 -mx-3 px-3">
+                                <span>Avance sur salaire</span>
+                                <span class="font-mono text-red-600">-${format(fiche.avance)}</span>
+                            </div>` : ''}
+                            ${fiche.acompte > 0 ? `
+                            <div class="flex justify-between border-b pb-1 bg-yellow-50 -mx-3 px-3">
+                                <span>Acompte</span>
+                                <span class="font-mono text-red-600">-${format(fiche.acompte)}</span>
+                            </div>` : ''}
+                            ${fiche.pret > 0 ? `
+                            <div class="flex justify-between border-b pb-1 bg-yellow-50 -mx-3 px-3">
+                                <span>Remb. prêt</span>
+                                <span class="font-mono text-red-600">-${format(fiche.pret)}</span>
+                            </div>` : ''}
+                            ${fiche.autresRetenues > 0 ? `
+                            <div class="flex justify-between border-b pb-1 bg-yellow-50 -mx-3 px-3">
+                                <span>Autres retenues</span>
+                                <span class="font-mono text-red-600">-${format(fiche.autresRetenues)}</span>
+                            </div>` : ''}
+                            <div class="flex justify-between pt-2 bg-red-50 -mx-3 px-3 py-2 mt-2 font-bold">
+                                <span class="text-red-700">TOTAL RETENUES</span>
+                                <span class="text-red-700 font-mono">${format(fiche.totalCotisationsSalariales + fiche.totalRetenuesDiverses)}</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Cotisations patronales (info) -->
+                <div class="bg-blue-50 rounded-xl p-3 mb-4 text-sm">
+                    <h4 class="font-bold text-blue-800 mb-2">Cotisations Patronales (pour information)</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div><span class="text-gray-500">IPRES (8,4%)</span><br><span class="font-mono">${format(fiche.cotisations.patronales.ipresRG)}</span></div>
+                        ${fiche.isCadre ? `<div><span class="text-gray-500">IPRES Compl. (3,6%)</span><br><span class="font-mono">${format(fiche.cotisations.patronales.ipresRC)}</span></div>` : ''}
+                        <div><span class="text-gray-500">Prest. Fam. (7%)</span><br><span class="font-mono">${format(fiche.cotisations.patronales.prestationsFamiliales)}</span></div>
+                        <div><span class="text-gray-500">AT (${fiche.tauxAT}%)</span><br><span class="font-mono">${format(fiche.cotisations.patronales.accidentsTravail)}</span></div>
+                        <div><span class="text-gray-500">IPM (3%)</span><br><span class="font-mono">${format(fiche.cotisations.patronales.ipm)}</span></div>
+                        <div><span class="text-gray-500">CFE (3%)</span><br><span class="font-mono">${format(fiche.cotisations.patronales.cfe)}</span></div>
+                        <div class="font-bold"><span class="text-blue-800">TOTAL</span><br><span class="font-mono text-blue-800">${format(fiche.totalCotisationsPatronales)}</span></div>
+                    </div>
+                </div>
+                
                 <!-- NET À PAYER -->
-                <div class="bg-gradient-to-r from-blue-800 to-blue-900 rounded-xl p-5 mb-6 shadow-lg">
+                <div class="bg-gradient-to-r from-blue-800 to-blue-900 rounded-xl p-5 mb-4 shadow-lg">
                     <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div class="flex items-center gap-3">
                             <span class="material-icons text-yellow-400 text-3xl">account_balance_wallet</span>
                             <span class="text-white font-bold text-xl">NET À PAYER</span>
                         </div>
                         <div class="bg-yellow-400 text-blue-900 font-bold text-2xl px-6 py-3 rounded-xl shadow-md font-mono">
-                            ${fiche.net.toLocaleString('fr-FR')} FCFA
+                            ${format(fiche.net)} FCFA
                         </div>
                     </div>
                 </div>
@@ -3295,7 +3939,7 @@ function apercuFicheDePaie() {
                     </div>
                     <div>
                         <p class="text-xs text-gray-500">Mode de paiement</p>
-                        <p class="font-bold text-gray-800 text-lg">${fiche.modePaiement}</p>
+                        <p class="font-bold text-gray-800">${fiche.modePaiement} ${fiche.banque ? '- ' + fiche.banque : ''}</p>
                     </div>
                 </div>
             </div>
@@ -3304,7 +3948,7 @@ function apercuFicheDePaie() {
             <div class="bg-gray-50 px-6 py-4 border-t flex flex-wrap justify-between items-center gap-3">
                 <p class="text-xs text-gray-500">
                     <span class="material-icons text-sm align-middle">info</span>
-                    Ce bulletin doit être conservé sans limitation de durée
+                    Conforme au Code du Travail Sénégalais - À conserver sans limitation de durée
                 </p>
                 <div class="flex gap-3">
                     <button onclick="fermerApercuFichePaie()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center gap-2">
@@ -3349,7 +3993,7 @@ function genererFicheDePaiePDF() {
     
     // Fonction de formatage des nombres compatible avec jsPDF
     function formatMontant(nombre) {
-        return nombre.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        return (nombre || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
     
     try {
@@ -3359,251 +4003,335 @@ function genererFicheDePaiePDF() {
         const moisFormate = new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
         const dateEmission = new Date().toLocaleDateString('fr-FR');
         
-        // Couleurs professionnelles
-        const bleuFonce = [30, 58, 138];
-        const bleuClair = [59, 130, 246];
-        const gris = [100, 100, 100];
-        const grisClair = [245, 245, 245];
-        const vert = [34, 197, 94];
-        const rouge = [220, 38, 38];
+        // Couleurs NOIR ET BLANC uniquement
+        const noir = [0, 0, 0];
+        const gris = [80, 80, 80];
+        const grisClair = [240, 240, 240];
+        const blanc = [255, 255, 255];
         
         // ========== EN-TÊTE ==========
-        // Bandeau supérieur bleu
-        doc.setFillColor(...bleuFonce);
-        doc.rect(0, 0, 210, 8, 'F');
+        doc.setFillColor(...noir);
+        doc.rect(0, 0, 210, 6, 'F');
         
-        // Zone entreprise (gauche)
-        doc.setFillColor(255, 255, 255);
-        doc.rect(10, 12, 90, 35, 'F');
-        doc.setDrawColor(...bleuClair);
-        doc.setLineWidth(0.5);
-        doc.rect(10, 12, 90, 35, 'S');
+        // Zone entreprise
+        doc.setFillColor(...blanc);
+        doc.rect(10, 10, 90, 30, 'F');
+        doc.setDrawColor(...noir);
+        doc.setLineWidth(0.3);
+        doc.rect(10, 10, 90, 30, 'S');
         
-        doc.setTextColor(...bleuFonce);
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('KFS BTP IMMO', 55, 22, { align: 'center' });
-        
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...gris);
-        doc.text('Villa 123 MC, Quartier Medinacoura', 55, 29, { align: 'center' });
-        doc.text('Tambacounda, Senegal', 55, 34, { align: 'center' });
-        doc.text('Tel: +221 78 584 28 71', 55, 39, { align: 'center' });
-        doc.text('Email: kfsbtpproimmo@gmail.com', 55, 44, { align: 'center' });
-        
-        // Zone titre (droite)
-        doc.setFillColor(...bleuFonce);
-        doc.rect(110, 12, 90, 35, 'F');
-        
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(18);
-        doc.setFont('helvetica', 'bold');
-        doc.text('BULLETIN DE PAIE', 155, 25, { align: 'center' });
-        
-        doc.setFontSize(12);
-        doc.text(moisFormate.toUpperCase(), 155, 35, { align: 'center' });
-        
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Emis le: ' + dateEmission, 155, 44, { align: 'center' });
-        
-        // ========== INFORMATIONS EMPLOYE ==========
-        const startEmploye = 55;
-        
-        // Titre section
-        doc.setFillColor(...bleuClair);
-        doc.rect(10, startEmploye, 190, 8, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('IDENTIFICATION DU SALARIE', 105, startEmploye + 5.5, { align: 'center' });
-        
-        // Cadre infos employé
-        doc.setFillColor(...grisClair);
-        doc.rect(10, startEmploye + 8, 190, 28, 'F');
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(10, startEmploye + 8, 190, 28, 'S');
-        
-        // Colonne gauche
-        doc.setTextColor(...gris);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Nom et Prenom:', 15, startEmploye + 16);
-        doc.text('Poste occupe:', 15, startEmploye + 24);
-        doc.text('Departement:', 15, startEmploye + 32);
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text((fiche.prenom + ' ' + fiche.nom).toUpperCase(), 50, startEmploye + 16);
-        doc.text(fiche.poste || 'Non defini', 50, startEmploye + 24);
-        doc.text(fiche.departement || 'Non defini', 50, startEmploye + 32);
-        
-        // Colonne droite
-        doc.setTextColor(...gris);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Matricule:', 130, startEmploye + 16);
-        doc.text('Periode:', 130, startEmploye + 24);
-        doc.text('Mode de paiement:', 130, startEmploye + 32);
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text(fiche.matricule, 165, startEmploye + 16);
-        doc.text(moisFormate, 165, startEmploye + 24);
-        doc.text(fiche.modePaiement || 'Non specifie', 165, startEmploye + 32);
-        
-        // ========== TABLEAU SALAIRE ==========
-        const startTableau = 100;
-        
-        // Titre section GAINS
-        doc.setFillColor(...bleuClair);
-        doc.rect(10, startTableau, 95, 8, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('GAINS', 57, startTableau + 5.5, { align: 'center' });
-        
-        // Titre section RETENUES
-        doc.setFillColor(...bleuClair);
-        doc.rect(105, startTableau, 95, 8, 'F');
-        doc.text('RETENUES', 152, startTableau + 5.5, { align: 'center' });
-        
-        // Colonne GAINS
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(10, startTableau + 8, 95, 50, 'S');
-        
-        let yGains = startTableau + 18;
-        
-        // Salaire de base
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Salaire de base', 15, yGains);
-        doc.setFont('helvetica', 'bold');
-        doc.text(formatMontant(fiche.salaire), 100, yGains, { align: 'right' });
-        
-        doc.setDrawColor(230, 230, 230);
-        doc.line(12, yGains + 3, 103, yGains + 3);
-        
-        // Primes
-        yGains += 12;
-        doc.setFont('helvetica', 'normal');
-        doc.text('Primes et indemnites', 15, yGains);
-        doc.setTextColor(...vert);
-        doc.setFont('helvetica', 'bold');
-        doc.text(formatMontant(fiche.primes), 100, yGains, { align: 'right' });
-        
-        doc.setDrawColor(230, 230, 230);
-        doc.line(12, yGains + 3, 103, yGains + 3);
-        
-        // Total Gains
-        yGains += 20;
-        doc.setFillColor(240, 255, 240);
-        doc.rect(12, yGains - 5, 91, 12, 'F');
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('TOTAL GAINS', 15, yGains + 2);
-        doc.setTextColor(...vert);
-        doc.text(formatMontant(fiche.salaire + fiche.primes), 100, yGains + 2, { align: 'right' });
-        
-        // Colonne RETENUES
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(105, startTableau + 8, 95, 50, 'S');
-        
-        let yRetenues = startTableau + 18;
-        
-        // Retenues sur salaire
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Retenues sur salaire', 110, yRetenues);
-        doc.setTextColor(...rouge);
-        doc.setFont('helvetica', 'bold');
-        doc.text(formatMontant(fiche.retenues), 195, yRetenues, { align: 'right' });
-        
-        doc.setDrawColor(230, 230, 230);
-        doc.line(107, yRetenues + 3, 198, yRetenues + 3);
-        
-        // Espace pour autres retenues potentielles
-        yRetenues += 12;
-        doc.setTextColor(...gris);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.text('(Autres retenues: neant)', 110, yRetenues);
-        
-        // Total Retenues
-        yRetenues += 20;
-        doc.setFillColor(255, 240, 240);
-        doc.rect(107, yRetenues - 5, 91, 12, 'F');
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('TOTAL RETENUES', 110, yRetenues + 2);
-        doc.setTextColor(...rouge);
-        doc.text(formatMontant(fiche.retenues), 195, yRetenues + 2, { align: 'right' });
-        
-        // ========== NET A PAYER ==========
-        const startNet = 168;
-        
-        // Grand encadré bleu foncé
-        doc.setFillColor(...bleuFonce);
-        doc.roundedRect(10, startNet, 190, 22, 3, 3, 'F');
-        
-        // Texte NET A PAYER
-        doc.setTextColor(255, 255, 255);
+        doc.setTextColor(...noir);
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('NET A PAYER', 20, startNet + 14);
+        doc.text('KFS BTP IMMO', 55, 18, { align: 'center' });
         
-        // Encadré jaune pour le montant
-        doc.setFillColor(250, 204, 21);
-        doc.roundedRect(100, startNet + 3, 95, 16, 2, 2, 'F');
-        
-        // Montant
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(formatMontant(fiche.net) + ' FCFA', 147, startNet + 14, { align: 'center' });
-        
-        // ========== SIGNATURES ==========
-        const startSign = 198;
-        
-        // Ligne de séparation
-        doc.setDrawColor(...bleuClair);
-        doc.setLineWidth(0.5);
-        doc.line(10, startSign - 3, 200, startSign - 3);
-        
-        // Signature Employeur
-        doc.setDrawColor(200, 200, 200);
-        doc.rect(15, startSign, 80, 35, 'S');
-        doc.setTextColor(...gris);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Signature et cachet de l\'employeur', 55, startSign + 6, { align: 'center' });
-        doc.text('KFS BTP IMMO', 55, startSign + 30, { align: 'center' });
-        
-        // Signature Employé
-        doc.rect(115, startSign, 80, 35, 'S');
-        doc.text('Signature du salarie', 155, startSign + 6, { align: 'center' });
-        doc.text('(Lu et approuve)', 155, startSign + 30, { align: 'center' });
-        
-        // ========== PIED DE PAGE ==========
-        // Bandeau inférieur
-        doc.setFillColor(...bleuFonce);
-        doc.rect(0, 280, 210, 17, 'F');
-        
-        doc.setTextColor(255, 255, 255);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
-        doc.text('Ce bulletin de paie doit etre conserve sans limitation de duree - Article L.143-3 du Code du Travail', 105, 286, { align: 'center' });
-        doc.text('KFS BTP IMMO - NINEA: XXXXXXXXX - RC: XXXXXXXX - Document genere electroniquement', 105, 292, { align: 'center' });
+        doc.setTextColor(...gris);
+        doc.text('Villa 123 MC, Medinacoura, Tambacounda', 55, 24, { align: 'center' });
+        doc.text('NINEA: ' + fiche.nineaEntreprise + ' | RCCM: ' + fiche.rccmEntreprise, 55, 29, { align: 'center' });
+        doc.text('Tel: ' + fiche.telephoneEntreprise, 55, 34, { align: 'center' });
+        
+        // Zone titre
+        doc.setFillColor(...noir);
+        doc.rect(110, 10, 90, 30, 'F');
+        
+        doc.setTextColor(...blanc);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BULLETIN DE PAIE', 155, 20, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(moisFormate.toUpperCase(), 155, 28, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Emis le ' + dateEmission, 155, 35, { align: 'center' });
+        
+        // ========== IDENTIFICATION SALARIÉ ==========
+        let y = 48;
+        
+        doc.setFillColor(...gris);
+        doc.rect(10, y, 190, 6, 'F');
+        doc.setTextColor(...blanc);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('IDENTIFICATION DU SALARIE', 105, y + 4, { align: 'center' });
+        
+        y += 6;
+        doc.setFillColor(...grisClair);
+        doc.rect(10, y, 190, 22, 'F');
+        doc.setDrawColor(150, 150, 150);
+        doc.rect(10, y, 190, 22, 'S');
+        
+        // Infos employé - Colonne 1
+        doc.setTextColor(...gris);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Nom et Prenom:', 12, y + 6);
+        doc.text('Poste:', 12, y + 12);
+        doc.text('Date embauche:', 12, y + 18);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text((fiche.prenom + ' ' + fiche.nom).toUpperCase(), 40, y + 6);
+        doc.text(fiche.poste || 'N/D', 40, y + 12);
+        doc.text(fiche.dateEmbauche || 'N/D', 40, y + 18);
+        
+        // Infos employé - Colonne 2
+        doc.setTextColor(...gris);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Matricule:', 80, y + 6);
+        doc.text('Cat./Ech.:', 80, y + 12);
+        doc.text('Convention:', 80, y + 18);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text(fiche.matricule, 105, y + 6);
+        doc.text(fiche.categorie + '-' + fiche.echelon, 105, y + 12);
+        doc.text(fiche.convention, 105, y + 18);
+        
+        // Infos employé - Colonne 3
+        doc.setTextColor(...gris);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Statut:', 140, y + 6);
+        doc.text('Heures:', 140, y + 12);
+        doc.text('Mode paiement:', 140, y + 18);
+        
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text(fiche.isCadre ? 'Cadre' : 'Non-cadre', 170, y + 6);
+        doc.text(fiche.heuresTravaillees + 'h', 170, y + 12);
+        doc.text(fiche.modePaiement, 170, y + 18);
+        
+        // ========== TABLEAU GAINS / RETENUES ==========
+        y += 28;
+        
+        // Titres colonnes - NOIR
+        doc.setFillColor(...noir);
+        doc.rect(10, y, 95, 6, 'F');
+        doc.setFillColor(...noir);
+        doc.rect(105, y, 95, 6, 'F');
+        
+        doc.setTextColor(...blanc);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('GAINS', 57, y + 4, { align: 'center' });
+        doc.text('RETENUES', 152, y + 4, { align: 'center' });
+        
+        y += 6;
+        
+        // Contenu GAINS
+        doc.setDrawColor(150, 150, 150);
+        doc.rect(10, y, 95, 55, 'S');
+        
+        let yGains = y + 6;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(7);
+        
+        // Salaire de base
+        doc.setFont('helvetica', 'normal');
+        doc.text('Salaire de base', 12, yGains);
+        doc.setFont('helvetica', 'bold');
+        doc.text(formatMontant(fiche.salaireBase), 102, yGains, { align: 'right' });
+        
+        yGains += 5;
+        if (fiche.montantHeuresSup > 0) {
+            doc.setFont('helvetica', 'normal');
+            doc.text('Heures supp. (' + fiche.heuresSup + 'h)', 12, yGains);
+            doc.setFont('helvetica', 'bold');
+            doc.text(formatMontant(fiche.montantHeuresSup), 102, yGains, { align: 'right' });
+            yGains += 5;
+        }
+        
+        if (fiche.primeAnciennete > 0) {
+            doc.setFont('helvetica', 'normal');
+            doc.text('Prime anciennete', 12, yGains);
+            doc.text(formatMontant(fiche.primeAnciennete), 102, yGains, { align: 'right' });
+            yGains += 5;
+        }
+        
+        if (fiche.primeRendement > 0) {
+            doc.setFont('helvetica', 'normal');
+            doc.text('Prime rendement', 12, yGains);
+            doc.text(formatMontant(fiche.primeRendement), 102, yGains, { align: 'right' });
+            yGains += 5;
+        }
+        
+        if (fiche.primeTransport > 0) {
+            doc.setFont('helvetica', 'normal');
+            doc.text('Prime transport', 12, yGains);
+            doc.text(formatMontant(fiche.primeTransport), 102, yGains, { align: 'right' });
+            yGains += 5;
+        }
+        
+        if (fiche.indemniteLogement > 0) {
+            doc.setFont('helvetica', 'normal');
+            doc.text('Indemnite logement', 12, yGains);
+            doc.text(formatMontant(fiche.indemniteLogement), 102, yGains, { align: 'right' });
+            yGains += 5;
+        }
+        
+        if (fiche.autresPrimes > 0) {
+            doc.setFont('helvetica', 'normal');
+            doc.text('Autres primes', 12, yGains);
+            doc.text(formatMontant(fiche.autresPrimes), 102, yGains, { align: 'right' });
+            yGains += 5;
+        }
+        
+        // Total Gains
+        doc.setFillColor(...grisClair);
+        doc.rect(11, y + 47, 93, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.text('SALAIRE BRUT', 12, y + 52);
+        doc.setTextColor(...noir);
+        doc.text(formatMontant(fiche.salaireBrut), 102, y + 52, { align: 'right' });
+        
+        // Contenu RETENUES
+        doc.rect(105, y, 95, 55, 'S');
+        
+        let yRet = y + 6;
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(7);
+        
+        // IPRES RG
+        doc.setFont('helvetica', 'normal');
+        doc.text('IPRES Retraite (5,6%)', 107, yRet);
+        doc.text(formatMontant(fiche.cotisations.salariales.ipresRG), 197, yRet, { align: 'right' });
+        yRet += 5;
+        
+        // IPRES RC si cadre
+        if (fiche.isCadre) {
+            doc.text('IPRES Complementaire (2,4%)', 107, yRet);
+            doc.text(formatMontant(fiche.cotisations.salariales.ipresRC), 197, yRet, { align: 'right' });
+            yRet += 5;
+        }
+        
+        // IPM
+        doc.text('IPM Maladie (3%)', 107, yRet);
+        doc.text(formatMontant(fiche.cotisations.salariales.ipm), 197, yRet, { align: 'right' });
+        yRet += 5;
+        
+        // TRIMF
+        doc.text('TRIMF', 107, yRet);
+        doc.text(formatMontant(fiche.cotisations.salariales.trimf), 197, yRet, { align: 'right' });
+        yRet += 5;
+        
+        // Retenues diverses
+        if (fiche.avance > 0) {
+            doc.text('Avance sur salaire', 107, yRet);
+            doc.text(formatMontant(fiche.avance), 197, yRet, { align: 'right' });
+            yRet += 5;
+        }
+        
+        if (fiche.acompte > 0) {
+            doc.text('Acompte', 107, yRet);
+            doc.text(formatMontant(fiche.acompte), 197, yRet, { align: 'right' });
+            yRet += 5;
+        }
+        
+        if (fiche.pret > 0) {
+            doc.text('Remboursement pret', 107, yRet);
+            doc.text(formatMontant(fiche.pret), 197, yRet, { align: 'right' });
+            yRet += 5;
+        }
+        
+        if (fiche.autresRetenues > 0) {
+            doc.text('Autres retenues', 107, yRet);
+            doc.text(formatMontant(fiche.autresRetenues), 197, yRet, { align: 'right' });
+        }
+        
+        // Total Retenues
+        doc.setFillColor(...grisClair);
+        doc.rect(106, y + 47, 93, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(...noir);
+        doc.text('TOTAL RETENUES', 107, y + 52);
+        doc.setTextColor(...noir);
+        const totalRetenues = fiche.totalCotisationsSalariales + fiche.totalRetenuesDiverses;
+        doc.text(formatMontant(totalRetenues), 197, y + 52, { align: 'right' });
+        
+        // ========== COTISATIONS PATRONALES ==========
+        y += 60;
+        
+        doc.setFillColor(...grisClair);
+        doc.rect(10, y, 190, 16, 'F');
+        doc.setDrawColor(...gris);
+        doc.rect(10, y, 190, 16, 'S');
+        
+        doc.setTextColor(...noir);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COTISATIONS PATRONALES (pour information)', 15, y + 5);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...gris);
+        doc.setFontSize(6);
+        
+        // Ligne 1
+        doc.text('IPRES RG (8,4%): ' + formatMontant(fiche.cotisations.patronales.ipresRG), 15, y + 10);
+        if (fiche.isCadre) {
+            doc.text('IPRES Compl (3,6%): ' + formatMontant(fiche.cotisations.patronales.ipresRC), 55, y + 10);
+        }
+        doc.text('Prest. Fam (7%): ' + formatMontant(fiche.cotisations.patronales.prestationsFamiliales), 100, y + 10);
+        doc.text('AT (' + fiche.tauxAT + '%): ' + formatMontant(fiche.cotisations.patronales.accidentsTravail), 145, y + 10);
+        
+        // Ligne 2
+        doc.text('IPM (3%): ' + formatMontant(fiche.cotisations.patronales.ipm), 15, y + 14);
+        doc.text('CFE (3%): ' + formatMontant(fiche.cotisations.patronales.cfe), 55, y + 14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...noir);
+        doc.text('TOTAL PATRONAL: ' + formatMontant(fiche.totalCotisationsPatronales) + ' FCFA', 145, y + 14);
+        
+        // ========== NET A PAYER ==========
+        y += 22;
+        
+        doc.setFillColor(...noir);
+        doc.roundedRect(10, y, 190, 18, 2, 2, 'F');
+        
+        doc.setTextColor(...blanc);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('NET A PAYER', 20, y + 11);
+        
+        // Encadré blanc avec bordure noire
+        doc.setFillColor(...blanc);
+        doc.roundedRect(100, y + 2, 95, 14, 2, 2, 'F');
+        doc.setDrawColor(...noir);
+        doc.roundedRect(100, y + 2, 95, 14, 2, 2, 'S');
+        
+        doc.setTextColor(...noir);
+        doc.setFontSize(14);
+        doc.text(formatMontant(fiche.net) + ' FCFA', 147, y + 12, { align: 'center' });
+        
+        // ========== SIGNATURE EMPLOYEUR UNIQUEMENT ==========
+        y += 28;
+        
+        doc.setDrawColor(150, 150, 150);
+        doc.rect(55, y, 100, 28, 'S');
+        doc.setTextColor(...gris);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Signature et cachet de l\'employeur', 105, y + 5, { align: 'center' });
+        doc.text('KFS BTP IMMO', 105, y + 24, { align: 'center' });
+        
+        // ========== PIED DE PAGE ==========
+        doc.setFillColor(...noir);
+        doc.rect(0, 280, 210, 17, 'F');
+        
+        doc.setTextColor(...blanc);
+        doc.setFontSize(6);
+        doc.text('Bulletin de paie conforme au Code du Travail Senegalais - A conserver sans limitation de duree', 105, 286, { align: 'center' });
+        doc.text('Cotisations: IPRES (retraite) - CSS (prestations familiales, AT) - IPM (maladie) - TRIMF', 105, 290, { align: 'center' });
+        doc.text('KFS BTP IMMO - NINEA: ' + fiche.nineaEntreprise + ' - RCCM: ' + fiche.rccmEntreprise, 105, 294, { align: 'center' });
         
         // Sauvegarder le PDF
-        const filename = 'Bulletin_Paie_' + fiche.prenom + '_' + fiche.nom + '_' + fiche.mois + '.pdf';
+        const filename = 'Bulletin_Paie_' + fiche.prenom + '_' + fiche.nom + '_' + fiche.mois.replace('-', '_') + '.pdf';
         doc.save(filename);
         
         showNotification('PDF genere', 'Bulletin de paie telecharge: ' + filename, 'success');
@@ -3624,28 +4352,28 @@ function enregistrerFicheDePaie() {
     fiches.unshift(fiche);
     localStorage.setItem('fichesPaie', JSON.stringify(fiches));
     
-    // 🔗 LIAISON FINANCES: Enregistrer le salaire comme dépense
+    // 🔗 LIAISON FINANCES: Enregistrer le salaire net comme dépense
     if (fiche.net > 0) {
         autoAddTransaction({
             type: 'depense',
             montant: fiche.net,
             categorie: 'salaires',
-            description: `Salaire ${fiche.mois} - ${fiche.prenom} ${fiche.nom} (${fiche.matricule})`,
-            reference: `PAIE_${fiche.matricule}_${fiche.mois.replace(/\s/g, '_')}`,
+            description: `Salaire net ${fiche.mois} - ${fiche.prenom} ${fiche.nom} (${fiche.matricule})`,
+            reference: `PAIE_${fiche.matricule}_${fiche.mois.replace(/-/g, '_')}`,
             sourceModule: 'paie',
             date: new Date().toISOString().split('T')[0]
         });
-        showNotification('💰 Finances mises à jour', `Salaire de ${fiche.net.toLocaleString('fr-FR')} FCFA enregistré`, 'info');
+        showNotification('💰 Finances mises à jour', `Salaire net de ${fiche.net.toLocaleString('fr-FR')} FCFA enregistré`, 'info');
     }
     
-    // Enregistrer aussi les cotisations patronales comme dépense séparée
-    if (fiche.cotisationsPatronales > 0) {
+    // Enregistrer les cotisations patronales comme dépense séparée
+    if (fiche.totalCotisationsPatronales > 0) {
         autoAddTransaction({
             type: 'depense',
-            montant: fiche.cotisationsPatronales,
+            montant: fiche.totalCotisationsPatronales,
             categorie: 'charges_sociales',
-            description: `Cotisations patronales ${fiche.mois} - ${fiche.prenom} ${fiche.nom}`,
-            reference: `COTIS_${fiche.matricule}_${fiche.mois.replace(/\s/g, '_')}`,
+            description: `Cotisations patronales ${fiche.mois} - ${fiche.prenom} ${fiche.nom} (IPRES, CSS, IPM, CFE)`,
+            reference: `COTIS_${fiche.matricule}_${fiche.mois.replace(/-/g, '_')}`,
             sourceModule: 'paie',
             date: new Date().toISOString().split('T')[0]
         });
@@ -4373,7 +5101,7 @@ function getCategoryColor(cat) {
         'location': 'bg-purple-100 text-purple-800',
         'service': 'bg-cyan-100 text-cyan-800',
         // Dépenses
-        'achats': 'bg-orange-100 text-orange-800',
+        'achats': 'bg-orange-100 text-yellow-800',
         'salaires': 'bg-red-100 text-red-800',
         'salaire': 'bg-red-100 text-red-800',
         'charges_sociales': 'bg-pink-100 text-pink-800',
@@ -6999,7 +7727,7 @@ function renderProjets() {
                             </span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="h-2 rounded-full ${depassement ? 'bg-red-500' : progression > 80 ? 'bg-orange-500' : 'bg-blue-500'}" 
+                            <div class="h-2 rounded-full ${depassement ? 'bg-red-500' : progression > 80 ? 'bg-yellow-500' : 'bg-blue-500'}" 
                                 style="width: ${Math.min(100, progression)}%"></div>
                         </div>
                     </div>
@@ -7414,7 +8142,7 @@ function renderEmployes() {
     const deptColors = {
         'direction': 'bg-purple-500',
         'commercial': 'bg-blue-500',
-        'technique': 'bg-orange-500',
+        'technique': 'bg-yellow-500',
         'administratif': 'bg-green-500',
         'chantier': 'bg-yellow-500'
     };
@@ -7856,7 +8584,7 @@ function renderStocks() {
     }
     
     const catColors = {
-        'materiaux': 'bg-orange-500',
+        'materiaux': 'bg-yellow-500',
         'outillage': 'bg-blue-500',
         'equipement': 'bg-purple-500',
         'consommable': 'bg-green-500',
@@ -7880,7 +8608,7 @@ function renderStocks() {
         const valeur = s.quantite * s.prixUnitaire;
         
         return `
-            <div class="bg-white rounded-xl shadow-sm border ${enRupture ? 'border-red-300 bg-red-50' : enAlerte ? 'border-orange-300 bg-orange-50' : 'border-gray-100'} hover:shadow-md transition overflow-hidden">
+            <div class="bg-white rounded-xl shadow-sm border ${enRupture ? 'border-red-300 bg-red-50' : enAlerte ? 'border-orange-300 bg-yellow-50' : 'border-gray-100'} hover:shadow-md transition overflow-hidden">
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-3">
                         <div class="flex items-center">
@@ -7901,7 +8629,7 @@ function renderStocks() {
                     
                     <div class="flex items-center justify-between mb-4">
                         <div class="text-center">
-                            <p class="text-3xl font-bold ${enRupture ? 'text-red-600' : enAlerte ? 'text-orange-600' : 'text-gray-800'}">${s.quantite}</p>
+                            <p class="text-3xl font-bold ${enRupture ? 'text-red-600' : enAlerte ? 'text-yellow-600' : 'text-gray-800'}">${s.quantite}</p>
                             <p class="text-xs text-gray-500">${s.unite}</p>
                         </div>
                         <div class="text-right">
@@ -8271,7 +8999,7 @@ function renderDocuments() {
     
     const catColors = {
         'administratif': 'bg-blue-500',
-        'technique': 'bg-orange-500',
+        'technique': 'bg-yellow-500',
         'commercial': 'bg-green-500',
         'juridique': 'bg-red-500',
         'comptable': 'bg-purple-500',
@@ -10575,12 +11303,12 @@ function generateContratPrestation(data) {
             <!-- LE CLIENT -->
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
                 <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Le Client</h4>
-                <p style="margin: 5px 0;"><strong>${client.nom || data.clientNom || '___________________'}</strong></p>
-                <p style="margin: 5px 0; font-size: 13px;">Adresse: ${client.adresse || data.clientAdresse || '___________________'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Téléphone: ${client.telephone || data.clientTel || '___________________'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Email: ${client.email || data.clientEmail || '___________________'}</p>
+                <p style="margin: 5px 0;"><strong>${client.nom || data.clientNom || '<span style="color:#dc2626; background:#fee2e2; padding:2px 8px; border-radius:4px;">Nom à compléter</span>'}</strong></p>
+                <p style="margin: 5px 0; font-size: 13px;">Adresse: ${client.adresse || data.clientAdresse || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Téléphone: ${client.telephone || data.clientTel || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Email: ${client.email || data.clientEmail || '<span style="color:#9ca3af;">Non renseigné</span>'}</p>
                 ${client.type === 'entreprise' || data.clientType === 'entreprise' ? `
-                <p style="margin: 5px 0; font-size: 13px;">NINEA: ${client.ninea || data.clientNinea || '___________________'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">NINEA: ${client.ninea || data.clientNinea || '<span style="color:#9ca3af;">Non renseigné</span>'}</p>
                 ` : ''}
                 <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 12px;">Ci-après dénommé "LE CLIENT"</p>
             </div>
@@ -10621,7 +11349,7 @@ function generateContratPrestation(data) {
             <p style="margin: 0; white-space: pre-line;">${data.descriptionTravaux || '• À définir'}</p>
         </div>
         <p style="font-size: 13px;">
-            <strong>Lieu d'exécution:</strong> ${data.lieuTravaux || '___________________'}
+            <strong>Lieu d'exécution:</strong> ${data.lieuTravaux || '<span style="color:#dc2626;">À compléter</span>'}
         </p>
     </div>
 
@@ -10636,10 +11364,10 @@ function generateContratPrestation(data) {
             à compter de la date de signature des présentes.
         </p>
         <p style="text-align: justify; font-size: 13px;">
-            <strong>2.2.</strong> Date prévisionnelle de début des travaux: <strong>${data.dateDebut ? new Date(data.dateDebut).toLocaleDateString('fr-FR') : '___________________'}</strong>
+            <strong>2.2.</strong> Date prévisionnelle de début des travaux: <strong>${data.dateDebut ? new Date(data.dateDebut).toLocaleDateString('fr-FR') : '<span style="color:#dc2626;">À définir</span>'}</strong>
         </p>
         <p style="text-align: justify; font-size: 13px;">
-            <strong>2.3.</strong> Date prévisionnelle de fin des travaux: <strong>${data.dateFin ? new Date(data.dateFin).toLocaleDateString('fr-FR') : '___________________'}</strong>
+            <strong>2.3.</strong> Date prévisionnelle de fin des travaux: <strong>${data.dateFin ? new Date(data.dateFin).toLocaleDateString('fr-FR') : '<span style="color:#dc2626;">À définir</span>'}</strong>
         </p>
         <p style="text-align: justify; font-size: 13px;">
             <strong>2.4.</strong> En cas de retard non imputable au Prestataire (intempéries, modifications demandées par le Client, 
@@ -10850,7 +11578,7 @@ function generateContratPrestation(data) {
             <div style="text-align: center;">
                 <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">LE PRESTATAIRE</p>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${company.nom}</p>
-                <p style="font-size: 12px; margin-bottom: 80px;">${data.representantPrestataire || '___________________'}</p>
+                <p style="font-size: 12px; margin-bottom: 80px;">${data.representantPrestataire || 'Le Directeur Général'}</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
                     <p style="font-size: 11px; color: #666; margin: 0;">Signature et cachet</p>
                     <p style="font-size: 11px; color: #666; margin: 5px 0 0 0;">(Précédé de la mention "Lu et approuvé")</p>
@@ -10858,7 +11586,7 @@ function generateContratPrestation(data) {
             </div>
             <div style="text-align: center;">
                 <p style="font-weight: bold; color: #10b981; margin-bottom: 15px; font-size: 13px;">LE CLIENT</p>
-                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${client.nom || data.clientNom || '___________________'}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${client.nom || data.clientNom || '<span style="color:#dc2626;">Nom du client</span>'}</p>
                 <p style="font-size: 12px; margin-bottom: 80px;">&nbsp;</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
                     <p style="font-size: 11px; color: #666; margin: 0;">Signature</p>
@@ -10963,12 +11691,12 @@ function generateContratBail(data) {
             <!-- LE LOCATAIRE -->
             <div style="background: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b;">
                 <h4 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Le Locataire</h4>
-                <p style="margin: 5px 0;"><strong>${client.nom || data.locataireNom || '___________________'}</strong></p>
-                <p style="margin: 5px 0; font-size: 13px;">Né(e) le: ${data.locataireDateNaissance || '___________________'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">CNI/Passeport: ${data.locataireCNI || '___________________'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Téléphone: ${client.telephone || data.locataireTel || '___________________'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Email: ${client.email || data.locataireEmail || '___________________'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Profession: ${data.locataireProfession || '___________________'}</p>
+                <p style="margin: 5px 0;"><strong>${client.nom || data.locataireNom || '<span style="color:#dc2626; background:#fee2e2; padding:2px 8px; border-radius:4px;">Nom à compléter</span>'}</strong></p>
+                <p style="margin: 5px 0; font-size: 13px;">Né(e) le: ${data.locataireDateNaissance || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">CNI/Passeport: ${data.locataireCNI || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Téléphone: ${client.telephone || data.locataireTel || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Email: ${client.email || data.locataireEmail || '<span style="color:#9ca3af;">Non renseigné</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Profession: ${data.locataireProfession || '<span style="color:#9ca3af;">Non renseignée</span>'}</p>
                 <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 12px;">Ci-après dénommé "LE LOCATAIRE"</p>
             </div>
         </div>
@@ -10990,7 +11718,7 @@ function generateContratBail(data) {
             <table style="width: 100%; font-size: 13px;">
                 <tr>
                     <td style="padding: 10px 0; width: 35%; font-weight: bold;">Adresse du bien:</td>
-                    <td style="padding: 10px 0;">${data.adresseBien || '___________________'}</td>
+                    <td style="padding: 10px 0;">${data.adresseBien || '<span style="color:#dc2626;">À compléter</span>'}</td>
                 </tr>
                 <tr style="background: #f0fdf4;">
                     <td style="padding: 10px; font-weight: bold;">Ville:</td>
@@ -11041,10 +11769,10 @@ function generateContratBail(data) {
             soit <strong>${data.dureeBail ? Math.floor(data.dureeBail/12) : '1'} an(s)</strong>.
         </p>
         <p style="text-align: justify; font-size: 13px;">
-            <strong>2.2.</strong> Date de prise d'effet: <strong>${data.dateEntree ? new Date(data.dateEntree).toLocaleDateString('fr-FR') : '___________________'}</strong>
+            <strong>2.2.</strong> Date de prise d'effet: <strong>${data.dateEntree ? new Date(data.dateEntree).toLocaleDateString('fr-FR') : '<span style="color:#dc2626;">À définir</span>'}</strong>
         </p>
         <p style="text-align: justify; font-size: 13px;">
-            <strong>2.3.</strong> Date d'expiration: <strong>${data.dateFin ? new Date(data.dateFin).toLocaleDateString('fr-FR') : '___________________'}</strong>
+            <strong>2.3.</strong> Date d'expiration: <strong>${data.dateFin ? new Date(data.dateFin).toLocaleDateString('fr-FR') : '<span style="color:#dc2626;">À définir</span>'}</strong>
         </p>
         <p style="text-align: justify; font-size: 13px;">
             <strong>2.4.</strong> Le bail sera ${data.renouvellement === 'tacite' ? 'renouvelé par tacite reconduction pour des périodes successives de même durée, sauf dénonciation par l\'une des parties avec un préavis de ' + (data.preavis || '3') + ' mois' : 'à durée déterminée sans reconduction tacite'}.
@@ -11278,7 +12006,7 @@ function generateContratBail(data) {
             <div style="text-align: center;">
                 <p style="font-weight: bold; color: #059669; margin-bottom: 15px; font-size: 14px;">LE BAILLEUR</p>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${company.nom}</p>
-                <p style="font-size: 12px; margin-bottom: 80px;">${data.representantBailleur || '___________________'}</p>
+                <p style="font-size: 12px; margin-bottom: 80px;">${data.representantBailleur || 'Le Directeur Général'}</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
                     <p style="font-size: 11px; color: #666; margin: 0;">Signature et cachet</p>
                     <p style="font-size: 11px; color: #666; margin: 5px 0 0 0;">(Précédé de la mention "Lu et approuvé")</p>
@@ -11286,7 +12014,7 @@ function generateContratBail(data) {
             </div>
             <div style="text-align: center;">
                 <p style="font-weight: bold; color: #b45309; margin-bottom: 15px; font-size: 14px;">LE LOCATAIRE</p>
-                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${client.nom || data.locataireNom || '___________________'}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${client.nom || data.locataireNom || '<span style="color:#dc2626;">Nom du locataire</span>'}</p>
                 <p style="font-size: 12px; margin-bottom: 80px;">&nbsp;</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
                     <p style="font-size: 11px; color: #666; margin: 0;">Signature</p>
@@ -11383,11 +12111,11 @@ function generateDevisProfessionnel(data) {
         <div></div>
         <div style="background: #f8fafc; padding: 20px; border-radius: 10px; border-left: 4px solid #f59e0b;">
             <h3 style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #f59e0b; letter-spacing: 1px;">Client</h3>
-            <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">${client.nom || data.clientNom || '___________________'}</p>
+            <p style="margin: 5px 0; font-weight: bold; font-size: 16px;">${client.nom || data.clientNom || '<span style="color:#dc2626;">Nom à compléter</span>'}</p>
             ${client.type === 'entreprise' || data.clientType === 'entreprise' ? `<p style="margin: 3px 0; font-size: 12px;">NINEA: ${client.ninea || data.clientNinea || '-'}</p>` : ''}
-            <p style="margin: 3px 0; font-size: 12px;">${client.adresse || data.clientAdresse || '___________________'}</p>
-            <p style="margin: 3px 0; font-size: 12px;">Tél: ${client.telephone || data.clientTel || '___________________'}</p>
-            <p style="margin: 3px 0; font-size: 12px;">Email: ${client.email || data.clientEmail || '___________________'}</p>
+            <p style="margin: 3px 0; font-size: 12px;">${client.adresse || data.clientAdresse || '<span style="color:#9ca3af;">Adresse non renseignée</span>'}</p>
+            <p style="margin: 3px 0; font-size: 12px;">Tél: ${client.telephone || data.clientTel || '<span style="color:#dc2626;">À compléter</span>'}</p>
+            <p style="margin: 3px 0; font-size: 12px;">Email: ${client.email || data.clientEmail || '<span style="color:#9ca3af;">Non renseigné</span>'}</p>
         </div>
     </div>
 
@@ -12606,48 +13334,48 @@ function generateAttestationForm(clients) {
 function generateDevisForm(clients, projets) {
     return `
         <!-- Section Client -->
-        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
-            <h3 class="font-bold text-orange-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-orange-600">person</span>Informations Client
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-200">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">person</span>Informations Client
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Client existant</label>
-                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Client existant</label>
+                    <select id="doc-client-select" onchange="fillDocClientInfo()" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                         <option value="">-- Nouveau client --</option>
                         ${clients.map((c, i) => `<option value="${i}">${c.nom || c.raisonSociale || 'Client ' + (i+1)}</option>`).join('')}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Nom / Raison sociale *</label>
-                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Nom / Raison sociale *</label>
+                    <input type="text" id="doc-client-nom" required class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Type</label>
-                    <select id="doc-client-type" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Type</label>
+                    <select id="doc-client-type" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                         <option value="particulier">Particulier</option>
                         <option value="entreprise">Entreprise</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Téléphone *</label>
-                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Téléphone *</label>
+                    <input type="tel" id="doc-client-tel" required class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Email</label>
-                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Email</label>
+                    <input type="email" id="doc-client-email" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Adresse</label>
-                    <input type="text" id="doc-client-adresse" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Adresse</label>
+                    <input type="text" id="doc-client-adresse" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">NINEA (entreprise)</label>
-                    <input type="text" id="doc-client-ninea" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">NINEA (entreprise)</label>
+                    <input type="text" id="doc-client-ninea" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Projet lié</label>
-                    <select id="doc-projet-select" onchange="fillProjetInfo()" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Projet lié</label>
+                    <select id="doc-projet-select" onchange="fillProjetInfo()" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                         <option value="">-- Aucun --</option>
                         ${projets.map((p, i) => `<option value="${i}">${p.nom || 'Projet ' + (i+1)}</option>`).join('')}
                     </select>
@@ -12656,33 +13384,33 @@ function generateDevisForm(clients, projets) {
         </div>
         
         <!-- Section Devis -->
-        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
-            <h3 class="font-bold text-orange-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-orange-600">request_quote</span>Détails du Devis
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-200">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">request_quote</span>Détails du Devis
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Objet du devis *</label>
-                    <input type="text" id="doc-objet-devis" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: Travaux de rénovation appartement">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Objet du devis *</label>
+                    <input type="text" id="doc-objet-devis" required class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white" placeholder="Ex: Travaux de rénovation appartement">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Référence</label>
-                    <input type="text" id="doc-reference" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Auto-générée">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Référence</label>
+                    <input type="text" id="doc-reference" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white" placeholder="Auto-générée">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Lieu des travaux *</label>
-                    <input type="text" id="doc-lieu-travaux" required class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Adresse du chantier">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Lieu des travaux *</label>
+                    <input type="text" id="doc-lieu-travaux" required class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white" placeholder="Adresse du chantier">
                 </div>
             </div>
         </div>
         
         <!-- Lignes du devis -->
-        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-200">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-orange-800 flex items-center">
-                    <span class="material-icons mr-2 text-orange-600">list</span>Prestations / Articles
+                <h3 class="font-bold text-yellow-800 flex items-center">
+                    <span class="material-icons mr-2 text-yellow-600">list</span>Prestations / Articles
                 </h3>
-                <button type="button" onclick="addDevisLigne()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button type="button" onclick="addDevisLigne()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
                     <span class="material-icons align-middle text-sm">add</span> Ajouter une ligne
                 </button>
             </div>
@@ -12692,37 +13420,37 @@ function generateDevisForm(clients, projets) {
         </div>
         
         <!-- Totaux et conditions -->
-        <div class="bg-orange-50 rounded-xl p-5 border border-orange-100">
-            <h3 class="font-bold text-orange-800 mb-4 flex items-center">
-                <span class="material-icons mr-2 text-orange-600">calculate</span>Montants et Conditions
+        <div class="bg-yellow-50 rounded-xl p-5 border border-yellow-200">
+            <h3 class="font-bold text-yellow-800 mb-4 flex items-center">
+                <span class="material-icons mr-2 text-yellow-600">calculate</span>Montants et Conditions
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">TVA</label>
-                    <select id="doc-avec-tva" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">TVA</label>
+                    <select id="doc-avec-tva" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                         <option value="non">Sans TVA</option>
                         <option value="oui">Avec TVA (18%)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Remise (%)</label>
-                    <input type="number" id="doc-remise" value="0" min="0" max="100" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Remise (%)</label>
+                    <input type="number" id="doc-remise" value="0" min="0" max="100" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Validité (jours)</label>
-                    <input type="number" id="doc-validite" value="30" min="1" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Validité (jours)</label>
+                    <input type="number" id="doc-validite" value="30" min="1" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Acompte (%)</label>
-                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Acompte (%)</label>
+                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Délai d'exécution</label>
-                    <input type="number" id="doc-delai" min="1" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Ex: 15">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Délai d'exécution</label>
+                    <input type="number" id="doc-delai" min="1" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white" placeholder="Ex: 15">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Unité délai</label>
-                    <select id="doc-unite-delai" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Unité délai</label>
+                    <select id="doc-unite-delai" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                         <option value="jours ouvrés">Jours ouvrés</option>
                         <option value="jours">Jours</option>
                         <option value="semaines">Semaines</option>
@@ -12730,16 +13458,16 @@ function generateDevisForm(clients, projets) {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Date début prévue</label>
-                    <input type="date" id="doc-date-debut" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white">
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Date début prévue</label>
+                    <input type="date" id="doc-date-debut" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Total HT</label>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Total HT</label>
                     <input type="text" id="doc-total-ht-display" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-500 bg-gray-100 font-bold">
                 </div>
                 <div class="md:col-span-4">
-                    <label class="block text-orange-800 text-sm font-medium mb-1">Notes / Conditions particulières</label>
-                    <textarea id="doc-notes" rows="2" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl text-gray-800 bg-white" placeholder="Conditions de paiement, garanties, etc."></textarea>
+                    <label class="block text-yellow-800 text-sm font-medium mb-1">Notes / Conditions particulières</label>
+                    <textarea id="doc-notes" rows="2" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white" placeholder="Conditions de paiement, garanties, etc."></textarea>
                 </div>
             </div>
         </div>
@@ -13033,11 +13761,11 @@ function generateDocumentHTML(type, data, isPreview) {
             <!-- LE CLIENT / LOCATAIRE -->
             <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
                 <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">${type === 'bail' || type === 'location-courte' ? 'Le Locataire' : 'Le Client'}</h4>
-                <p style="margin: 5px 0;"><strong>${data.clientNom || '___________________'}</strong></p>
-                ${data.clientAdresse ? `<p style="margin: 5px 0; font-size: 13px;">Adresse: ${data.clientAdresse}</p>` : ''}
-                ${data.clientTel ? `<p style="margin: 5px 0; font-size: 13px;">Téléphone: ${data.clientTel}</p>` : ''}
-                ${data.clientEmail ? `<p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail}</p>` : ''}
-                ${data.clientNinea ? `<p style="margin: 5px 0; font-size: 13px;">NINEA: ${data.clientNinea}</p>` : '<p style="margin: 5px 0; font-size: 13px;">NINEA: ___________________</p>'}
+                <p style="margin: 5px 0;"><strong>${data.clientNom || '<span style="color:#dc2626; background:#fee2e2; padding:2px 8px; border-radius:4px;">Nom à compléter</span>'}</strong></p>
+                <p style="margin: 5px 0; font-size: 13px;">Adresse: ${data.clientAdresse || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Téléphone: ${data.clientTel || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail || '<span style="color:#dc2626;">À compléter</span>'}</p>
+                <p style="margin: 5px 0; font-size: 13px;">NINEA: ${data.clientNinea || '<span style="color:#9ca3af;">Non applicable</span>'}</p>
                 <p style="margin-top: 10px; font-style: italic; color: #666; font-size: 12px;">Ci-après dénommé "${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : 'LE CLIENT'}"</p>
             </div>
         </div>
@@ -13296,7 +14024,7 @@ function generateDocumentHTML(type, data, isPreview) {
         </h3>
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
             <p style="margin: 5px 0;"><strong>Type de bien:</strong> ${data.typeBien || 'Appartement'}</p>
-            <p style="margin: 5px 0;"><strong>Adresse:</strong> ${data.adresseBien || '___________________'}, ${data.villeBien || 'Dakar'}</p>
+            <p style="margin: 5px 0;"><strong>Adresse:</strong> ${data.adresseBien || '<span style="color:#dc2626;">À compléter</span>'}, ${data.villeBien || 'Dakar'}</p>
             ${data.surface ? `<p style="margin: 5px 0;"><strong>Surface:</strong> ${data.surface} m²</p>` : ''}
             ${data.nombrePieces ? `<p style="margin: 5px 0;"><strong>Nombre de pièces:</strong> ${data.nombrePieces}</p>` : ''}
             ${data.etage ? `<p style="margin: 5px 0;"><strong>Étage:</strong> ${data.etage}</p>` : ''}
@@ -13428,7 +14156,7 @@ function generateDocumentHTML(type, data, isPreview) {
         </h3>
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
             <p style="margin: 5px 0;"><strong>Type de bien:</strong> ${data.typeBien || 'Appartement meublé'}</p>
-            <p style="margin: 5px 0;"><strong>Adresse:</strong> ${data.adresseBien || '___________________'}, ${data.villeBien || 'Dakar'}</p>
+            <p style="margin: 5px 0;"><strong>Adresse:</strong> ${data.adresseBien || '<span style="color:#dc2626;">À compléter</span>'}, ${data.villeBien || 'Dakar'}</p>
             ${data.surface ? `<p style="margin: 5px 0;"><strong>Surface:</strong> ${data.surface} m²</p>` : ''}
             ${data.nombrePieces ? `<p style="margin: 5px 0;"><strong>Nombre de pièces:</strong> ${data.nombrePieces}</p>` : ''}
             ${data.equipements ? `<p style="margin: 5px 0;"><strong>Équipements:</strong> ${data.equipements}</p>` : ''}
@@ -13442,9 +14170,9 @@ function generateDocumentHTML(type, data, isPreview) {
             DURÉE DU SÉJOUR
         </h3>
         <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #fcd34d;">
-            <p style="margin: 5px 0;"><strong>Date d'arrivée:</strong> ${dateEntree ? dateEntree.toLocaleDateString('fr-FR') : '___/___/______'}</p>
-            <p style="margin: 5px 0;"><strong>Date de départ:</strong> ${dateSortie ? dateSortie.toLocaleDateString('fr-FR') : '___/___/______'}</p>
-            <p style="margin: 5px 0;"><strong>Durée:</strong> ${nbJours} jour(s)</p>
+            <p style="margin: 5px 0;"><strong>Date d'arrivée:</strong> ${dateEntree ? dateEntree.toLocaleDateString('fr-FR') : '<span style="color:#dc2626;">À compléter</span>'}</p>
+            <p style="margin: 5px 0;"><strong>Date de départ:</strong> ${dateSortie ? dateSortie.toLocaleDateString('fr-FR') : '<span style="color:#dc2626;">À compléter</span>'}</p>
+            <p style="margin: 5px 0;"><strong>Durée:</strong> ${nbJours > 0 ? nbJours + ' jour(s)' : '<span style="color:#dc2626;">À calculer</span>'}</p>
         </div>
         <p style="font-size: 13px;">Heure d'arrivée: 14h00 | Heure de départ: 12h00</p>
     </div>
@@ -13532,10 +14260,10 @@ function generateDocumentHTML(type, data, isPreview) {
     <div style="margin: 30px 0;">
         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
             <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Client</h4>
-            <p style="margin: 5px 0;"><strong>${data.clientNom || '___________________'}</strong></p>
-            ${data.clientAdresse ? `<p style="margin: 5px 0; font-size: 13px;">${data.clientAdresse}</p>` : ''}
-            ${data.clientTel ? `<p style="margin: 5px 0; font-size: 13px;">Tél: ${data.clientTel}</p>` : ''}
-            ${data.clientEmail ? `<p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail}</p>` : ''}
+            <p style="margin: 5px 0;"><strong>${data.clientNom || '<span style="color:#dc2626;">Nom à compléter</span>'}</strong></p>
+            <p style="margin: 5px 0; font-size: 13px;">${data.clientAdresse || '<span style="color:#9ca3af;">Adresse non renseignée</span>'}</p>
+            <p style="margin: 5px 0; font-size: 13px;">Tél: ${data.clientTel || '<span style="color:#dc2626;">À compléter</span>'}</p>
+            <p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail || '<span style="color:#9ca3af;">Non renseigné</span>'}</p>
         </div>
     </div>
 
@@ -13637,7 +14365,7 @@ function generateDocumentHTML(type, data, isPreview) {
     <div style="margin: 30px 0;">
         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
             <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Bénéficiaire</h4>
-            <p style="margin: 5px 0; font-size: 16px;"><strong>${data.clientNom || '___________________'}</strong></p>
+            <p style="margin: 5px 0; font-size: 16px;"><strong>${data.clientNom || '<span style="color:#dc2626;">Nom à compléter</span>'}</strong></p>
         </div>
     </div>
 
@@ -13660,16 +14388,36 @@ function generateDocumentHTML(type, data, isPreview) {
         </div>
         
         <p style="text-align: justify; font-size: 14px; line-height: 2; margin-top: 30px;">
-            Cette attestation est délivrée à <strong>${data.clientNom || '___________________'}</strong> 
+            Cette attestation est délivrée à <strong>${data.clientNom || '<span style="color:#dc2626;">Bénéficiaire</span>'}</strong> 
             pour servir et valoir ce que de droit.
         </p>
         
-        ${data.motif ? `<p style="text-align: justify; font-size: 14px; line-height: 2;">Motif: ${data.motif}</p>` : ''}
+        ${data.motifAttestation ? `<p style="text-align: justify; font-size: 14px; line-height: 2;">Motif: ${data.motifAttestation}</p>` : ''}
     </div>`;
     }
 
-    // SIGNATURES (commun à tous)
-    html += `
+    // SIGNATURES
+    if (type === 'attestation') {
+        // Pour les attestations : seulement la signature de l'émetteur (centrée)
+        html += `
+    <!-- SIGNATURE ÉMETTEUR UNIQUEMENT -->
+    <div style="margin-top: 50px; page-break-inside: avoid;">
+        <p style="text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 13px;">
+            Fait à Dakar, le ${dateJour}, en un (1) exemplaire original.
+        </p>
+        
+        <div style="max-width: 300px; margin: 0 auto; text-align: center;">
+            <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">L'ÉMETTEUR</p>
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">KFS BTP IMMO</p>
+            <p style="font-size: 12px; margin-bottom: 80px;">Le Directeur Général</p>
+            <div style="border-top: 1px solid #333; padding-top: 10px;">
+                <p style="font-size: 11px; color: #666; margin: 0;">Signature et cachet</p>
+            </div>
+        </div>
+    </div>`;
+    } else {
+        // Pour les autres documents : deux signatures
+        html += `
     <!-- SIGNATURES -->
     <div style="margin-top: 50px; page-break-inside: avoid;">
         <p style="text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 13px;">
@@ -13678,17 +14426,17 @@ function generateDocumentHTML(type, data, isPreview) {
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px;">
             <div style="text-align: center;">
-                <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE BAILLEUR' : type === 'attestation' ? 'L\'ÉMETTEUR' : 'LE PRESTATAIRE'}</p>
+                <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE BAILLEUR' : 'LE PRESTATAIRE'}</p>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">KFS BTP IMMO</p>
-                <p style="font-size: 12px; margin-bottom: 80px;">___________________</p>
+                <p style="font-size: 12px; margin-bottom: 80px;">Le Directeur Général</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
                     <p style="font-size: 11px; color: #666; margin: 0;">Signature et cachet</p>
                     <p style="font-size: 11px; color: #666; margin: 5px 0 0 0;">(Précédé de la mention "Lu et approuvé")</p>
                 </div>
             </div>
             <div style="text-align: center;">
-                <p style="font-weight: bold; color: #10b981; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : type === 'attestation' ? 'LE BÉNÉFICIAIRE' : type === 'devis' ? 'BON POUR ACCORD' : 'LE CLIENT'}</p>
-                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${data.clientNom || '___________________'}</p>
+                <p style="font-weight: bold; color: #10b981; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : type === 'devis' ? 'BON POUR ACCORD' : 'LE CLIENT'}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${data.clientNom || data.locataireNom || '<span style="color:#dc2626;">Nom</span>'}</p>
                 <p style="font-size: 12px; margin-bottom: 80px;">&nbsp;</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
                     <p style="font-size: 11px; color: #666; margin: 0;">Signature</p>
@@ -13696,9 +14444,11 @@ function generateDocumentHTML(type, data, isPreview) {
                 </div>
             </div>
         </div>
-    </div>
+    </div>`;
+    }
 
-    <!-- PIED DE PAGE -->
+    // PIED DE PAGE
+    html += `
     <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 10px; color: #999;">
         <p style="margin: 0;">
             KFS BTP IMMO - Villa 123 MC, Quartier Medinacoura, Tambacounda | Tél: +221 78 584 28 71 / +33 6 05 84 68 07 | Email: kfsbtpproimmo@gmail.com
@@ -13855,6 +14605,51 @@ function collectFormData() {
         data.fumeurAutorise = document.getElementById('doc-fumeur')?.checked || false;
         data.activiteProfessionnelle = document.getElementById('doc-activite-pro')?.checked || false;
         data.revisionLoyer = document.getElementById('doc-revision-loyer')?.checked || false;
+    }
+    
+    if (type === 'location-courte') {
+        // Infos locataire
+        data.locataireNom = data.clientNom;
+        data.locataireTel = data.clientTel;
+        data.locataireEmail = data.clientEmail;
+        data.locataireDateNaissance = document.getElementById('doc-locataire-naissance')?.value || '';
+        data.locataireCNI = document.getElementById('doc-locataire-cni')?.value || '';
+        data.locataireNationalite = document.getElementById('doc-locataire-nationalite')?.value || 'Sénégalaise';
+        data.locataireProfession = document.getElementById('doc-locataire-profession')?.value || '';
+        
+        // Infos bien
+        data.adresseBien = document.getElementById('doc-adresse-bien')?.value || '';
+        data.villeBien = document.getElementById('doc-ville-bien')?.value || 'Dakar';
+        data.typeBien = document.getElementById('doc-type-bien')?.value || 'Appartement meublé';
+        data.nombrePieces = document.getElementById('doc-nb-pieces')?.value || '';
+        data.surface = document.getElementById('doc-surface')?.value || '';
+        data.equipements = document.getElementById('doc-equipements')?.value || '';
+        
+        // Durée et tarifs
+        data.dateEntree = document.getElementById('doc-date-entree')?.value || '';
+        data.dateSortie = document.getElementById('doc-date-sortie')?.value || '';
+        data.tarifJour = document.getElementById('doc-tarif-jour')?.value || 0;
+        data.caution = document.getElementById('doc-caution')?.value || 0;
+        
+        // Services inclus
+        data.serviceWifi = document.getElementById('doc-service-wifi')?.checked || false;
+        data.serviceElectricite = document.getElementById('doc-service-electricite')?.checked || false;
+        data.serviceEau = document.getElementById('doc-service-eau')?.checked || false;
+        data.serviceMenage = document.getElementById('doc-service-menage')?.checked || false;
+        data.serviceGardien = document.getElementById('doc-service-gardien')?.checked || false;
+        data.serviceParking = document.getElementById('doc-service-parking')?.checked || false;
+        data.serviceLinge = document.getElementById('doc-service-linge')?.checked || false;
+        data.serviceClim = document.getElementById('doc-service-clim')?.checked || false;
+        
+        // Conditions
+        data.conditions = document.getElementById('doc-conditions')?.value || '';
+    }
+    
+    if (type === 'attestation') {
+        data.beneficiaireNom = data.clientNom;
+        data.typeAttestation = document.getElementById('doc-type-attestation')?.value || 'autre';
+        data.contenuAttestation = document.getElementById('doc-contenu-attestation')?.value || '';
+        data.motifAttestation = document.getElementById('doc-motif')?.value || 'Pour faire valoir ce que de droit';
     }
     
     if (type === 'devis') {
