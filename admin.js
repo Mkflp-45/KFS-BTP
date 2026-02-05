@@ -1074,7 +1074,7 @@ function renderFaq() {
             <p class="text-gray-600 text-sm mb-4 line-clamp-3">${f.reponse}</p>
             <div class="flex space-x-2">
                 <button onclick="editFaq(${i})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200">Modifier</button>
-                <button onclick="toggleFaq(${i})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200">${f.visible !== false ? 'Masquer' : 'Afficher'}</button>
+                <button onclick="toggleFaq(${i})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-blue-200">${f.visible !== false ? 'Masquer' : 'Afficher'}</button>
                 <button onclick="deleteFaq(${i})" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">Supprimer</button>
             </div>
         </div>
@@ -1751,7 +1751,7 @@ function checkPasswordStrength(password) {
     if (/[0-9]/.test(password)) strength++;
     if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
     
-    const colors = ['bg-red-500', 'bg-yellow-500', 'bg-yellow-500', 'bg-green-500'];
+    const colors = ['bg-red-500', 'bg-blue-600', 'bg-blue-600', 'bg-green-500'];
     const texts = ['Très faible', 'Faible', 'Moyen', 'Fort'];
     
     for (let i = 0; i < strength; i++) {
@@ -2901,7 +2901,7 @@ function renderFicheDePaieForm() {
                             <p class="text-yellow-700 font-medium">Aucun employé enregistré</p>
                             <p class="text-yellow-600 text-sm mt-1">Ajoutez d'abord des employés dans le module "Employés"</p>
                             <button type="button" onclick="window.switchModule && window.switchModule('employes')" 
-                                class="mt-3 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition">
+                                class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                 <span class="material-icons text-sm mr-1">person_add</span> Ajouter un employé
                             </button>
                         </div>
@@ -3241,7 +3241,7 @@ function renderFicheDePaieForm() {
                                     <p class="text-blue-200 text-xs">Cotisations Patronales</p>
                                     <p id="recap-cotis-pat" class="font-mono font-bold text-lg text-blue-300">0 FCFA</p>
                                 </div>
-                                <div class="bg-yellow-400 rounded-lg p-3">
+                                <div class="bg-blue-500 rounded-lg p-3">
                                     <p class="text-blue-900 text-xs font-bold">NET À PAYER</p>
                                     <p id="recap-net" class="font-mono font-bold text-xl text-blue-900">0 FCFA</p>
                                 </div>
@@ -3250,7 +3250,7 @@ function renderFicheDePaieForm() {
                         
                         <!-- Boutons -->
                         <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-                            <button type="button" id="btn-apercu-fiche" class="flex-1 min-w-[150px] px-6 py-3 bg-yellow-500 text-gray-900 rounded-xl font-semibold hover:bg-yellow-600 transition flex items-center justify-center gap-2">
+                            <button type="button" id="btn-apercu-fiche" class="flex-1 min-w-[150px] px-6 py-3 bg-blue-600 text-gray-900 rounded-xl font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2">
                                 <span class="material-icons">preview</span> Aperçu
                             </button>
                             <button type="button" id="btn-generer-pdf" class="flex-1 min-w-[150px] px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition flex items-center justify-center gap-2">
@@ -3926,7 +3926,7 @@ function apercuFicheDePaie() {
                             <span class="material-icons text-yellow-400 text-3xl">account_balance_wallet</span>
                             <span class="text-white font-bold text-xl">NET À PAYER</span>
                         </div>
-                        <div class="bg-yellow-400 text-blue-900 font-bold text-2xl px-6 py-3 rounded-xl shadow-md font-mono">
+                        <div class="bg-blue-500 text-blue-900 font-bold text-2xl px-6 py-3 rounded-xl shadow-md font-mono">
                             ${format(fiche.net)} FCFA
                         </div>
                     </div>
@@ -3980,6 +3980,23 @@ function fermerApercuFichePaie() {
     }
 }
 
+// Logo KFS BTP - Variable initialisée par logo-base64.js
+let logoKFSBase64 = null;
+
+// Précharger le logo au démarrage de l'admin
+function preloadLogo() {
+    // Utiliser le logo défini dans logo-base64.js
+    if (typeof LOGO_KFS_BASE64 !== 'undefined') {
+        logoKFSBase64 = LOGO_KFS_BASE64;
+        console.log('Logo KFS BTP chargé depuis logo-base64.js');
+    } else {
+        console.warn('LOGO_KFS_BASE64 non trouvé, le logo ne sera pas affiché');
+    }
+}
+
+// Appeler au chargement
+document.addEventListener('DOMContentLoaded', preloadLogo);
+
 function genererFicheDePaiePDF() {
     const fiche = getFichePaieData();
     if (!fiche) return;
@@ -3993,6 +4010,10 @@ function genererFicheDePaiePDF() {
     
     // Fonction de formatage des nombres compatible avec jsPDF
     function formatMontant(nombre) {
+        return (nombre || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ').replace('.', ',');
+    }
+    
+    function formatEntier(nombre) {
         return (nombre || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
     
@@ -4003,332 +4024,271 @@ function genererFicheDePaiePDF() {
         const moisFormate = new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
         const dateEmission = new Date().toLocaleDateString('fr-FR');
         
-        // Couleurs NOIR ET BLANC uniquement
+        // Couleurs KFS BTP
+        const bleuFonce = [30, 58, 138];      // #1e3a8a - Bleu KFS principal
+        const bleuMoyen = [37, 99, 235];      // #2563eb - Bleu KFS secondaire
+        const bleuClair = [219, 234, 254];    // #dbeafe - Bleu très clair
         const noir = [0, 0, 0];
-        const gris = [80, 80, 80];
-        const grisClair = [240, 240, 240];
+        const gris = [100, 100, 100];
+        const grisClair = [245, 245, 245];
+        const grisMoyen = [220, 220, 220];
         const blanc = [255, 255, 255];
         
+        // Utiliser le logo préchargé
+        let logoBase64 = logoKFSBase64;
+        
+        let y = 8;
+        
         // ========== EN-TÊTE ==========
-        doc.setFillColor(...noir);
-        doc.rect(0, 0, 210, 6, 'F');
+        // Logo à gauche
+        if (logoBase64) {
+            try {
+                doc.addImage(logoBase64, 'JPEG', 10, y, 25, 25);
+            } catch (e) {
+                console.error('Erreur logo PDF:', e);
+                doc.setFillColor(...bleuFonce);
+                doc.circle(22, y + 12, 10, 'F');
+                doc.setTextColor(...blanc);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('KFS', 22, y + 14, { align: 'center' });
+            }
+        } else {
+            doc.setFillColor(...bleuFonce);
+            doc.circle(22, y + 12, 10, 'F');
+            doc.setTextColor(...blanc);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text('KFS', 22, y + 14, { align: 'center' });
+        }
         
-        // Zone entreprise
-        doc.setFillColor(...blanc);
-        doc.rect(10, 10, 90, 30, 'F');
-        doc.setDrawColor(...noir);
-        doc.setLineWidth(0.3);
-        doc.rect(10, 10, 90, 30, 'S');
-        
+        // Infos entreprise sous le logo
         doc.setTextColor(...noir);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('KFS BTP IMMO', 55, 18, { align: 'center' });
-        
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...gris);
-        doc.text('Villa 123 MC, Medinacoura, Tambacounda', 55, 24, { align: 'center' });
-        doc.text('NINEA: ' + fiche.nineaEntreprise + ' | RCCM: ' + fiche.rccmEntreprise, 55, 29, { align: 'center' });
-        doc.text('Tel: ' + fiche.telephoneEntreprise, 55, 34, { align: 'center' });
+        doc.text('NINEA: ' + (fiche.nineaEntreprise || 'N/D'), 10, y + 30);
+        doc.text('RCCM: ' + (fiche.rccmEntreprise || 'N/D'), 10, y + 34);
         
-        // Zone titre
-        doc.setFillColor(...noir);
-        doc.rect(110, 10, 90, 30, 'F');
-        
+        // BULLETIN DE SALAIRE (bandeau bleu KFS à droite)
+        doc.setFillColor(...bleuFonce);
+        doc.rect(100, y, 100, 14, 'F');
         doc.setTextColor(...blanc);
-        doc.setFontSize(12);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('BULLETIN DE PAIE', 155, 20, { align: 'center' });
-        doc.setFontSize(10);
-        doc.text(moisFormate.toUpperCase(), 155, 28, { align: 'center' });
-        doc.setFontSize(8);
+        doc.text('BULLETIN DE SALAIRE', 150, y + 9, { align: 'center' });
+        
+        // Période sous le bandeau
+        doc.setTextColor(...noir);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('Emis le ' + dateEmission, 155, 35, { align: 'center' });
+        doc.text('Periode du 01 au ' + new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).split(' ').slice(1).join(' '), 100, y + 20);
         
-        // ========== IDENTIFICATION SALARIÉ ==========
-        let y = 48;
-        
-        doc.setFillColor(...gris);
-        doc.rect(10, y, 190, 6, 'F');
+        // Zone employé (bandeau bleu KFS)
+        y += 38;
+        doc.setFillColor(...bleuMoyen);
+        doc.rect(100, y, 100, 12, 'F');
         doc.setTextColor(...blanc);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
-        doc.text('IDENTIFICATION DU SALARIE', 105, y + 4, { align: 'center' });
-        
-        y += 6;
-        doc.setFillColor(...grisClair);
-        doc.rect(10, y, 190, 22, 'F');
-        doc.setDrawColor(150, 150, 150);
-        doc.rect(10, y, 190, 22, 'S');
-        
-        // Infos employé - Colonne 1
-        doc.setTextColor(...gris);
+        doc.text((fiche.prenom + ' ' + fiche.nom).toUpperCase(), 105, y + 5);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
-        doc.text('Nom et Prenom:', 12, y + 6);
-        doc.text('Poste:', 12, y + 12);
-        doc.text('Date embauche:', 12, y + 18);
+        doc.text('Dakar, Senegal', 105, y + 10);
         
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text((fiche.prenom + ' ' + fiche.nom).toUpperCase(), 40, y + 6);
-        doc.text(fiche.poste || 'N/D', 40, y + 12);
-        doc.text(fiche.dateEmbauche || 'N/D', 40, y + 18);
-        
-        // Infos employé - Colonne 2
-        doc.setTextColor(...gris);
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Matricule:', 80, y + 6);
-        doc.text('Cat./Ech.:', 80, y + 12);
-        doc.text('Convention:', 80, y + 18);
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(fiche.matricule, 105, y + 6);
-        doc.text(fiche.categorie + '-' + fiche.echelon, 105, y + 12);
-        doc.text(fiche.convention, 105, y + 18);
-        
-        // Infos employé - Colonne 3
-        doc.setTextColor(...gris);
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Statut:', 140, y + 6);
-        doc.text('Heures:', 140, y + 12);
-        doc.text('Mode paiement:', 140, y + 18);
-        
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text(fiche.isCadre ? 'Cadre' : 'Non-cadre', 170, y + 6);
-        doc.text(fiche.heuresTravaillees + 'h', 170, y + 12);
-        doc.text(fiche.modePaiement, 170, y + 18);
-        
-        // ========== TABLEAU GAINS / RETENUES ==========
-        y += 28;
-        
-        // Titres colonnes - NOIR
-        doc.setFillColor(...noir);
-        doc.rect(10, y, 95, 6, 'F');
-        doc.setFillColor(...noir);
-        doc.rect(105, y, 95, 6, 'F');
-        
-        doc.setTextColor(...blanc);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('GAINS', 57, y + 4, { align: 'center' });
-        doc.text('RETENUES', 152, y + 4, { align: 'center' });
-        
-        y += 6;
-        
-        // Contenu GAINS
-        doc.setDrawColor(150, 150, 150);
-        doc.rect(10, y, 95, 55, 'S');
-        
-        let yGains = y + 6;
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(7);
-        
-        // Salaire de base
-        doc.setFont('helvetica', 'normal');
-        doc.text('Salaire de base', 12, yGains);
-        doc.setFont('helvetica', 'bold');
-        doc.text(formatMontant(fiche.salaireBase), 102, yGains, { align: 'right' });
-        
-        yGains += 5;
-        if (fiche.montantHeuresSup > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.text('Heures supp. (' + fiche.heuresSup + 'h)', 12, yGains);
-            doc.setFont('helvetica', 'bold');
-            doc.text(formatMontant(fiche.montantHeuresSup), 102, yGains, { align: 'right' });
-            yGains += 5;
-        }
-        
-        if (fiche.primeAnciennete > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.text('Prime anciennete', 12, yGains);
-            doc.text(formatMontant(fiche.primeAnciennete), 102, yGains, { align: 'right' });
-            yGains += 5;
-        }
-        
-        if (fiche.primeRendement > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.text('Prime rendement', 12, yGains);
-            doc.text(formatMontant(fiche.primeRendement), 102, yGains, { align: 'right' });
-            yGains += 5;
-        }
-        
-        if (fiche.primeTransport > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.text('Prime transport', 12, yGains);
-            doc.text(formatMontant(fiche.primeTransport), 102, yGains, { align: 'right' });
-            yGains += 5;
-        }
-        
-        if (fiche.indemniteLogement > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.text('Indemnite logement', 12, yGains);
-            doc.text(formatMontant(fiche.indemniteLogement), 102, yGains, { align: 'right' });
-            yGains += 5;
-        }
-        
-        if (fiche.autresPrimes > 0) {
-            doc.setFont('helvetica', 'normal');
-            doc.text('Autres primes', 12, yGains);
-            doc.text(formatMontant(fiche.autresPrimes), 102, yGains, { align: 'right' });
-            yGains += 5;
-        }
-        
-        // Total Gains
-        doc.setFillColor(...grisClair);
-        doc.rect(11, y + 47, 93, 7, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text('SALAIRE BRUT', 12, y + 52);
+        // Infos employé à gauche
         doc.setTextColor(...noir);
-        doc.text(formatMontant(fiche.salaireBrut), 102, y + 52, { align: 'right' });
-        
-        // Contenu RETENUES
-        doc.rect(105, y, 95, 55, 'S');
-        
-        let yRet = y + 6;
-        doc.setTextColor(0, 0, 0);
         doc.setFontSize(7);
+        const infoY = y - 2;
+        doc.text('Matricule: ' + fiche.matricule, 10, infoY);
+        doc.text('N IPRES: ' + (fiche.numSecuSociale || 'N/D'), 10, infoY + 4);
+        doc.text('Emploi: ' + (fiche.poste || 'N/D'), 10, infoY + 8);
+        doc.text('Statut: ' + (fiche.isCadre ? 'Cadre' : 'Non-cadre'), 10, infoY + 12);
+        doc.text('Cat./Ech.: ' + fiche.categorie + '-' + fiche.echelon, 50, infoY);
+        doc.text('Entree: ' + (fiche.dateEmbauche || 'N/D'), 50, infoY + 4);
+        doc.text('Convention: ' + fiche.convention, 50, infoY + 8);
         
-        // IPRES RG
-        doc.setFont('helvetica', 'normal');
-        doc.text('IPRES Retraite (5,6%)', 107, yRet);
-        doc.text(formatMontant(fiche.cotisations.salariales.ipresRG), 197, yRet, { align: 'right' });
-        yRet += 5;
+        // ========== TABLEAU PRINCIPAL ==========
+        y += 18;
         
-        // IPRES RC si cadre
-        if (fiche.isCadre) {
-            doc.text('IPRES Complementaire (2,4%)', 107, yRet);
-            doc.text(formatMontant(fiche.cotisations.salariales.ipresRC), 197, yRet, { align: 'right' });
-            yRet += 5;
+        // En-têtes du tableau
+        const colWidths = [60, 25, 20, 25, 25, 35];
+        const colX = [10, 70, 95, 115, 140, 165];
+        const tableWidth = 190;
+        
+        doc.setFillColor(...bleuFonce);
+        doc.rect(10, y, tableWidth, 8, 'F');
+        doc.setTextColor(...blanc);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Elements de paie', colX[0] + 2, y + 5);
+        doc.text('Base', colX[1] + 2, y + 5);
+        doc.text('Taux', colX[2] + 2, y + 5);
+        doc.text('A deduire', colX[3] + 2, y + 5);
+        doc.text('A payer', colX[4] + 2, y + 5);
+        doc.text('Charges pat.', colX[5] + 2, y + 5);
+        
+        y += 8;
+        let rowY = y;
+        const rowHeight = 5;
+        
+        // Fonction pour dessiner une ligne du tableau
+        function drawRow(label, base, taux, deduire, payer, patronal, isBold, bgColor) {
+            if (bgColor) {
+                doc.setFillColor(...bgColor);
+                doc.rect(10, rowY, tableWidth, rowHeight, 'F');
+            }
+            doc.setDrawColor(...grisMoyen);
+            doc.line(10, rowY + rowHeight, 200, rowY + rowHeight);
+            
+            doc.setTextColor(...noir);
+            doc.setFontSize(6);
+            doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+            
+            doc.text(label, colX[0] + 2, rowY + 3.5);
+            if (base !== '') doc.text(base.toString(), colX[1] + 22, rowY + 3.5, { align: 'right' });
+            if (taux !== '') doc.text(taux.toString(), colX[2] + 18, rowY + 3.5, { align: 'right' });
+            if (deduire !== '') doc.text(deduire.toString(), colX[3] + 23, rowY + 3.5, { align: 'right' });
+            if (payer !== '') doc.text(payer.toString(), colX[4] + 23, rowY + 3.5, { align: 'right' });
+            if (patronal !== '') doc.text(patronal.toString(), colX[5] + 33, rowY + 3.5, { align: 'right' });
+            
+            rowY += rowHeight;
         }
         
-        // IPM
-        doc.text('IPM Maladie (3%)', 107, yRet);
-        doc.text(formatMontant(fiche.cotisations.salariales.ipm), 197, yRet, { align: 'right' });
-        yRet += 5;
+        // ===== SALAIRE =====
+        drawRow('SALAIRE', '', '', '', '', '', true, grisClair);
+        drawRow('Salaire de base', formatEntier(fiche.heuresTravaillees) + 'h', formatMontant(fiche.salaireBase / fiche.heuresTravaillees), '', formatMontant(fiche.salaireBase), '', false, null);
+        
+        // Heures supplémentaires
+        if (fiche.montantHeuresSup > 0) {
+            drawRow('Heures supplementaires', fiche.heuresSup + 'h', '', '', formatMontant(fiche.montantHeuresSup), '', false, null);
+        }
+        
+        // ===== PRIMES ET INDEMNITÉS =====
+        const hasIndemnites = fiche.primeAnciennete > 0 || fiche.primeRendement > 0 || fiche.primeTransport > 0 || fiche.indemniteLogement > 0 || fiche.autresPrimes > 0;
+        if (hasIndemnites) {
+            drawRow('PRIMES ET INDEMNITES', '', '', '', '', '', true, grisClair);
+            if (fiche.primeAnciennete > 0) drawRow('Prime anciennete', '', '', '', formatMontant(fiche.primeAnciennete), '', false, null);
+            if (fiche.primeRendement > 0) drawRow('Prime de rendement', '', '', '', formatMontant(fiche.primeRendement), '', false, null);
+            if (fiche.primeTransport > 0) drawRow('Prime de transport', '', '', '', formatMontant(fiche.primeTransport), '', false, null);
+            if (fiche.indemniteLogement > 0) drawRow('Indemnite de logement', '', '', '', formatMontant(fiche.indemniteLogement), '', false, null);
+            if (fiche.autresPrimes > 0) drawRow('Autres primes', '', '', '', formatMontant(fiche.autresPrimes), '', false, null);
+        }
+        
+        // ===== SALAIRE BRUT =====
+        drawRow('SALAIRE BRUT', '', '', '', formatMontant(fiche.salaireBrut), '', true, bleuClair);
+        
+        // ===== COTISATIONS =====
+        drawRow('COTISATIONS SOCIALES', '', '', '', '', '', true, grisClair);
+        
+        // Retraite IPRES RG
+        drawRow('IPRES Regime General', formatMontant(fiche.salaireBrut), '5,60%', formatMontant(fiche.cotisations.salariales.ipresRG), '', formatMontant(fiche.cotisations.patronales.ipresRG), false, null);
+        
+        // Retraite IPRES RC (cadres)
+        if (fiche.isCadre) {
+            drawRow('IPRES Regime Complementaire', formatMontant(fiche.salaireBrut), '2,40%', formatMontant(fiche.cotisations.salariales.ipresRC), '', formatMontant(fiche.cotisations.patronales.ipresRC), false, null);
+        }
+        
+        // IPM Maladie
+        drawRow('IPM Maladie', formatMontant(fiche.salaireBrut), '3,00%', formatMontant(fiche.cotisations.salariales.ipm), '', formatMontant(fiche.cotisations.patronales.ipm), false, null);
+        
+        // Prestations familiales
+        drawRow('Prestations Familiales (CSS)', formatMontant(fiche.salaireBrut), '7,00%', '', '', formatMontant(fiche.cotisations.patronales.prestationsFamiliales), false, null);
+        
+        // Accidents du travail
+        drawRow('Accidents du Travail', formatMontant(fiche.salaireBrut), fiche.tauxAT + '%', '', '', formatMontant(fiche.cotisations.patronales.accidentsTravail), false, null);
+        
+        // CFE
+        drawRow('CFE', formatMontant(fiche.salaireBrut), '3,00%', '', '', formatMontant(fiche.cotisations.patronales.cfe), false, null);
         
         // TRIMF
-        doc.text('TRIMF', 107, yRet);
-        doc.text(formatMontant(fiche.cotisations.salariales.trimf), 197, yRet, { align: 'right' });
-        yRet += 5;
+        drawRow('TRIMF', '', '', formatMontant(fiche.cotisations.salariales.trimf), '', '', false, null);
         
-        // Retenues diverses
-        if (fiche.avance > 0) {
-            doc.text('Avance sur salaire', 107, yRet);
-            doc.text(formatMontant(fiche.avance), 197, yRet, { align: 'right' });
-            yRet += 5;
+        // Total cotisations
+        drawRow('TOTAL COTISATIONS', '', '', formatMontant(fiche.totalCotisationsSalariales), '', formatMontant(fiche.totalCotisationsPatronales), true, bleuClair);
+        
+        // ===== RETENUES DIVERSES =====
+        const hasRetenues = fiche.avance > 0 || fiche.acompte > 0 || fiche.pret > 0 || fiche.autresRetenues > 0;
+        if (hasRetenues) {
+            drawRow('AUTRES RETENUES', '', '', '', '', '', true, grisClair);
+            if (fiche.avance > 0) drawRow('Avance sur salaire', '', '', formatMontant(fiche.avance), '', '', false, null);
+            if (fiche.acompte > 0) drawRow('Acompte', '', '', formatMontant(fiche.acompte), '', '', false, null);
+            if (fiche.pret > 0) drawRow('Remboursement pret', '', '', formatMontant(fiche.pret), '', '', false, null);
+            if (fiche.autresRetenues > 0) drawRow('Autres retenues', '', '', formatMontant(fiche.autresRetenues), '', '', false, null);
+            drawRow('TOTAL RETENUES DIVERSES', '', '', formatMontant(fiche.totalRetenuesDiverses), '', '', true, null);
         }
         
-        if (fiche.acompte > 0) {
-            doc.text('Acompte', 107, yRet);
-            doc.text(formatMontant(fiche.acompte), 197, yRet, { align: 'right' });
-            yRet += 5;
-        }
-        
-        if (fiche.pret > 0) {
-            doc.text('Remboursement pret', 107, yRet);
-            doc.text(formatMontant(fiche.pret), 197, yRet, { align: 'right' });
-            yRet += 5;
-        }
-        
-        if (fiche.autresRetenues > 0) {
-            doc.text('Autres retenues', 107, yRet);
-            doc.text(formatMontant(fiche.autresRetenues), 197, yRet, { align: 'right' });
-        }
-        
-        // Total Retenues
-        doc.setFillColor(...grisClair);
-        doc.rect(106, y + 47, 93, 7, 'F');
+        // ===== NET A PAYER =====
+        rowY += 2;
+        doc.setFillColor(...bleuFonce);
+        doc.rect(10, rowY, tableWidth, 10, 'F');
+        doc.setTextColor(...blanc);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(...noir);
-        doc.text('TOTAL RETENUES', 107, y + 52);
-        doc.setTextColor(...noir);
-        const totalRetenues = fiche.totalCotisationsSalariales + fiche.totalRetenuesDiverses;
-        doc.text(formatMontant(totalRetenues), 197, y + 52, { align: 'right' });
+        doc.text('NET A PAYER', 15, rowY + 7);
+        doc.setFontSize(12);
+        doc.text(formatMontant(fiche.net) + ' FCFA', 195, rowY + 7, { align: 'right' });
         
-        // ========== COTISATIONS PATRONALES ==========
-        y += 60;
+        rowY += 14;
+        
+        // Cadre latéral des bordures du tableau
+        doc.setDrawColor(...grisMoyen);
+        doc.rect(10, y, tableWidth, rowY - y - 4, 'S');
+        
+        // Lignes verticales
+        doc.line(colX[1], y, colX[1], rowY - 4);
+        doc.line(colX[2], y, colX[2], rowY - 4);
+        doc.line(colX[3], y, colX[3], rowY - 4);
+        doc.line(colX[4], y, colX[4], rowY - 4);
+        doc.line(colX[5], y, colX[5], rowY - 4);
+        
+        // ========== TABLEAU RECAPITULATIF ==========
+        y = rowY + 2;
+        const recapCols = [10, 35, 60, 85, 110, 140, 165];
         
         doc.setFillColor(...grisClair);
-        doc.rect(10, y, 190, 16, 'F');
-        doc.setDrawColor(...gris);
-        doc.rect(10, y, 190, 16, 'S');
+        doc.rect(10, y, 190, 14, 'F');
+        doc.setDrawColor(...grisMoyen);
+        doc.rect(10, y, 190, 14, 'S');
         
         doc.setTextColor(...noir);
-        doc.setFontSize(7);
+        doc.setFontSize(6);
         doc.setFont('helvetica', 'bold');
-        doc.text('COTISATIONS PATRONALES (pour information)', 15, y + 5);
         
+        // Ligne 1 - Titres
+        doc.text('Heures', recapCols[0] + 2, y + 4);
+        doc.text('Brut', recapCols[1] + 2, y + 4);
+        doc.text('Plafond IPRES', recapCols[2] + 2, y + 4);
+        doc.text('Net imposable', recapCols[3] + 2, y + 4);
+        doc.text('Ch. patronales', recapCols[4] + 2, y + 4);
+        doc.text('Cout Global', recapCols[5] + 2, y + 4);
+        doc.text('Mode paiement', recapCols[6] + 2, y + 4);
+        
+        // Ligne 2 - Valeurs
         doc.setFont('helvetica', 'normal');
+        doc.text(fiche.heuresTravaillees + 'h', recapCols[0] + 2, y + 10);
+        doc.text(formatEntier(fiche.salaireBrut), recapCols[1] + 2, y + 10);
+        doc.text(formatEntier(Math.min(fiche.salaireBrut, 630000)), recapCols[2] + 2, y + 10); // Plafond sécu Sénégal
+        doc.text(formatEntier(fiche.salaireBrut - fiche.totalCotisationsSalariales), recapCols[3] + 2, y + 10);
+        doc.text(formatEntier(fiche.totalCotisationsPatronales), recapCols[4] + 2, y + 10);
+        doc.text(formatEntier(fiche.salaireBrut + fiche.totalCotisationsPatronales), recapCols[5] + 2, y + 10);
+        doc.text(fiche.modePaiement || 'Virement', recapCols[6] + 2, y + 10);
+        
+        // ========== MENTIONS LÉGALES ==========
+        y += 20;
         doc.setTextColor(...gris);
         doc.setFontSize(6);
-        
-        // Ligne 1
-        doc.text('IPRES RG (8,4%): ' + formatMontant(fiche.cotisations.patronales.ipresRG), 15, y + 10);
-        if (fiche.isCadre) {
-            doc.text('IPRES Compl (3,6%): ' + formatMontant(fiche.cotisations.patronales.ipresRC), 55, y + 10);
-        }
-        doc.text('Prest. Fam (7%): ' + formatMontant(fiche.cotisations.patronales.prestationsFamiliales), 100, y + 10);
-        doc.text('AT (' + fiche.tauxAT + '%): ' + formatMontant(fiche.cotisations.patronales.accidentsTravail), 145, y + 10);
-        
-        // Ligne 2
-        doc.text('IPM (3%): ' + formatMontant(fiche.cotisations.patronales.ipm), 15, y + 14);
-        doc.text('CFE (3%): ' + formatMontant(fiche.cotisations.patronales.cfe), 55, y + 14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...noir);
-        doc.text('TOTAL PATRONAL: ' + formatMontant(fiche.totalCotisationsPatronales) + ' FCFA', 145, y + 14);
-        
-        // ========== NET A PAYER ==========
-        y += 22;
-        
-        doc.setFillColor(...noir);
-        doc.roundedRect(10, y, 190, 18, 2, 2, 'F');
-        
-        doc.setTextColor(...blanc);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('NET A PAYER', 20, y + 11);
-        
-        // Encadré blanc avec bordure noire
-        doc.setFillColor(...blanc);
-        doc.roundedRect(100, y + 2, 95, 14, 2, 2, 'F');
-        doc.setDrawColor(...noir);
-        doc.roundedRect(100, y + 2, 95, 14, 2, 2, 'S');
-        
-        doc.setTextColor(...noir);
-        doc.setFontSize(14);
-        doc.text(formatMontant(fiche.net) + ' FCFA', 147, y + 12, { align: 'center' });
-        
-        // ========== SIGNATURE EMPLOYEUR UNIQUEMENT ==========
-        y += 28;
-        
-        doc.setDrawColor(150, 150, 150);
-        doc.rect(55, y, 100, 28, 'S');
-        doc.setTextColor(...gris);
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Signature et cachet de l\'employeur', 105, y + 5, { align: 'center' });
-        doc.text('KFS BTP IMMO', 105, y + 24, { align: 'center' });
+        doc.setFont('helvetica', 'italic');
+        doc.text('Dans votre interet et pour faire valoir vos droits, conservez ce bulletin de paie sans limitation de duree.', 105, y, { align: 'center' });
+        doc.text('Paiement effectue le ' + dateEmission + ' - Mode de paiement: ' + (fiche.modePaiement || 'Virement'), 105, y + 4, { align: 'center' });
         
         // ========== PIED DE PAGE ==========
-        doc.setFillColor(...noir);
-        doc.rect(0, 280, 210, 17, 'F');
+        doc.setFillColor(...bleuFonce);
+        doc.rect(0, 282, 210, 15, 'F');
         
         doc.setTextColor(...blanc);
         doc.setFontSize(6);
-        doc.text('Bulletin de paie conforme au Code du Travail Senegalais - A conserver sans limitation de duree', 105, 286, { align: 'center' });
-        doc.text('Cotisations: IPRES (retraite) - CSS (prestations familiales, AT) - IPM (maladie) - TRIMF', 105, 290, { align: 'center' });
-        doc.text('KFS BTP IMMO - NINEA: ' + fiche.nineaEntreprise + ' - RCCM: ' + fiche.rccmEntreprise, 105, 294, { align: 'center' });
+        doc.text('Bulletin de paie conforme au Code du Travail Senegalais - Cotisations: IPRES (retraite) - CSS (prestations familiales, AT) - IPM (maladie) - TRIMF', 105, 287, { align: 'center' });
+        doc.text('KFS BTP IMMO - NINEA: ' + fiche.nineaEntreprise + ' - RCCM: ' + fiche.rccmEntreprise + ' - Dakar, Senegal', 105, 292, { align: 'center' });
         
         // Sauvegarder le PDF
         const filename = 'Bulletin_Paie_' + fiche.prenom + '_' + fiche.nom + '_' + fiche.mois.replace('-', '_') + '.pdf';
@@ -4512,7 +4472,7 @@ function showNotification(title, message, type = 'info') {
     const colors = {
         'info': 'bg-blue-500',
         'success': 'bg-green-500',
-        'warning': 'bg-yellow-500',
+        'warning': 'bg-blue-600',
         'error': 'bg-red-500'
     };
     
@@ -6258,7 +6218,7 @@ function renderFactures() {
                     <button onclick="printFacture(${globalIndex})" class="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200">
                         <span class="material-icons text-sm align-middle">print</span> Imprimer
                     </button>
-                    <button onclick="changeFactureStatus(${globalIndex})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200">
+                    <button onclick="changeFactureStatus(${globalIndex})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-blue-200">
                         <span class="material-icons text-sm align-middle">edit</span> Statut
                     </button>
                     <button onclick="deleteFacture(${globalIndex})" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
@@ -7727,7 +7687,7 @@ function renderProjets() {
                             </span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="h-2 rounded-full ${depassement ? 'bg-red-500' : progression > 80 ? 'bg-yellow-500' : 'bg-blue-500'}" 
+                            <div class="h-2 rounded-full ${depassement ? 'bg-red-500' : progression > 80 ? 'bg-blue-600' : 'bg-blue-500'}" 
                                 style="width: ${Math.min(100, progression)}%"></div>
                         </div>
                     </div>
@@ -7745,7 +7705,7 @@ function renderProjets() {
                     <button onclick="viewProjet(${globalIndex})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200" title="Voir détails">
                         <span class="material-icons text-sm align-middle">visibility</span> Détails
                     </button>
-                    <button onclick="editProjet(${globalIndex})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-yellow-200" title="Modifier">
+                    <button onclick="editProjet(${globalIndex})" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-sm hover:bg-blue-200" title="Modifier">
                         <span class="material-icons text-sm align-middle">edit</span>
                     </button>
                     <button onclick="recevoirAcompteProjet(${globalIndex})" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200" title="Recevoir acompte">
@@ -8142,9 +8102,9 @@ function renderEmployes() {
     const deptColors = {
         'direction': 'bg-purple-500',
         'commercial': 'bg-blue-500',
-        'technique': 'bg-yellow-500',
+        'technique': 'bg-blue-600',
         'administratif': 'bg-green-500',
-        'chantier': 'bg-yellow-500'
+        'chantier': 'bg-blue-600'
     };
     
     container.innerHTML = filtered.map((e, i) => {
@@ -8584,7 +8544,7 @@ function renderStocks() {
     }
     
     const catColors = {
-        'materiaux': 'bg-yellow-500',
+        'materiaux': 'bg-blue-600',
         'outillage': 'bg-blue-500',
         'equipement': 'bg-purple-500',
         'consommable': 'bg-green-500',
@@ -8999,11 +8959,11 @@ function renderDocuments() {
     
     const catColors = {
         'administratif': 'bg-blue-500',
-        'technique': 'bg-yellow-500',
+        'technique': 'bg-blue-600',
         'commercial': 'bg-green-500',
         'juridique': 'bg-red-500',
         'comptable': 'bg-purple-500',
-        'projet': 'bg-yellow-500',
+        'projet': 'bg-blue-600',
         'autre': 'bg-gray-500'
     };
     
@@ -13410,7 +13370,7 @@ function generateDevisForm(clients, projets) {
                 <h3 class="font-bold text-yellow-800 flex items-center">
                     <span class="material-icons mr-2 text-yellow-600">list</span>Prestations / Articles
                 </h3>
-                <button type="button" onclick="addDevisLigne()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                <button type="button" onclick="addDevisLigne()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
                     <span class="material-icons align-middle text-sm">add</span> Ajouter une ligne
                 </button>
             </div>

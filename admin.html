@@ -91,7 +91,7 @@
                     Connexion
                 </button>
                 <p id="login-error" class="text-red-500 text-center hidden">Mot de passe incorrect</p>
-                <button type="button" id="reset-password-btn" class="w-full mt-2 bg-yellow-400 text-yellow-900 py-2 rounded-xl font-semibold shadow hover:bg-yellow-500 transition duration-200">
+                <button type="button" id="reset-password-btn" class="w-full mt-2 bg-blue-500 text-white py-2 rounded-xl font-semibold shadow hover:bg-blue-600 transition duration-200">
                     Réinitialiser mot de passe (admin123)
                 </button>
             </form>
@@ -103,8 +103,20 @@
     <div id="dashboard-container" class="hidden">
         <div class="flex min-h-screen">
             
+            <!-- Overlay mobile pour fermer le menu -->
+            <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden" onclick="toggleMobileMenu()"></div>
+            
+            <!-- Bouton Hamburger Mobile -->
+            <button id="mobile-menu-btn" class="lg:hidden fixed top-4 left-4 z-50 p-3 bg-blue-600 rounded-xl shadow-lg text-white">
+                <span class="material-icons">menu</span>
+            </button>
+            
             <!-- Sidebar -->
-            <aside class="sidebar w-72 fixed left-0 top-0 h-full shadow-2xl z-40 flex flex-col">
+            <aside id="admin-sidebar" class="sidebar w-72 fixed left-0 top-0 h-full shadow-2xl z-40 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+                <!-- Bouton fermer mobile -->
+                <button id="close-sidebar-btn" class="lg:hidden absolute top-4 right-4 p-2 text-white/70 hover:text-white">
+                    <span class="material-icons">close</span>
+                </button>
                 <!-- Logo -->
                 <div class="p-6 border-b border-white/10">
                     <div class="flex items-center space-x-3">
@@ -270,17 +282,17 @@
             </aside>
 
             <!-- Contenu principal -->
-            <main class="flex-1 ml-72 p-8">
+            <main class="flex-1 ml-0 lg:ml-72 p-4 lg:p-8 pt-20 lg:pt-8">
                 
                 <!-- Header -->
-                <header class="flex items-center justify-between mb-8">
+                <header class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 id="page-title" class="text-3xl font-bold text-white">Tableau de bord</h1>
-                        <p class="text-gray-400 mt-1">Bienvenue dans votre espace d'administration</p>
+                        <h1 id="page-title" class="text-2xl lg:text-3xl font-bold text-white">Tableau de bord</h1>
+                        <p class="text-gray-400 mt-1 text-sm lg:text-base">Bienvenue dans votre espace d'administration</p>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <span class="text-gray-400" id="current-date"></span>
-                        <a href="index.html" target="_blank" class="flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded-xl text-gray-900 font-semibold transition shadow-lg">
+                        <span class="text-gray-400 hidden lg:inline" id="current-date"></span>
+                        <a href="index.html" target="_blank" class="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-semibold transition shadow-lg text-sm lg:text-base">
                             <span class="material-icons mr-2">visibility</span>Voir le site
                         </a>
                     </div>
@@ -466,7 +478,7 @@
                             <div class="glass-card rounded-2xl p-6 shadow-xl">
                                 <div class="flex items-center justify-between mb-6">
                                     <h3 class="text-xl font-bold text-gray-800">Questions fréquentes</h3>
-                                    <button onclick="openFaqModal()" class="px-4 py-2 bg-yellow-500 text-gray-900 rounded-xl font-semibold hover:bg-yellow-600 transition shadow-lg">
+                                    <button onclick="openFaqModal()" class="px-4 py-2 bg-blue-600 text-gray-900 rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg">
                                         <span class="material-icons align-middle mr-1 text-sm">add</span>Nouvelle question
                                     </button>
                                 </div>
@@ -1072,7 +1084,7 @@
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="maintenance-toggle" class="sr-only peer">
-                                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-yellow-500"></div>
+                                    <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
                                 </label>
                             </div>
                             <div id="maintenance-options" class="hidden mt-4 space-y-4">
@@ -1159,7 +1171,7 @@
                                 Prévisualiser la page de maintenance
                             </h3>
                             <p class="text-amber-100 mb-4">Voir ce que les visiteurs verront pendant la maintenance</p>
-                            <a href="maintenance.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-yellow-400 text-amber-900 font-bold rounded-xl hover:bg-yellow-300 transition shadow-lg">
+                            <a href="maintenance.html" target="_blank" class="inline-flex items-center px-6 py-3 bg-blue-500 text-amber-900 font-bold rounded-xl hover:bg-blue-400 transition shadow-lg">
                                 <span class="material-icons mr-2">open_in_new</span>
                                 Ouvrir maintenance.html
                             </a>
@@ -1502,7 +1514,7 @@
                                             </div>
                                             <label class="relative inline-flex items-center cursor-pointer">
                                                 <input type="checkbox" id="sec-alert-failed" class="sr-only peer" checked>
-                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                             </label>
                                         </div>
                                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
@@ -1512,7 +1524,7 @@
                                             </div>
                                             <label class="relative inline-flex items-center cursor-pointer">
                                                 <input type="checkbox" id="sec-alert-login" class="sr-only peer">
-                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                             </label>
                                         </div>
                                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
@@ -1522,7 +1534,7 @@
                                             </div>
                                             <label class="relative inline-flex items-center cursor-pointer">
                                                 <input type="checkbox" id="sec-alert-delete" class="sr-only peer" checked>
-                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                             </label>
                                         </div>
                                     </div>
@@ -2176,7 +2188,7 @@
                                     <span class="text-gray-500" id="projets-count">0 projets</span>
                                 </div>
                             </div>
-                            <button onclick="openProjetModal()" class="flex items-center px-6 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
+                            <button onclick="openProjetModal()" class="flex items-center px-6 py-3 bg-blue-600 text-gray-900 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
                                 <span class="material-icons mr-2">add_task</span>
                                 Nouveau projet
                             </button>
@@ -2282,7 +2294,7 @@
                                     <span class="text-gray-500" id="stocks-count">0 articles</span>
                                 </div>
                             </div>
-                            <button onclick="openStockModal()" class="flex items-center px-6 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
+                            <button onclick="openStockModal()" class="flex items-center px-6 py-3 bg-blue-600 text-gray-900 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
                                 <span class="material-icons mr-2">add_box</span>
                                 Nouvel article
                             </button>
@@ -2377,10 +2389,10 @@
                                 </button>
                                 <button onclick="generateDocTemplate('location-courte')" class="flex flex-col items-center p-4 bg-yellow-100 hover:bg-yellow-200 rounded-xl transition group">
                                     <span class="material-icons text-yellow-700 text-2xl mb-2">hotel</span>
-                                    <span class="text-yellow-900 text-sm font-semibold">Location Courte Durée</span>
+                                    <span class="text-white text-sm font-semibold">Location Courte Durée</span>
                                     <span class="text-xs text-yellow-700 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
-                                <button onclick="generateDocTemplate('devis')" class="flex flex-col items-center p-4 bg-yellow-500 hover:bg-yellow-600 rounded-xl transition group shadow-lg">
+                                <button onclick="generateDocTemplate('devis')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
                                     <span class="material-icons text-white text-2xl mb-2">request_quote</span>
                                     <span class="text-white text-sm font-bold">Devis</span>
                                     <span class="text-xs text-orange-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
@@ -2866,7 +2878,7 @@
         <div class="relative min-h-screen flex items-center justify-center p-4">
             <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden animate__animated animate__fadeInUp animate__faster">
                 <!-- Header -->
-                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-yellow-500">
+                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-blue-600">
                     <div class="flex items-center justify-between">
                         <div>
                             <h3 id="stock-modal-title" class="text-xl font-bold text-white">Nouvel article</h3>
@@ -3018,7 +3030,7 @@
                             <button type="button" onclick="closeStockModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                                 Annuler
                             </button>
-                            <button type="submit" class="px-8 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
+                            <button type="submit" class="px-8 py-3 bg-blue-600 text-gray-900 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
                                 <span class="material-icons align-middle mr-1">save</span>Enregistrer
                             </button>
                         </div>
@@ -3258,7 +3270,7 @@
                         <button type="button" onclick="closeProjetModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                             Annuler
                         </button>
-                        <button type="submit" class="px-8 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
+                        <button type="submit" class="px-8 py-3 bg-blue-600 text-gray-900 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
                             <span class="material-icons align-middle mr-1">save</span>Enregistrer
                         </button>
                     </div>
@@ -4182,7 +4194,7 @@
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeFaqModal()"></div>
             <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform transition-all animate__animated animate__fadeInUp animate__faster">
                 <!-- Header -->
-                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-yellow-500 rounded-t-3xl">
+                <div class="sticky top-0 z-10 px-6 py-4 border-b bg-blue-600 rounded-t-3xl">
                     <div class="flex items-center justify-between">
                         <h3 id="faq-modal-title" class="text-xl font-bold text-white flex items-center">
                             <span class="material-icons mr-2">help_outline</span>Nouvelle question FAQ
@@ -4221,7 +4233,7 @@
                         <button type="button" onclick="closeFaqModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition">
                             Annuler
                         </button>
-                        <button type="submit" class="px-8 py-3 bg-yellow-500 text-gray-900 rounded-xl font-bold hover:bg-yellow-600 transition shadow-lg">
+                        <button type="submit" class="px-8 py-3 bg-blue-600 text-gray-900 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
                             <span class="material-icons align-middle mr-1">save</span>Enregistrer
                         </button>
                     </div>
@@ -4456,6 +4468,8 @@
         </div>
     </div>
 
+    <!-- Logo KFS en Base64 pour les PDFs -->
+    <script src="logo-base64.js"></script>
     <script src="admin.js"></script>
 
 <script>
@@ -4469,6 +4483,76 @@ document.addEventListener('DOMContentLoaded', function() {
             location.reload();
         };
     }
+});
+</script>
+<script>
+// Menu mobile - Toggle sidebar
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('admin-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (sidebar && overlay) {
+        const isOpen = !sidebar.classList.contains('-translate-x-full');
+        
+        if (isOpen) {
+            // Fermer
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        } else {
+            // Ouvrir
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+    const overlay = document.getElementById('sidebar-overlay');
+    const navLinks = document.querySelectorAll('#admin-sidebar nav button');
+    
+    // Bouton hamburger
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    }
+    
+    // Bouton fermer
+    if (closeSidebarBtn) {
+        closeSidebarBtn.addEventListener('click', toggleMobileMenu);
+    }
+    
+    // Clic sur overlay
+    if (overlay) {
+        overlay.addEventListener('click', toggleMobileMenu);
+    }
+    
+    // Fermer le menu quand on clique sur un lien (mobile)
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 1024) {
+                toggleMobileMenu();
+            }
+        });
+    });
+    
+    // Réinitialiser l'état sur resize
+    window.addEventListener('resize', function() {
+        const sidebar = document.getElementById('admin-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        if (window.innerWidth >= 1024) {
+            if (sidebar) sidebar.classList.remove('-translate-x-full');
+            if (overlay) overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        } else {
+            if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.add('-translate-x-full');
+            }
+        }
+    });
 });
 </script>
 </body>
