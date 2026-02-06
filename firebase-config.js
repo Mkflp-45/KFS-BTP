@@ -9,7 +9,7 @@
 const FIREBASE_CONFIG = {
     apiKey: "AIzaSyAaG8hkyEt0AqqZ5wESuzZlqPLYM6mYIyI",
     authDomain: "kfs-btp-sn.firebaseapp.com",
-    databaseURL: "https://kfs-btp-sn-default-rtdb.europe-west1.firebasedatabase.app",
+    databaseURL: "https://kfs-btp-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "kfs-btp-sn",
     storageBucket: "kfs-btp-sn.firebasestorage.app",
     messagingSenderId: "208534847953",
