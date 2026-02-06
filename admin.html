@@ -83,19 +83,25 @@
                 <p class="text-gray-500 mt-2">Connectez-vous pour accéder au tableau de bord</p>
             </div>
             <form id="login-form" class="space-y-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-medium mb-2">Email</label>
+                    <input type="email" id="login-email" class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" placeholder="votre@email.com" required>
+                </div>
                 <div class="mb-5">
                     <label class="block text-gray-700 font-medium mb-2">Mot de passe</label>
                     <input type="password" id="login-password" class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/80 shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition placeholder-gray-400" placeholder="Entrez votre mot de passe" required>
                 </div>
-                <button type="submit" class="w-full bg-gradient-to-r from-blue-700 to-blue-500 text-white py-3 rounded-xl font-semibold shadow-lg hover:from-blue-800 hover:to-blue-600 transition duration-200">
-                    Connexion
+                <button type="submit" id="login-btn" class="w-full bg-gradient-to-r from-blue-700 to-blue-500 text-white py-3 rounded-xl font-semibold shadow-lg hover:from-blue-800 hover:to-blue-600 transition duration-200 flex items-center justify-center">
+                    <span id="login-btn-text">Connexion</span>
+                    <span id="login-spinner" class="hidden ml-2 animate-spin">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    </span>
                 </button>
-                <p id="login-error" class="text-red-500 text-center hidden">Mot de passe incorrect</p>
-                <button type="button" id="reset-password-btn" class="w-full mt-2 bg-blue-500 text-white py-2 rounded-xl font-semibold shadow hover:bg-blue-600 transition duration-200">
-                    Réinitialiser mot de passe (admin123)
-                </button>
+                <p id="login-error" class="text-red-500 text-center hidden mt-3"></p>
             </form>
-            <p class="text-center text-gray-400 mt-6 text-sm">Mot de passe par défaut : <code class="bg-gray-100 px-2 py-1 rounded text-gray-700">admin123</code></p>
+            <div class="mt-6 p-4 bg-blue-50 rounded-xl text-center">
+                <p class="text-blue-800 text-sm">🔐 Connexion sécurisée via Firebase</p>
+            </div>
         </div>
     </div>
 

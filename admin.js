@@ -13,36 +13,126 @@ function initMessages() {
     // Mettre à jour les statistiques
     updateStats();
 }
-// ================= MODULE : AUTHENTIFICATION ADMIN =====================
+// ================= MODULE : AUTHENTIFICATION ADMIN (FIREBASE) =====================
 function initLogin() {
     const loginScreen = document.getElementById('login-screen');
     const dashboard = document.getElementById('dashboard-container');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
-    // Si déjà authentifié, afficher le dashboard
-    if (sessionStorage.getItem('adminAuth') === 'true') {
-        if (loginScreen) loginScreen.style.display = 'none';
-        if (dashboard) dashboard.classList.remove('hidden');
-        return;
-    }
-    // Sinon, afficher l'écran de connexion
-    if (loginScreen) loginScreen.style.display = '';
-    if (dashboard) dashboard.classList.add('hidden');
-    if (loginForm) {
-        loginForm.onsubmit = function(e) {
-            e.preventDefault();
-            let pwd = document.getElementById('login-password').value;
-            let stored = localStorage.getItem('adminPassword');
-            if (!stored) stored = btoa('admin123');
-            if (btoa(pwd) === stored) {
+    const loginBtn = document.getElementById('login-btn');
+    const loginBtnText = document.getElementById('login-btn-text');
+    const loginSpinner = document.getElementById('login-spinner');
+    
+    // Vérifier si Firebase Auth est disponible
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        // Observer les changements d'état d'authentification Firebase
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                // Utilisateur connecté via Firebase
+                console.log('✅ Utilisateur Firebase connecté:', user.email);
                 sessionStorage.setItem('adminAuth', 'true');
+                sessionStorage.setItem('adminEmail', user.email);
                 if (loginScreen) loginScreen.style.display = 'none';
                 if (dashboard) dashboard.classList.remove('hidden');
-                if (loginError) loginError.classList.add('hidden');
             } else {
-                if (loginError) loginError.classList.remove('hidden');
+                // Utilisateur non connecté
+                console.log('🔒 Aucun utilisateur Firebase connecté');
+                sessionStorage.removeItem('adminAuth');
+                sessionStorage.removeItem('adminEmail');
+                if (loginScreen) loginScreen.style.display = '';
+                if (dashboard) dashboard.classList.add('hidden');
+            }
+        });
+    } else {
+        // Fallback si Firebase n'est pas disponible
+        if (sessionStorage.getItem('adminAuth') === 'true') {
+            if (loginScreen) loginScreen.style.display = 'none';
+            if (dashboard) dashboard.classList.remove('hidden');
+            return;
+        }
+        if (loginScreen) loginScreen.style.display = '';
+        if (dashboard) dashboard.classList.add('hidden');
+    }
+    
+    // Gestion du formulaire de connexion
+    if (loginForm) {
+        loginForm.onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            
+            // Afficher le spinner de chargement
+            if (loginBtn) loginBtn.disabled = true;
+            if (loginBtnText) loginBtnText.textContent = 'Connexion...';
+            if (loginSpinner) loginSpinner.classList.remove('hidden');
+            if (loginError) loginError.classList.add('hidden');
+            
+            try {
+                // Connexion via Firebase Auth
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    await firebase.auth().signInWithEmailAndPassword(email, password);
+                    console.log('✅ Connexion Firebase réussie');
+                    // L'observer onAuthStateChanged gère l'affichage du dashboard
+                } else {
+                    throw new Error('Firebase Auth non disponible');
+                }
+            } catch (error) {
+                console.error('❌ Erreur de connexion:', error);
+                
+                // Afficher le message d'erreur approprié
+                let errorMessage = 'Erreur de connexion';
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'Adresse email invalide';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'Ce compte a été désactivé';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage = 'Aucun compte avec cet email';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Mot de passe incorrect';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Trop de tentatives. Réessayez plus tard';
+                        break;
+                    case 'auth/invalid-credential':
+                        errorMessage = 'Email ou mot de passe incorrect';
+                        break;
+                    default:
+                        errorMessage = error.message || 'Erreur de connexion';
+                }
+                
+                if (loginError) {
+                    loginError.textContent = errorMessage;
+                    loginError.classList.remove('hidden');
+                }
+            } finally {
+                // Réinitialiser le bouton
+                if (loginBtn) loginBtn.disabled = false;
+                if (loginBtnText) loginBtnText.textContent = 'Connexion';
+                if (loginSpinner) loginSpinner.classList.add('hidden');
             }
         };
+    }
+}
+
+// Fonction de déconnexion Firebase
+function logoutAdmin() {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().signOut().then(function() {
+            console.log('✅ Déconnexion réussie');
+            sessionStorage.removeItem('adminAuth');
+            sessionStorage.removeItem('adminEmail');
+            window.location.reload();
+        }).catch(function(error) {
+            console.error('❌ Erreur de déconnexion:', error);
+        });
+    } else {
+        sessionStorage.removeItem('adminAuth');
+        window.location.reload();
     }
 }
 // ================= FIN MODULE AUTH =====================
@@ -299,6 +389,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // === INITIALISATION DE TOUS LES MODULES ===
     initLogin();
+    
+    // Événement du bouton de déconnexion
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logoutAdmin);
+    }
+    
     initNavigation();
     initDashboard();
     initMessages();
