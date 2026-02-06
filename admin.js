@@ -12079,13 +12079,6 @@ function generateDevisProfessionnel(data) {
         </div>
     </div>
 
-    <!-- OBJET DU DEVIS -->
-    <div style="margin-bottom: 25px; padding: 15px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
-        <h3 style="margin: 0 0 10px 0; font-size: 13px; color: #b45309;">OBJET DU DEVIS</h3>
-        <p style="margin: 0; font-size: 14px;">${data.objetDevis || 'Travaux de construction / rénovation'}</p>
-        ${data.lieuTravaux ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">📍 Lieu: ${data.lieuTravaux}</p>` : ''}
-    </div>
-
     <!-- CONDITIONS -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
@@ -12109,6 +12102,13 @@ function generateDevisProfessionnel(data) {
                 <strong>Validité du devis:</strong> ${data.validite || '30'} jours
             </p>
         </div>
+    </div>
+
+    <!-- OBJET DU DEVIS -->
+    <div style="margin-bottom: 25px; padding: 15px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <h3 style="margin: 0 0 10px 0; font-size: 13px; color: #b45309;">OBJET DU DEVIS</h3>
+        <p style="margin: 0; font-size: 14px;">${data.objetDevis || 'Travaux de construction / rénovation'}</p>
+        ${data.lieuTravaux ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">📍 Lieu: ${data.lieuTravaux}</p>` : ''}
     </div>
 
     <!-- TABLEAU DES PRESTATIONS (DÉSIGNATIONS) -->
@@ -12204,21 +12204,13 @@ function generateDevisProfessionnel(data) {
         </ul>
     </div>
 
-    <!-- SIGNATURE BON POUR ACCORD -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
-        <div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 10px;">
+    <!-- SIGNATURE ENTREPRISE -->
+    <div style="display: flex; justify-content: flex-start; margin-top: 40px;">
+        <div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 10px; width: 300px;">
             <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">Pour ${company.nom}</p>
             <p style="font-weight: bold; margin: 0 0 60px 0;">${data.commercial || 'Le service commercial'}</p>
             <div style="border-top: 1px dashed #ccc; padding-top: 10px;">
                 <p style="font-size: 10px; color: #999; margin: 0;">Signature</p>
-            </div>
-        </div>
-        <div style="text-align: center; padding: 20px; background: #f0fdf4; border-radius: 10px; border: 2px dashed #10b981;">
-            <p style="font-size: 12px; color: #059669; margin: 0 0 5px 0; font-weight: bold;">✅ BON POUR ACCORD</p>
-            <p style="font-size: 11px; color: #666; margin: 0 0 10px 0;">Date et signature du client</p>
-            <p style="font-size: 10px; color: #666; margin: 0 0 50px 0;">(précédé de la mention manuscrite "Bon pour accord")</p>
-            <div style="border-top: 1px dashed #10b981; padding-top: 10px;">
-                <p style="font-size: 10px; color: #666; margin: 0;">Signature client: ${client.nom || '_________________'}</p>
             </div>
         </div>
     </div>
