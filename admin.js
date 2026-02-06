@@ -14231,6 +14231,17 @@ function generateDocumentHTML(type, data, isPreview) {
         </div>
     </div>
 
+    <!-- CONDITIONS -->
+    <div style="margin: 25px 0; padding: 20px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <h4 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px;">CONDITIONS</h4>
+        <ul style="font-size: 13px; margin: 0; padding-left: 20px;">
+            <li>Validité du devis: <strong>${data.validite || 30} jours</strong></li>
+            <li>Acompte à la commande: <strong>${data.acompte || 30}%</strong> soit ${acompte.toLocaleString('fr-FR')} FCFA</li>
+            ${data.delaiExecution ? `<li>Délai d'exécution: <strong>${data.delaiExecution} ${data.uniteDelai || 'jours ouvrés'}</strong></li>` : ''}
+            ${data.dateDebut ? `<li>Date de début prévue: <strong>${new Date(data.dateDebut).toLocaleDateString('fr-FR')}</strong></li>` : ''}
+        </ul>
+    </div>
+
     <!-- OBJET DU DEVIS -->
     <div style="margin: 25px 0;">
         <h3 style="color: #1e3a8a; font-size: 14px; margin-bottom: 15px;">OBJET DU DEVIS</h3>
@@ -14288,30 +14299,12 @@ function generateDocumentHTML(type, data, isPreview) {
         </div>
     </div>
 
-    <!-- CONDITIONS -->
-    <div style="margin: 25px 0; padding: 20px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
-        <h4 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px;">CONDITIONS</h4>
-        <ul style="font-size: 13px; margin: 0; padding-left: 20px;">
-            <li>Validité du devis: <strong>${data.validite || 30} jours</strong></li>
-            <li>Acompte à la commande: <strong>${data.acompte || 30}%</strong> soit ${acompte.toLocaleString('fr-FR')} FCFA</li>
-            ${data.delaiExecution ? `<li>Délai d'exécution: <strong>${data.delaiExecution} ${data.uniteDelai || 'jours ouvrés'}</strong></li>` : ''}
-            ${data.dateDebut ? `<li>Date de début prévue: <strong>${new Date(data.dateDebut).toLocaleDateString('fr-FR')}</strong></li>` : ''}
-        </ul>
-    </div>
-
     ${data.notes ? `
     <div style="margin: 25px 0;">
         <h4 style="color: #1e3a8a; font-size: 14px; margin-bottom: 10px;">Notes</h4>
         <p style="font-size: 13px; color: #666;">${data.notes}</p>
     </div>
-    ` : ''}
-
-    <!-- MENTION ACCEPTATION -->
-    <div style="margin: 30px 0; padding: 15px; background: #f8fafc; border-radius: 8px; text-align: center;">
-        <p style="font-size: 12px; color: #666; margin: 0;">
-            Devis reçu avant l'exécution des travaux. Bon pour accord et exécution des travaux.
-        </p>
-    </div>`;
+    ` : ''}`;
     }
     
     // ATTESTATION
@@ -14354,17 +14347,17 @@ function generateDocumentHTML(type, data, isPreview) {
     }
 
     // SIGNATURES
-    if (type === 'attestation') {
-        // Pour les attestations : seulement la signature de l'émetteur (centrée)
+    if (type === 'attestation' || type === 'devis') {
+        // Pour les attestations et devis : seulement la signature de l'entreprise (centrée)
         html += `
-    <!-- SIGNATURE ÉMETTEUR UNIQUEMENT -->
+    <!-- SIGNATURE ENTREPRISE UNIQUEMENT -->
     <div style="margin-top: 50px; page-break-inside: avoid;">
         <p style="text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 13px;">
             Fait à Dakar, le ${dateJour}, en un (1) exemplaire original.
         </p>
         
         <div style="max-width: 300px; margin: 0 auto; text-align: center;">
-            <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">L'ÉMETTEUR</p>
+            <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">${type === 'devis' ? 'LE PRESTATAIRE' : 'L\\'ÉMETTEUR'}</p>
             <p style="font-size: 12px; color: #666; margin-bottom: 10px;">KFS BTP IMMO</p>
             <p style="font-size: 12px; margin-bottom: 80px;">Le Directeur Général</p>
             <div style="border-top: 1px solid #333; padding-top: 10px;">
@@ -14392,7 +14385,7 @@ function generateDocumentHTML(type, data, isPreview) {
                 </div>
             </div>
             <div style="text-align: center;">
-                <p style="font-weight: bold; color: #10b981; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : type === 'devis' ? 'BON POUR ACCORD' : 'LE CLIENT'}</p>
+                <p style="font-weight: bold; color: #10b981; margin-bottom: 15px; font-size: 13px;">${type === 'bail' || type === 'location-courte' ? 'LE LOCATAIRE' : 'LE CLIENT'}</p>
                 <p style="font-size: 12px; color: #666; margin-bottom: 10px;">${data.clientNom || data.locataireNom || '<span style="color:#dc2626;">Nom</span>'}</p>
                 <p style="font-size: 12px; margin-bottom: 80px;">&nbsp;</p>
                 <div style="border-top: 1px solid #333; padding-top: 10px;">
