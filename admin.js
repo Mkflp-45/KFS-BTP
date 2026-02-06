@@ -4222,15 +4222,15 @@ function genererFicheDePaiePDF() {
         // ===== NET A PAYER =====
         rowY += 2;
         doc.setFillColor(...bleuFonce);
-        doc.rect(10, rowY, tableWidth, 10, 'F');
+        doc.rect(10, rowY, tableWidth, 8, 'F');
         doc.setTextColor(...blanc);
-        doc.setFontSize(10);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('NET A PAYER', 15, rowY + 7);
-        doc.setFontSize(12);
-        doc.text(formatMontant(fiche.net) + ' FCFA', 195, rowY + 7, { align: 'right' });
+        doc.text('NET A PAYER', 15, rowY + 5.5);
+        doc.setFontSize(9);
+        doc.text(formatMontant(fiche.net) + ' FCFA', colX[5] + colWidths[5] - 3, rowY + 5.5, { align: 'right' });
         
-        rowY += 14;
+        rowY += 12;
         
         // Cadre latéral des bordures du tableau
         doc.setDrawColor(...grisMoyen);
