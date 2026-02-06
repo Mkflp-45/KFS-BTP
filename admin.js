@@ -13750,30 +13750,20 @@ function generateDocumentHTML(type, data, isPreview) {
     </div>`;
     }
     
-    // Pour location-courte: version simplifiée sans "Entre les soussignés"
+    // Pour location-courte: seulement Préambule et "IL A ÉTÉ CONVENU" (pas de "Entre les soussignés" ni cartes Bailleur/Locataire)
     if (type === 'location-courte') {
         html += `
-    <!-- INFORMATIONS RÉSERVATION -->
-    <div style="margin: 30px 0;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-            <!-- BAILLEUR -->
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #1e3a8a;">
-                <h4 style="color: #1e3a8a; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Bailleur</h4>
-                <p style="margin: 5px 0;"><strong>KFS BTP IMMO</strong></p>
-                <p style="margin: 5px 0; font-size: 13px;">Villa 123 MC, Quartier Medinacoura, Tambacounda</p>
-                <p style="margin: 5px 0; font-size: 13px;">Tél: +221 78 584 28 71 / +33 6 05 84 68 07</p>
-                <p style="margin: 5px 0; font-size: 13px;">NINEA: 009468499 | RCCM: SN TBC 2025 M 1361</p>
-            </div>
-            
-            <!-- LOCATAIRE -->
-            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981;">
-                <h4 style="color: #10b981; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Locataire</h4>
-                <p style="margin: 5px 0;"><strong>${data.clientNom || '<span style="color:#dc2626; background:#fee2e2; padding:2px 8px; border-radius:4px;">Nom à compléter</span>'}</strong></p>
-                <p style="margin: 5px 0; font-size: 13px;">Adresse: ${data.clientAdresse || '<span style="color:#dc2626;">À compléter</span>'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Téléphone: ${data.clientTel || '<span style="color:#dc2626;">À compléter</span>'}</p>
-                <p style="margin: 5px 0; font-size: 13px;">Email: ${data.clientEmail || '<span style="color:#dc2626;">À compléter</span>'}</p>
-            </div>
-        </div>
+    <!-- PRÉAMBULE -->
+    <div style="margin: 30px 0; padding: 20px; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <h3 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px; text-transform: uppercase;">Préambule</h3>
+        <p style="text-align: justify; font-size: 13px; margin: 0;">
+            Le Bailleur met à disposition du Locataire un logement meublé pour une courte durée, aux conditions définies ci-après.
+        </p>
+    </div>
+
+    <!-- IL A ÉTÉ CONVENU CE QUI SUIT -->
+    <div style="text-align: center; margin: 30px 0; padding: 15px; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+        <p style="font-weight: bold; font-size: 16px; color: #1e3a8a; margin: 0; letter-spacing: 3px;">IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT</p>
     </div>`;
     }
 
