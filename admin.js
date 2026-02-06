@@ -12086,7 +12086,32 @@ function generateDevisProfessionnel(data) {
         ${data.lieuTravaux ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">📍 Lieu: ${data.lieuTravaux}</p>` : ''}
     </div>
 
-    <!-- TABLEAU DES PRESTATIONS -->
+    <!-- CONDITIONS -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase;">💰 Conditions de paiement</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 11px; color: #555;">
+                <li>Acompte à la commande: <strong>${data.acompte || '30'}%</strong> soit ${formatMontant(totalTTC * (parseFloat(data.acompte) || 30) / 100)}</li>
+                ${data.echeancier ? data.echeancier.split('\n').map(e => `<li>${e}</li>`).join('') : `
+                <li>Situation intermédiaire: <strong>40%</strong></li>
+                <li>Solde à la réception: <strong>30%</strong></li>
+                `}
+            </ul>
+            <p style="margin: 10px 0 0 0; font-size: 11px; color: #666;">
+                Mode de paiement: ${data.modePaiement || 'Virement, chèque, espèces, Wave, Orange Money'}
+            </p>
+        </div>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase;">📅 Délais d'exécution</h4>
+            <p style="margin: 0; font-size: 11px; color: #555;">
+                <strong>Durée estimée:</strong> ${data.delaiExecution || '___'} ${data.uniteDelai || 'jours ouvrés'}<br>
+                <strong>Début prévisionnel:</strong> ${data.dateDebut ? new Date(data.dateDebut).toLocaleDateString('fr-FR') : 'À convenir'}<br>
+                <strong>Validité du devis:</strong> ${data.validite || '30'} jours
+            </p>
+        </div>
+    </div>
+
+    <!-- TABLEAU DES PRESTATIONS (DÉSIGNATIONS) -->
     <div style="margin-bottom: 25px;">
         <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
             <thead>
@@ -12155,31 +12180,6 @@ function generateDevisProfessionnel(data) {
             </table>
             <p style="text-align: center; font-size: 11px; color: #666; margin-top: 10px; font-style: italic;">
                 Arrêté à la somme de:<br><strong>${nombreEnLettres(Math.round(totalTTC))} francs CFA</strong>
-            </p>
-        </div>
-    </div>
-
-    <!-- CONDITIONS -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
-            <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase;">💰 Conditions de paiement</h4>
-            <ul style="margin: 0; padding-left: 20px; font-size: 11px; color: #555;">
-                <li>Acompte à la commande: <strong>${data.acompte || '30'}%</strong> soit ${formatMontant(totalTTC * (parseFloat(data.acompte) || 30) / 100)}</li>
-                ${data.echeancier ? data.echeancier.split('\n').map(e => `<li>${e}</li>`).join('') : `
-                <li>Situation intermédiaire: <strong>40%</strong></li>
-                <li>Solde à la réception: <strong>30%</strong></li>
-                `}
-            </ul>
-            <p style="margin: 10px 0 0 0; font-size: 11px; color: #666;">
-                Mode de paiement: ${data.modePaiement || 'Virement, chèque, espèces, Wave, Orange Money'}
-            </p>
-        </div>
-        <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
-            <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase;">📅 Délais d'exécution</h4>
-            <p style="margin: 0; font-size: 11px; color: #555;">
-                <strong>Durée estimée:</strong> ${data.delaiExecution || '___'} ${data.uniteDelai || 'jours ouvrés'}<br>
-                <strong>Début prévisionnel:</strong> ${data.dateDebut ? new Date(data.dateDebut).toLocaleDateString('fr-FR') : 'À convenir'}<br>
-                <strong>Validité du devis:</strong> ${data.validite || '30'} jours
             </p>
         </div>
     </div>
