@@ -2,24 +2,18 @@
 // CONFIGURATION FIREBASE - KFS BTP
 // =====================================================
 // 
-// INSTRUCTIONS POUR CONFIGURER FIREBASE :
-// 
-// 1. Créez un projet sur https://console.firebase.google.com/
-// 2. Activez "Firestore Database" (mode test pour commencer)
-// 3. Activez "Authentication" > "Email/Password"
-// 4. Allez dans Project Settings > General > Your apps > Web app
-// 5. Copiez la configuration Firebase ci-dessous
+// Firebase Realtime Database configuré et prêt !
 // 
 // =====================================================
 
 const FIREBASE_CONFIG = {
-    // Remplacez par vos vraies valeurs depuis Firebase Console
-    apiKey: "VOTRE_API_KEY",
-    authDomain: "votre-projet.firebaseapp.com",
-    projectId: "votre-projet",
-    storageBucket: "votre-projet.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
+    apiKey: "AIzaSyAaG8hkyEt0AqqZ5wESuzZlqPLYM6mYIyI",
+    authDomain: "kfs-btp-sn.firebaseapp.com",
+    databaseURL: "https://kfs-btp-sn-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "kfs-btp-sn",
+    storageBucket: "kfs-btp-sn.firebasestorage.app",
+    messagingSenderId: "208534847953",
+    appId: "1:208534847953:web:026a00d91b1834269ca0f0"
 };
 
 // Variable globale pour l'état Firebase
@@ -29,7 +23,7 @@ let firebaseAuth = null;
 let isFirebaseConfigured = false;
 
 // =====================================================
-// INITIALISATION FIREBASE
+// INITIALISATION FIREBASE REALTIME DATABASE
 // =====================================================
 (function() {
     // Vérifier si Firebase est configuré
@@ -38,10 +32,10 @@ let isFirebaseConfigured = false;
         return;
     }
     
-    // Charger les SDK Firebase
+    // Charger les SDK Firebase (Realtime Database)
     const scripts = [
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js',
+        'https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js',
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js'
     ];
     
@@ -62,11 +56,11 @@ let isFirebaseConfigured = false;
 function initFirebase() {
     try {
         firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-        firebaseDb = firebase.firestore();
+        firebaseDb = firebase.database();
         firebaseAuth = firebase.auth();
         isFirebaseConfigured = true;
         
-        console.log('✅ Firebase initialisé');
+        console.log('✅ Firebase Realtime Database initialisé');
         
         // Synchroniser les données locales vers Firebase
         syncLocalToFirebase();
@@ -77,29 +71,39 @@ function initFirebase() {
 }
 
 // =====================================================
-// SYNCHRONISATION localStorage <-> Firebase
+// SYNCHRONISATION localStorage <-> Firebase Realtime
 // =====================================================
 async function syncLocalToFirebase() {
     if (!isFirebaseConfigured) return;
     
-    const collections = ['annonces', 'messages', 'temoignages', 'clients', 'factures', 'rdv'];
+    const collections = ['annonces', 'messages', 'temoignages', 'clients', 'factures', 'rdv', 'employes', 'fichesPaie', 'documents', 'companyInfo'];
     
     for (const collectionName of collections) {
         const localData = JSON.parse(localStorage.getItem(collectionName) || '[]');
         
-        if (localData.length > 0) {
-            console.log(`📤 Sync ${collectionName}: ${localData.length} items`);
+        if (localData.length > 0 || (typeof localData === 'object' && Object.keys(localData).length > 0)) {
+            console.log(`📤 Sync ${collectionName}`);
             
-            for (const item of localData) {
-                try {
-                    const docId = item.id ? String(item.id) : firebaseDb.collection(collectionName).doc().id;
-                    await firebaseDb.collection(collectionName).doc(docId).set({
-                        ...item,
+            try {
+                // Pour les tableaux
+                if (Array.isArray(localData)) {
+                    for (const item of localData) {
+                        const itemId = item.id ? String(item.id) : firebaseDb.ref(collectionName).push().key;
+                        await firebaseDb.ref(`${collectionName}/${itemId}`).set({
+                            ...item,
+                            id: itemId,
+                            syncedAt: new Date().toISOString()
+                        });
+                    }
+                } else {
+                    // Pour les objets simples (comme companyInfo)
+                    await firebaseDb.ref(collectionName).set({
+                        ...localData,
                         syncedAt: new Date().toISOString()
-                    }, { merge: true });
-                } catch (e) {
-                    console.warn(`Erreur sync ${collectionName}:`, e);
+                    });
                 }
+            } catch (e) {
+                console.warn(`Erreur sync ${collectionName}:`, e);
             }
         }
     }
@@ -108,18 +112,23 @@ async function syncLocalToFirebase() {
 }
 
 // =====================================================
-// API UNIFIÉE : localStorage ou Firebase
+// API UNIFIÉE : localStorage + Firebase Realtime Database
 // =====================================================
 const DataStore = {
     // Obtenir tous les éléments d'une collection
     async getAll(collectionName) {
         if (isFirebaseConfigured) {
             try {
-                const snapshot = await firebaseDb.collection(collectionName).get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Mettre à jour le localStorage
-                localStorage.setItem(collectionName, JSON.stringify(data));
-                return data;
+                const snapshot = await firebaseDb.ref(collectionName).once('value');
+                const data = snapshot.val();
+                if (data) {
+                    // Convertir l'objet en tableau
+                    const dataArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                    // Mettre à jour le localStorage
+                    localStorage.setItem(collectionName, JSON.stringify(dataArray));
+                    return dataArray;
+                }
+                return [];
             } catch (e) {
                 console.warn('Firebase getAll error, fallback localStorage:', e);
             }
@@ -131,9 +140,9 @@ const DataStore = {
     async getById(collectionName, id) {
         if (isFirebaseConfigured) {
             try {
-                const doc = await firebaseDb.collection(collectionName).doc(String(id)).get();
-                if (doc.exists) {
-                    return { id: doc.id, ...doc.data() };
+                const snapshot = await firebaseDb.ref(`${collectionName}/${id}`).once('value');
+                if (snapshot.exists()) {
+                    return { id: snapshot.key, ...snapshot.val() };
                 }
             } catch (e) {
                 console.warn('Firebase getById error:', e);
@@ -145,9 +154,10 @@ const DataStore = {
     
     // Ajouter un élément
     async add(collectionName, item) {
+        const newId = item.id || Date.now();
         const newItem = {
             ...item,
-            id: item.id || Date.now(),
+            id: newId,
             createdAt: new Date().toISOString()
         };
         
@@ -159,7 +169,7 @@ const DataStore = {
         // Sync avec Firebase si configuré
         if (isFirebaseConfigured) {
             try {
-                await firebaseDb.collection(collectionName).doc(String(newItem.id)).set(newItem);
+                await firebaseDb.ref(`${collectionName}/${newId}`).set(newItem);
                 console.log(`✅ ${collectionName} ajouté à Firebase`);
             } catch (e) {
                 console.warn('Firebase add error:', e);
@@ -187,7 +197,7 @@ const DataStore = {
         // Sync avec Firebase
         if (isFirebaseConfigured) {
             try {
-                await firebaseDb.collection(collectionName).doc(String(id)).update(updatedData);
+                await firebaseDb.ref(`${collectionName}/${id}`).update(updatedData);
             } catch (e) {
                 console.warn('Firebase update error:', e);
             }
@@ -206,7 +216,7 @@ const DataStore = {
         // Sync avec Firebase
         if (isFirebaseConfigured) {
             try {
-                await firebaseDb.collection(collectionName).doc(String(id)).delete();
+                await firebaseDb.ref(`${collectionName}/${id}`).remove();
             } catch (e) {
                 console.warn('Firebase delete error:', e);
             }
@@ -222,11 +232,53 @@ const DataStore = {
             return () => {};
         }
         
-        return firebaseDb.collection(collectionName).onSnapshot(snapshot => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            localStorage.setItem(collectionName, JSON.stringify(data));
-            callback(data);
+        const ref = firebaseDb.ref(collectionName);
+        const listener = ref.on('value', snapshot => {
+            const data = snapshot.val();
+            if (data) {
+                const dataArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                localStorage.setItem(collectionName, JSON.stringify(dataArray));
+                callback(dataArray);
+            } else {
+                callback([]);
+            }
         });
+        
+        // Retourner une fonction pour désabonner
+        return () => ref.off('value', listener);
+    },
+    
+    // Sauvegarder un objet simple (comme companyInfo)
+    async saveObject(key, obj) {
+        localStorage.setItem(key, JSON.stringify(obj));
+        
+        if (isFirebaseConfigured) {
+            try {
+                await firebaseDb.ref(key).set({
+                    ...obj,
+                    updatedAt: new Date().toISOString()
+                });
+            } catch (e) {
+                console.warn('Firebase saveObject error:', e);
+            }
+        }
+    },
+    
+    // Charger un objet simple
+    async getObject(key) {
+        if (isFirebaseConfigured) {
+            try {
+                const snapshot = await firebaseDb.ref(key).once('value');
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    localStorage.setItem(key, JSON.stringify(data));
+                    return data;
+                }
+            } catch (e) {
+                console.warn('Firebase getObject error:', e);
+            }
+        }
+        return JSON.parse(localStorage.getItem(key) || '{}');
     }
 };
 
