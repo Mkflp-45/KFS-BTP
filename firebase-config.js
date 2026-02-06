@@ -62,8 +62,8 @@ function initFirebase() {
         
         console.log('✅ Firebase Realtime Database initialisé');
         
-        // Synchroniser les données locales vers Firebase
-        syncLocalToFirebase();
+        // Charger les données depuis Firebase puis synchroniser
+        onFirebaseReady();
         
     } catch (error) {
         console.error('❌ Erreur initialisation Firebase:', error);
@@ -334,3 +334,132 @@ window.DataStore = DataStore;
 window.Auth = Auth;
 window.isFirebaseConfigured = () => isFirebaseConfigured;
 window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+
+// =====================================================
+// SYNCHRONISATION AUTOMATIQUE localStorage → Firebase
+// =====================================================
+// Intercepte tous les setItem pour synchroniser automatiquement
+
+const SYNC_COLLECTIONS = [
+    'annonces', 'messages', 'temoignages', 'clients', 'factures', 
+    'rdv', 'employes', 'fichesPaie', 'documents', 'companyInfo',
+    'projects', 'comptabilite', 'depenses', 'revenus', 'apporteurs'
+];
+
+// Sauvegarder la fonction originale
+const originalSetItem = localStorage.setItem.bind(localStorage);
+const originalRemoveItem = localStorage.removeItem.bind(localStorage);
+
+// Remplacer setItem pour synchroniser avec Firebase
+localStorage.setItem = function(key, value) {
+    // Appeler la fonction originale
+    originalSetItem(key, value);
+    
+    // Si Firebase est configuré et que c'est une collection à synchroniser
+    if (isFirebaseConfigured && SYNC_COLLECTIONS.includes(key)) {
+        try {
+            const data = JSON.parse(value);
+            
+            // Synchroniser vers Firebase
+            if (Array.isArray(data)) {
+                // Pour les tableaux, synchroniser chaque élément
+                const updates = {};
+                data.forEach(item => {
+                    const itemId = item.id || Date.now();
+                    updates[`${key}/${itemId}`] = { ...item, id: itemId };
+                });
+                
+                // Remplacer toute la collection
+                firebaseDb.ref(key).set(
+                    data.reduce((acc, item) => {
+                        const itemId = item.id || Date.now();
+                        acc[itemId] = { ...item, id: itemId, syncedAt: new Date().toISOString() };
+                        return acc;
+                    }, {})
+                ).then(() => {
+                    console.log(`🔄 ${key} synchronisé avec Firebase`);
+                }).catch(e => {
+                    console.warn(`Erreur sync ${key}:`, e);
+                });
+            } else if (typeof data === 'object') {
+                // Pour les objets simples
+                firebaseDb.ref(key).set({
+                    ...data,
+                    syncedAt: new Date().toISOString()
+                }).then(() => {
+                    console.log(`🔄 ${key} synchronisé avec Firebase`);
+                }).catch(e => {
+                    console.warn(`Erreur sync ${key}:`, e);
+                });
+            }
+        } catch (e) {
+            // Pas un JSON valide, ignorer
+        }
+    }
+};
+
+// Remplacer removeItem pour synchroniser les suppressions
+localStorage.removeItem = function(key) {
+    originalRemoveItem(key);
+    
+    if (isFirebaseConfigured && SYNC_COLLECTIONS.includes(key)) {
+        firebaseDb.ref(key).remove().then(() => {
+            console.log(`🗑️ ${key} supprimé de Firebase`);
+        }).catch(e => {
+            console.warn(`Erreur suppression ${key}:`, e);
+        });
+    }
+};
+
+// =====================================================
+// CHARGEMENT DES DONNÉES DEPUIS FIREBASE AU DÉMARRAGE
+// =====================================================
+async function loadFromFirebase() {
+    if (!isFirebaseConfigured) return;
+    
+    console.log('📥 Chargement des données depuis Firebase...');
+    
+    for (const collectionName of SYNC_COLLECTIONS) {
+        try {
+            const snapshot = await firebaseDb.ref(collectionName).once('value');
+            const data = snapshot.val();
+            
+            if (data) {
+                if (typeof data === 'object' && !Array.isArray(data)) {
+                    // Vérifier si c'est une collection (avec des IDs comme clés) ou un objet simple
+                    const keys = Object.keys(data);
+                    const isCollection = keys.length > 0 && keys.every(k => !isNaN(k) || k.length > 10);
+                    
+                    if (isCollection && !['companyInfo'].includes(collectionName)) {
+                        // C'est une collection - convertir en tableau
+                        const dataArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                        originalSetItem(collectionName, JSON.stringify(dataArray));
+                        console.log(`📥 ${collectionName}: ${dataArray.length} éléments chargés`);
+                    } else {
+                        // C'est un objet simple
+                        originalSetItem(collectionName, JSON.stringify(data));
+                        console.log(`📥 ${collectionName}: objet chargé`);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn(`Erreur chargement ${collectionName}:`, e);
+        }
+    }
+    
+    console.log('✅ Données Firebase chargées');
+    
+    // Déclencher un événement pour notifier que les données sont prêtes
+    window.dispatchEvent(new CustomEvent('firebase-data-loaded'));
+}
+
+// Appeler après l'initialisation de Firebase
+function onFirebaseReady() {
+    // D'abord charger depuis Firebase (priorité au cloud)
+    loadFromFirebase().then(() => {
+        // Puis synchroniser les données locales qui ne sont pas dans Firebase
+        syncLocalToFirebase();
+    });
+}
+
+console.log('🔥 Firebase Auto-Sync activé pour:', SYNC_COLLECTIONS.join(', '));
