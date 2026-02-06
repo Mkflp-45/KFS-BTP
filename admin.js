@@ -14357,7 +14357,7 @@ function generateDocumentHTML(type, data, isPreview) {
         </p>
         
         <div style="max-width: 300px; margin: 0 auto; text-align: center;">
-            <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">${type === 'devis' ? 'LE PRESTATAIRE' : 'L\\'ÉMETTEUR'}</p>
+            <p style="font-weight: bold; color: #1e3a8a; margin-bottom: 15px; font-size: 13px;">${type === 'devis' ? 'LE PRESTATAIRE' : "L'ÉMETTEUR"}</p>
             <p style="font-size: 12px; color: #666; margin-bottom: 10px;">KFS BTP IMMO</p>
             <p style="font-size: 12px; margin-bottom: 80px;">Le Directeur Général</p>
             <div style="border-top: 1px solid #333; padding-top: 10px;">
