@@ -13279,10 +13279,6 @@ function generateAttestationForm(clients) {
                     <label class="block text-gray-700 text-sm font-medium mb-1">Contenu de l'attestation *</label>
                     <textarea id="doc-contenu-attestation" required rows="5" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Certifie que [NOM] a bien réalisé les travaux de..."></textarea>
                 </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-1">Motif / Usage</label>
-                    <input type="text" id="doc-motif" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Pour faire valoir ce que de droit">
-                </div>
             </div>
         </div>
     `;
@@ -14364,11 +14360,8 @@ function generateDocumentHTML(type, data, isPreview) {
         </div>
         
         <p style="text-align: justify; font-size: 14px; line-height: 2; margin-top: 30px;">
-            Cette attestation est délivrée à <strong>${data.clientNom || '<span style="color:#dc2626;">Bénéficiaire</span>'}</strong> 
-            pour servir et valoir ce que de droit.
+            Cette attestation est délivrée à <strong>${data.clientNom || '<span style="color:#dc2626;">Bénéficiaire</span>'}</strong>.
         </p>
-        
-        ${data.motifAttestation ? `<p style="text-align: justify; font-size: 14px; line-height: 2;">Motif: ${data.motifAttestation}</p>` : ''}
     </div>`;
     }
 
@@ -14625,7 +14618,6 @@ function collectFormData() {
         data.beneficiaireNom = data.clientNom;
         data.typeAttestation = document.getElementById('doc-type-attestation')?.value || 'autre';
         data.contenuAttestation = document.getElementById('doc-contenu-attestation')?.value || '';
-        data.motifAttestation = document.getElementById('doc-motif')?.value || 'Pour faire valoir ce que de droit';
     }
     
     if (type === 'devis') {
