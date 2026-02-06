@@ -14358,10 +14358,6 @@ function generateDocumentHTML(type, data, isPreview) {
                 ${data.contenuAttestation || '[Contenu de l\'attestation à compléter]'}
             </p>
         </div>
-        
-        <p style="text-align: justify; font-size: 14px; line-height: 2; margin-top: 30px;">
-            Cette attestation est délivrée à <strong>${data.clientNom || '<span style="color:#dc2626;">Bénéficiaire</span>'}</strong>.
-        </p>
     </div>`;
     }
 
