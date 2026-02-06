@@ -4110,9 +4110,9 @@ function genererFicheDePaiePDF() {
         // ========== TABLEAU PRINCIPAL ==========
         y += 18;
         
-        // En-têtes du tableau
-        const colWidths = [60, 25, 20, 25, 25, 35];
-        const colX = [10, 70, 95, 115, 140, 165];
+        // En-têtes du tableau - colonnes mieux espacées et alignées
+        const colWidths = [55, 28, 22, 28, 28, 29];
+        const colX = [10, 65, 93, 115, 143, 171];
         const tableWidth = 190;
         
         doc.setFillColor(...bleuFonce);
@@ -4120,18 +4120,18 @@ function genererFicheDePaiePDF() {
         doc.setTextColor(...blanc);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text('Elements de paie', colX[0] + 2, y + 5);
-        doc.text('Base', colX[1] + 2, y + 5);
-        doc.text('Taux', colX[2] + 2, y + 5);
-        doc.text('A deduire', colX[3] + 2, y + 5);
-        doc.text('A payer', colX[4] + 2, y + 5);
-        doc.text('Charges pat.', colX[5] + 2, y + 5);
+        doc.text('Elements de paie', colX[0] + 3, y + 5);
+        doc.text('Base', colX[1] + colWidths[1]/2, y + 5, { align: 'center' });
+        doc.text('Taux', colX[2] + colWidths[2]/2, y + 5, { align: 'center' });
+        doc.text('Retenues', colX[3] + colWidths[3]/2, y + 5, { align: 'center' });
+        doc.text('Gains', colX[4] + colWidths[4]/2, y + 5, { align: 'center' });
+        doc.text('Ch. Patron.', colX[5] + colWidths[5]/2, y + 5, { align: 'center' });
         
         y += 8;
         let rowY = y;
-        const rowHeight = 5;
+        const rowHeight = 6;
         
-        // Fonction pour dessiner une ligne du tableau
+        // Fonction pour dessiner une ligne du tableau avec meilleur alignement
         function drawRow(label, base, taux, deduire, payer, patronal, isBold, bgColor) {
             if (bgColor) {
                 doc.setFillColor(...bgColor);
@@ -4141,15 +4141,17 @@ function genererFicheDePaiePDF() {
             doc.line(10, rowY + rowHeight, 200, rowY + rowHeight);
             
             doc.setTextColor(...noir);
-            doc.setFontSize(6);
+            doc.setFontSize(6.5);
             doc.setFont('helvetica', isBold ? 'bold' : 'normal');
             
-            doc.text(label, colX[0] + 2, rowY + 3.5);
-            if (base !== '') doc.text(base.toString(), colX[1] + 22, rowY + 3.5, { align: 'right' });
-            if (taux !== '') doc.text(taux.toString(), colX[2] + 18, rowY + 3.5, { align: 'right' });
-            if (deduire !== '') doc.text(deduire.toString(), colX[3] + 23, rowY + 3.5, { align: 'right' });
-            if (payer !== '') doc.text(payer.toString(), colX[4] + 23, rowY + 3.5, { align: 'right' });
-            if (patronal !== '') doc.text(patronal.toString(), colX[5] + 33, rowY + 3.5, { align: 'right' });
+            // Libellé aligné à gauche avec padding
+            doc.text(label, colX[0] + 3, rowY + 4);
+            // Valeurs numériques alignées à droite dans leur colonne
+            if (base !== '') doc.text(base.toString(), colX[1] + colWidths[1] - 3, rowY + 4, { align: 'right' });
+            if (taux !== '') doc.text(taux.toString(), colX[2] + colWidths[2] - 3, rowY + 4, { align: 'right' });
+            if (deduire !== '') doc.text(deduire.toString(), colX[3] + colWidths[3] - 3, rowY + 4, { align: 'right' });
+            if (payer !== '') doc.text(payer.toString(), colX[4] + colWidths[4] - 3, rowY + 4, { align: 'right' });
+            if (patronal !== '') doc.text(patronal.toString(), colX[5] + colWidths[5] - 3, rowY + 4, { align: 'right' });
             
             rowY += rowHeight;
         }
@@ -4234,7 +4236,7 @@ function genererFicheDePaiePDF() {
         doc.setDrawColor(...grisMoyen);
         doc.rect(10, y, tableWidth, rowY - y - 4, 'S');
         
-        // Lignes verticales
+        // Lignes verticales alignées avec les colonnes
         doc.line(colX[1], y, colX[1], rowY - 4);
         doc.line(colX[2], y, colX[2], rowY - 4);
         doc.line(colX[3], y, colX[3], rowY - 4);
@@ -4242,39 +4244,48 @@ function genererFicheDePaiePDF() {
         doc.line(colX[5], y, colX[5], rowY - 4);
         
         // ========== TABLEAU RECAPITULATIF ==========
-        y = rowY + 2;
-        const recapCols = [10, 35, 60, 85, 110, 140, 165];
+        y = rowY + 4;
+        const recapWidth = 27;
+        const recapCols = [10, 37, 64, 91, 118, 145, 172];
         
         doc.setFillColor(...grisClair);
-        doc.rect(10, y, 190, 14, 'F');
+        doc.rect(10, y, 190, 16, 'F');
         doc.setDrawColor(...grisMoyen);
-        doc.rect(10, y, 190, 14, 'S');
+        doc.rect(10, y, 190, 16, 'S');
+        
+        // Lignes verticales du récapitulatif
+        for (let i = 1; i < recapCols.length; i++) {
+            doc.line(recapCols[i], y, recapCols[i], y + 16);
+        }
         
         doc.setTextColor(...noir);
         doc.setFontSize(6);
         doc.setFont('helvetica', 'bold');
         
-        // Ligne 1 - Titres
-        doc.text('Heures', recapCols[0] + 2, y + 4);
-        doc.text('Brut', recapCols[1] + 2, y + 4);
-        doc.text('Plafond IPRES', recapCols[2] + 2, y + 4);
-        doc.text('Net imposable', recapCols[3] + 2, y + 4);
-        doc.text('Ch. patronales', recapCols[4] + 2, y + 4);
-        doc.text('Cout Global', recapCols[5] + 2, y + 4);
-        doc.text('Mode paiement', recapCols[6] + 2, y + 4);
+        // Ligne 1 - Titres centrés
+        doc.text('Heures', recapCols[0] + recapWidth/2, y + 5, { align: 'center' });
+        doc.text('Brut', recapCols[1] + recapWidth/2, y + 5, { align: 'center' });
+        doc.text('Plafond IPRES', recapCols[2] + recapWidth/2, y + 5, { align: 'center' });
+        doc.text('Net imposable', recapCols[3] + recapWidth/2, y + 5, { align: 'center' });
+        doc.text('Ch. patron.', recapCols[4] + recapWidth/2, y + 5, { align: 'center' });
+        doc.text('Cout Global', recapCols[5] + recapWidth/2, y + 5, { align: 'center' });
+        doc.text('Paiement', recapCols[6] + 19, y + 5, { align: 'center' });
         
-        // Ligne 2 - Valeurs
+        // Ligne horizontale séparatrice
+        doc.line(10, y + 8, 200, y + 8);
+        
+        // Ligne 2 - Valeurs centrées
         doc.setFont('helvetica', 'normal');
-        doc.text(fiche.heuresTravaillees + 'h', recapCols[0] + 2, y + 10);
-        doc.text(formatEntier(fiche.salaireBrut), recapCols[1] + 2, y + 10);
-        doc.text(formatEntier(Math.min(fiche.salaireBrut, 630000)), recapCols[2] + 2, y + 10); // Plafond sécu Sénégal
-        doc.text(formatEntier(fiche.salaireBrut - fiche.totalCotisationsSalariales), recapCols[3] + 2, y + 10);
-        doc.text(formatEntier(fiche.totalCotisationsPatronales), recapCols[4] + 2, y + 10);
-        doc.text(formatEntier(fiche.salaireBrut + fiche.totalCotisationsPatronales), recapCols[5] + 2, y + 10);
-        doc.text(fiche.modePaiement || 'Virement', recapCols[6] + 2, y + 10);
+        doc.text(fiche.heuresTravaillees + 'h', recapCols[0] + recapWidth/2, y + 13, { align: 'center' });
+        doc.text(formatEntier(fiche.salaireBrut), recapCols[1] + recapWidth/2, y + 13, { align: 'center' });
+        doc.text(formatEntier(Math.min(fiche.salaireBrut, 630000)), recapCols[2] + recapWidth/2, y + 13, { align: 'center' });
+        doc.text(formatEntier(fiche.salaireBrut - fiche.totalCotisationsSalariales), recapCols[3] + recapWidth/2, y + 13, { align: 'center' });
+        doc.text(formatEntier(fiche.totalCotisationsPatronales), recapCols[4] + recapWidth/2, y + 13, { align: 'center' });
+        doc.text(formatEntier(fiche.salaireBrut + fiche.totalCotisationsPatronales), recapCols[5] + recapWidth/2, y + 13, { align: 'center' });
+        doc.text(fiche.modePaiement || 'Virement', recapCols[6] + 19, y + 13, { align: 'center' });
         
         // ========== MENTIONS LÉGALES ==========
-        y += 20;
+        y += 22;
         doc.setTextColor(...gris);
         doc.setFontSize(6);
         doc.setFont('helvetica', 'italic');
