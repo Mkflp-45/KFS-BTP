@@ -26,22 +26,35 @@ let isFirebaseConfigured = false;
 // =====================================================
 // INITIALISATION FIREBASE REALTIME DATABASE
 // =====================================================
+
 (function() {
     // Vérifier si Firebase est configuré
     if (FIREBASE_CONFIG.apiKey === "VOTRE_API_KEY") {
         console.warn('⚠️ Firebase non configuré - Mode localStorage');
         return;
     }
-    
+
+    // Si le namespace firebase existe déjà, ne rien faire (évite les doublons)
+    if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
+        console.warn('⚠️ Firebase déjà chargé, initialisation ignorée.');
+        return;
+    }
+    if (window.firebase && (!window.firebase.apps || window.firebase.apps.length === 0)) {
+        console.error('❌ Conflit de namespace Firebase détecté. Rechargez la page sans extension ou nettoyez le cache.');
+        return;
+    }
+
     // Charger les SDK Firebase dans l'ordre correct
     const scripts = [
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js',
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js',
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js'
     ];
-    
+
     let loaded = 0;
     scripts.forEach(src => {
+        // Ne pas charger si déjà présent
+        if ([...document.scripts].some(s => s.src === src)) return;
         const script = document.createElement('script');
         script.src = src;
         script.onload = () => {

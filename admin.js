@@ -519,23 +519,23 @@ function renderKFSFieldRow(field = {}) {
 }
 
 // Suppression d'un modèle
-window.deleteKFSModele = function(index) {
-    if (!confirm('Supprimer ce modèle ?')) return;
+window.useKFSModele = function(index) {
     let modeles = [];
-    try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
-    const nom = modeles[index]?.nom || '';
-    modeles.splice(index, 1);
-    localStorage.setItem('documentTemplates', JSON.stringify(modeles));
-    renderKFSModelesList();
-    showNotification('Modèle supprimé', nom, 'warning');
-};
-
-// Utilisation d'un modèle (formulaire dynamique)
-// Formulaire pop-up spécifique Certificat de travail
-window.openCertificatTravailForm = function() {
-    // Récupérer la liste des employés
-    let employes;
-    try { employes = await DataStore.getAll('employes'); } catch(e) { employes = []; }
+    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    const tpl = modeles[index];
+    if (!tpl) return;
+    window.openKFSModal(`
+        <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
+        <div class='relative min-h-screen flex items-center justify-center p-4'>
+            <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
+                <form id='kfs-use-form' class='p-6 space-y-4'>
+                    <h2 class='text-xl font-bold mb-2'>${tpl.nom}</h2>
+                    ${(tpl.fields||[]).map(f => renderKFSUseField(f)).join('')}
+                    <div class='flex justify-end gap-2 mt-4'><button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button><button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>Générer le document</button></div>
+                </form>
+            </div>
+        </div>
+    `);
     window.openKFSModal(`
         <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
         <div class='relative min-h-screen flex items-center justify-center p-4'>
@@ -573,7 +573,6 @@ window.openCertificatTravailForm = function() {
         const phone = '+221 78 584 28 71';
         const email = 'kfsbtpproimmo@gmail.com';
         const today = new Date().toLocaleDateString('fr-FR');
-</div>
         // Extraction nom et prénom
         let nom = '', prenom = '';
         if (data.nom_salarie) {
@@ -620,7 +619,6 @@ window.openCertificatTravailForm = function() {
     <hr style="border:none;border-top:2px solid #2563eb;margin:96px 0 0;">
     <div style="text-align:center;color:#1e3a8a;font-size:1rem;margin-top:24px;letter-spacing:1px;">KFS BTP IMMO – Entreprise de BTP & Immobilier – Tambacounda, Sénégal</div>
 </div>
-`;
 `;
     }
 
@@ -720,7 +718,9 @@ window.useKFSModele = function(index) {
 function renderKFSUseField(f) {
     const label = `<label class='block text-sm font-semibold mb-1'>${f.name}${f.required ? ' *' : ''}</label>`;
     const base = `class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl' name='${f.name}' ${f.required ? 'required' : ''} placeholder='${f.placeholder||''}'`;
-    if (f.type === 'textarea') return `<div>${label}<textarea ${base} rows='3'></textarea></div>`;
+    if (f.type === 'textarea') {
+        return `<div>${label}<textarea ${base} rows='3'></textarea></div>`;
+    }
     return `<div>${label}<input type='${f.type||'text'}' ${base}></div>`;
 }
 window.openKFSModal = function(html, modalId = 'kfs-modal') {
@@ -752,12 +752,12 @@ window.closeKFSModal = function(modalId = 'kfs-modal') {
     if (modal) modal.remove();
 };
 // --- AUTO-REMPLISSAGE CLIENT POUR FORMULAIRES BAIL/CONTRAT ---
-function populateClientSelect(selectId, onChangeCb) {
+async function populateClientSelect(selectId, onChangeCb) {
     const clients = await DataStore.getAll('clients');
     const select = document.getElementById(selectId);
     if (!select) return;
     select.innerHTML = '<option value="">Sélectionner un client...</option>' +
-        clients.map((c, i) => `<option value="${i}">${c.nom} - ${c.telephone || ''}</option>`).join('');
+        clients.map(function(c, i) { return `<option value="${i}">${c.nom} - ${c.telephone || ''}</option>`; }).join('');
     select.onchange = function() {
         if (this.value !== '') onChangeCb(clients[this.value]);
     };
