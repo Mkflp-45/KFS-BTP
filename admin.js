@@ -300,9 +300,41 @@ function renderKFSModelesList() {
         modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]');
     } catch(e) { modeles = []; }
     if (!Array.isArray(modeles)) modeles = [];
-    if (modeles.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-center py-6 col-span-full">Aucun modèle. Cliquez sur "Créer un modèle".</p>';
-        return;
+    // Toujours ajouter le modèle Certificat de travail en tête de liste
+    const certifTravail = {
+        nom: 'Certificat de travail',
+        categorie: 'attestation',
+        description: 'Document officiel conforme au Code du travail sénégalais',
+        fields: [
+            { name: 'Nom du salarié', type: 'text', required: true, placeholder: 'Ex: Mamadou Ndiaye' },
+            { name: 'Poste occupé', type: 'text', required: true, placeholder: 'Ex: Maçon' },
+            { name: 'Date début', type: 'date', required: true, placeholder: '' },
+            { name: 'Date fin', type: 'date', required: false, placeholder: '' },
+            { name: 'Motif de départ', type: 'text', required: false, placeholder: 'Ex: Fin de contrat' },
+            { name: 'Adresse du salarié', type: 'text', required: false, placeholder: '' },
+            { name: 'Numéro d’identification', type: 'text', required: false, placeholder: 'Ex: N° CNPS' }
+        ],
+        content: `<div style='font-family:Inter,sans-serif;font-size:16px;'>
+<h2 style='text-align:center;font-weight:bold;'>CERTIFICAT DE TRAVAIL</h2>
+<p>Je soussigné(e), <b>{employeur}</b>, représentant légal de l’entreprise <b>{entreprise}</b> sise à <b>{adresse_entreprise}</b>, certifie que :</p>
+<p><b>{nom_salarie}</b>, demeurant à <b>{adresse_salarie}</b>, a travaillé dans notre société en qualité de <b>{poste}</b> du <b>{date_debut}</b> au <b>{date_fin}</b>.</p>
+<p>Ce certificat est délivré à la demande de l’intéressé(e) pour servir et valoir ce que de droit, conformément à l’article 54 du Code du travail sénégalais.</p>
+<p>Motif de départ : <b>{motif_depart}</b></p>
+<p style='margin-top:32px;'>Fait à <b>{lieu}</b>, le <b>{date_certificat}</b></p>
+<p style='margin-top:32px;'>Signature et cachet de l’entreprise</p>
+</div>`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    // Supprimer tout doublon
+    modeles = modeles.filter(m => m.nom !== 'Certificat de travail');
+    modeles.unshift(certifTravail);
+    localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+    // Si la liste est vide ou corrompue, forcer l'affichage du modèle Certificat de travail
+    if (!modeles || !modeles.length) {
+        modeles = [certifTravail];
+        localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+        if (window.showNotification) window.showNotification('Certificat de travail ajouté', 'Le modèle a été ajouté automatiquement.', 'success');
     }
     container.innerHTML = modeles.map((tpl, i) => `
         <div class="bg-white border-2 border-gray-100 rounded-xl p-4 mb-3 flex flex-col md:flex-row md:items-center md:justify-between">
@@ -421,6 +453,113 @@ window.deleteKFSModele = function(index) {
 };
 
 // Utilisation d'un modèle (formulaire dynamique)
+// Formulaire pop-up spécifique Certificat de travail
+window.openCertificatTravailForm = function() {
+    // Récupérer la liste des employés
+    let employes;
+    try { employes = JSON.parse(localStorage.getItem('employes') || '[]'); } catch(e) { employes = []; }
+    window.openKFSModal(`
+        <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
+        <div class='relative min-h-screen flex items-center justify-center p-4'>
+            <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
+                <form id='certif-travail-form' class='p-6 space-y-4'>
+                    <h2 class='text-xl font-bold mb-2'>Certificat de travail</h2>
+                    <div><label class='block text-sm font-semibold mb-1'>Employé *</label>
+                        <select name='nom_salarie' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'>
+                            <option value=''>Sélectionner un employé...</option>
+                            ${employes.map(e => `<option value='${e.nom}'>${e.nom} (${e.poste || ''})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div><label class='block text-sm font-semibold mb-1'>Poste *</label><input type='text' name='poste' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Date début *</label><input type='date' name='date_debut' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Date fin</label><input type='date' name='date_fin' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Motif de départ</label><input type='text' name='motif_depart' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Adresse du salarié</label><input type='text' name='adresse_salarie' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div><label class='block text-sm font-semibold mb-1'>Numéro d’identification</label><input type='text' name='num_identification' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
+                    <div class='flex justify-end gap-2 mt-4'>
+                        <button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button>
+                        <button type='button' id='btn-apercu-certif' class='px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 font-semibold'>Aperçu</button>
+                        <button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>Générer le document</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `);
+    function getCertifContent(data) {
+        const logo = window.logoKFSBase64 || 'assets/logo-kfs-btp.jpeg';
+        const drapeauSn = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Flag_of_Senegal.svg';
+        const company = 'KFS BTP IMMO';
+        const address = 'Villa 123 MC, Quartier Medinacoura, Tambacounda';
+        const ninea = '009468499';
+        const rccm = 'SN TBC 2025 M 1361';
+        const phone = '+221 78 584 28 71';
+        const email = 'kfsbtpproimmo@gmail.com';
+        const today = new Date().toLocaleDateString('fr-FR');
+        return `
+<div style="max-width:700px;margin:40px auto;padding:32px;background:#fff;border-radius:24px;box-shadow:0 8px 32px rgba(30,58,138,0.12);border:2px solid #1e3a8a;font-family:'Inter',Arial,sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <img src="${logo}" alt="Logo KFS BTP" style="width:70px;height:70px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
+        <img src="${drapeauSn}" alt="Drapeau Sénégal" style="width:40px;height:28px;border-radius:4px;box-shadow:0 1px 4px #0001;">
+    </div>
+    <div style="color:#2563eb;font-size:1.1rem;font-weight:600;">${company}</div>
+    <div style="color:#1e3a8a;font-size:1rem;">${address}</div>
+    <div style="color:#1e3a8a;font-size:1rem;">NINEA: ${ninea} &nbsp; | &nbsp; RCCM: ${rccm}</div>
+    <div style="color:#1e3a8a;font-size:1rem;">Tel: ${phone} &nbsp; | &nbsp; Email: ${email}</div>
+    <hr style="border:none;border-top:2px solid #2563eb;margin:24px 0;">
+    <div style="text-align:center;margin-bottom:24px;">
+        <span style="font-size:1.6rem;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:2px;">CERTIFICAT DE TRAVAIL</span>
+    </div>
+    <div style="font-size:1.1rem;color:#222;line-height:1.7;text-align:left;">
+        <p>Je soussigné(e), <b style="color:#1e3a8a;">Le Directeur Général de ${company}</b>, entreprise spécialisée dans le secteur du Bâtiment, des Travaux Publics et de l'Immobilier, dont le siège social est situé à <b>${address}</b>, immatriculée au RCCM sous le numéro <b>${rccm}</b>, NINEA <b>${ninea}</b>, certifie que :</p>
+        <p><b style="color:#2563eb;font-size:1.1rem;">${data.nom_salarie}</b>, demeurant à <b style="color:#2563eb;">${data.adresse_salarie || ''}</b>, a travaillé dans notre société en qualité de <b style="color:#2563eb;">${data.poste}</b> du <b style="color:#1e3a8a;">${data.date_debut}</b> au <b style="color:#1e3a8a;">${data.date_fin || 'à ce jour'}</b>.</p>
+        <p>Ce certificat est délivré à la demande de l’intéressé(e) pour servir et valoir ce que de droit, conformément à la législation du travail en vigueur au Sénégal.</p>
+        <p>Motif de départ : <b style="color:#2563eb;">${data.motif_depart || ''}</b></p>
+        <p>Numéro d’identification : <b style="color:#2563eb;">${data.num_identification || ''}</b></p>
+    </div>
+    <div style="margin-top:60px;text-align:right;font-size:1rem;color:#1e3a8a;">
+        <div>Fait à Tambacounda, le <b>${today}</b></div>
+        <div style="margin-top:48px;font-size:1.1rem;color:#222;">Signature et cachet de l’entreprise</div>
+    </div>
+    <hr style="border:none;border-top:2px solid #2563eb;margin:64px 0 0;">
+    <div style="text-align:center;color:#1e3a8a;font-size:0.95rem;margin-top:24px;">KFS BTP IMMO – Entreprise de BTP & Immobilier – Tambacounda, Sénégal</div>
+</div>
+`;
+    }
+
+    // Aperçu PDF
+    document.getElementById('btn-apercu-certif').onclick = function() {
+        const data = Object.fromEntries(new FormData(document.getElementById('certif-travail-form')));
+        const content = getCertifContent(data);
+        const previewWindow = window.open('', '_blank');
+        previewWindow.document.write(`<!DOCTYPE html><html><head><title>Aperçu Certificat de travail</title></head><body>${content}</body></html>`);
+        previewWindow.document.close();
+    };
+
+    // Génération PDF
+    // Auto-remplissage employé
+    // employes déjà déclaré plus haut
+    const selectEmploye = document.querySelector("#certif-travail-form select[name='nom_salarie']");
+    selectEmploye.addEventListener('change', function() {
+        const nom = this.value;
+        const emp = employes.find(e => e.nom === nom);
+        if (emp) {
+            if (document.querySelector("#certif-travail-form input[name='poste']")) document.querySelector("#certif-travail-form input[name='poste']").value = emp.poste || '';
+            if (document.querySelector("#certif-travail-form input[name='adresse_salarie']")) document.querySelector("#certif-travail-form input[name='adresse_salarie']").value = emp.adresse || '';
+            if (document.querySelector("#certif-travail-form input[name='num_identification']")) document.querySelector("#certif-travail-form input[name='num_identification']").value = emp.cni || emp.id || '';
+        }
+    });
+
+    document.getElementById('certif-travail-form').onsubmit = function(e) {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(this));
+        const content = getCertifContent(data);
+        const pdfWindow = window.open('', '_blank');
+        pdfWindow.document.write(`<!DOCTYPE html><html><head><title>Certificat de travail</title><script src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'></script></head><body><div id='pdf-content'>${content}</div><script>setTimeout(function(){html2pdf().set({margin:10,filename:'Certificat_Travail_${data.nom_salarie ? data.nom_salarie.replace(/\s+/g,'_') : 'Employe'}.pdf',html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(document.getElementById('pdf-content')).save();window.close();},500);<\/script></body></html>`);
+        pdfWindow.document.close();
+        window.closeKFSModal();
+        showNotification('Document généré', 'Certificat de travail', 'success');
+    };
+};
 window.useKFSModele = function(index) {
     let modeles = [];
     try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
@@ -13763,8 +13902,10 @@ window.saveAndGenerateDocument = function() {
     if (typeof renderDocuments === 'function') renderDocuments();
     if (typeof updateDocumentStats === 'function') updateDocumentStats();
     
-    // Afficher le document généré
+    // Afficher le document généré avec options Aperçu, Imprimer et Télécharger
     const printWindow = window.open('', '_blank', 'width=900,height=700');
+
+    const pdfFileName = (newDoc.nom ? newDoc.nom.replace(/\s+/g, '_') : 'attestation') + '.pdf';
     printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -13777,6 +13918,8 @@ window.saveAndGenerateDocument = function() {
                 .no-print button { padding: 12px 30px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
                 .btn-print { background: #3b82f6; color: white; }
                 .btn-print:hover { background: #2563eb; }
+                .btn-download { background: #facc15; color: #1e293b; }
+                .btn-download:hover { background: #fde047; }
                 @media print { 
                     body { background: white; padding: 0; }
                     .document-container { box-shadow: none; padding: 0; }
@@ -13785,15 +13928,46 @@ window.saveAndGenerateDocument = function() {
             </style>
         </head>
         <body>
-            <div class="document-container">${contenuHTML}</div>
+            <div class="document-container" id="attestation-pdf-content">${contenuHTML}</div>
             <div class="no-print">
                 <button class="btn-print" onclick="window.print()">🖨️ Imprimer / PDF</button>
+                <button class="btn-download" id="btn-download-attestation">⬇️ Télécharger</button>
             </div>
+            <script>
+            var pdfFileName = ${JSON.stringify((newDoc.nom ? newDoc.nom.replace(/\s+/g, '_') : 'attestation') + '.pdf')};
+            document.getElementById('btn-download-attestation').onclick = function() {
+                if (window.html2pdf) {
+                    html2pdf().set({
+                        margin: 10,
+                        filename: pdfFileName,
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    }).from(document.getElementById('attestation-pdf-content')).save();
+                } else {
+                    alert('html2pdf.js non chargé');
+                }
+            };
+            </script>
         </body>
         </html>
     `);
     printWindow.document.close();
-    
+
+    // Téléchargement automatique en PDF si attestation de travail
+    if (type === 'attestation' && data.typeAttestation === 'travail') {
+        setTimeout(() => {
+            if (printWindow.html2pdf) {
+                var pdfFileName = (newDoc.nom ? newDoc.nom.replace(/\s+/g, '_') : 'attestation') + '.pdf';
+                printWindow.html2pdf().set({
+                    margin: 10,
+                    filename: pdfFileName,
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).from(printWindow.document.getElementById('attestation-pdf-content')).save();
+            }
+        }, 1000);
+    }
+
     showNotification('Document généré !', `${newDoc.nom} (${numero})`, 'success');
 };
 

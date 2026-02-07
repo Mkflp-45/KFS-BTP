@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="style.css">
     <!-- jsPDF pour génération PDF fiche de paie -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2pdf.js pour génération PDF attestation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3a8a">
@@ -2438,6 +2440,12 @@
                                     <span class="text-purple-800 text-sm font-medium">Attestation</span>
                                     <span class="text-xs text-purple-500 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
+                                <button onclick="generateDocTemplate('certificatTravail')" class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-xl transition group">
+                                    <span class="material-icons text-green-600 text-2xl mb-2">badge</span>
+                                    <span class="text-green-800 text-sm font-medium">Certificat de travail</span>
+                                    <span class="text-xs text-green-500 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                                </button>
+                                <script>document.querySelector('button[onclick*="certificatTravail"]').onclick = function(){window.openCertificatTravailForm();};</script>
                                 <button onclick="gotoFichePaieModule()" class="flex flex-col items-center p-4 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition group">
                                     <span class="material-icons text-indigo-600 text-2xl mb-2">payments</span>
                                     <span class="text-indigo-900 text-sm font-semibold">Fiche de paie</span>

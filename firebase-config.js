@@ -7,13 +7,14 @@
 // =====================================================
 
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAaG8hkyEt0AqqZ5wESuzZlqPLYM6mYIyI",
-    authDomain: "kfs-btp-sn.firebaseapp.com",
+    apiKey: "AIzaSyCQ4irjOZQOy3DmpTjmxxUyDXYXbs6En94",
+    authDomain: "kfs-btp.firebaseapp.com",
     databaseURL: "https://kfs-btp-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "kfs-btp-sn",
-    storageBucket: "kfs-btp-sn.appspot.com",
-    messagingSenderId: "208534847953",
-    appId: "1:208534847953:web:026a00d91b1834269ca0f0"
+    projectId: "kfs-btp",
+    storageBucket: "kfs-btp.firebasestorage.app",
+    messagingSenderId: "932551681151",
+    appId: "1:932551681151:web:64ba159486a01de6f3cb4a",
+    measurementId: "G-7VDERYT9MD"
 };
 
 // Variable globale pour l'état Firebase
