@@ -14,6 +14,25 @@ function initMessages() {
     updateStats();
 }
 // ================= MODULE : AUTHENTIFICATION ADMIN (FIREBASE) =====================
+
+// Attendre que Firebase soit prêt
+function waitForFirebase(callback, maxAttempts = 50) {
+    let attempts = 0;
+    const checkFirebase = () => {
+        attempts++;
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            console.log('✅ Firebase Auth détecté après', attempts, 'tentatives');
+            callback(true);
+        } else if (attempts < maxAttempts) {
+            setTimeout(checkFirebase, 100); // Réessayer toutes les 100ms
+        } else {
+            console.warn('⚠️ Firebase Auth non disponible après', attempts, 'tentatives');
+            callback(false);
+        }
+    };
+    checkFirebase();
+}
+
 function initLogin() {
     const loginScreen = document.getElementById('login-screen');
     const dashboard = document.getElementById('dashboard-container');
@@ -23,36 +42,40 @@ function initLogin() {
     const loginBtnText = document.getElementById('login-btn-text');
     const loginSpinner = document.getElementById('login-spinner');
     
-    // Vérifier si Firebase Auth est disponible
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-        // Observer les changements d'état d'authentification Firebase
-        firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                // Utilisateur connecté via Firebase
-                console.log('✅ Utilisateur Firebase connecté:', user.email);
-                sessionStorage.setItem('adminAuth', 'true');
-                sessionStorage.setItem('adminEmail', user.email);
+    // Afficher l'écran de connexion par défaut
+    if (loginScreen) loginScreen.style.display = '';
+    if (dashboard) dashboard.classList.add('hidden');
+    
+    // Attendre que Firebase soit prêt
+    waitForFirebase(function(firebaseReady) {
+        if (firebaseReady) {
+            // Observer les changements d'état d'authentification Firebase
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // Utilisateur connecté via Firebase
+                    console.log('✅ Utilisateur Firebase connecté:', user.email);
+                    sessionStorage.setItem('adminAuth', 'true');
+                    sessionStorage.setItem('adminEmail', user.email);
+                    if (loginScreen) loginScreen.style.display = 'none';
+                    if (dashboard) dashboard.classList.remove('hidden');
+                } else {
+                    // Utilisateur non connecté
+                    console.log('🔒 Aucun utilisateur Firebase connecté');
+                    sessionStorage.removeItem('adminAuth');
+                    sessionStorage.removeItem('adminEmail');
+                    if (loginScreen) loginScreen.style.display = '';
+                    if (dashboard) dashboard.classList.add('hidden');
+                }
+            });
+        } else {
+            // Fallback si Firebase n'est pas disponible - utiliser localStorage
+            console.log('⚠️ Mode fallback localStorage');
+            if (sessionStorage.getItem('adminAuth') === 'true') {
                 if (loginScreen) loginScreen.style.display = 'none';
                 if (dashboard) dashboard.classList.remove('hidden');
-            } else {
-                // Utilisateur non connecté
-                console.log('🔒 Aucun utilisateur Firebase connecté');
-                sessionStorage.removeItem('adminAuth');
-                sessionStorage.removeItem('adminEmail');
-                if (loginScreen) loginScreen.style.display = '';
-                if (dashboard) dashboard.classList.add('hidden');
             }
-        });
-    } else {
-        // Fallback si Firebase n'est pas disponible
-        if (sessionStorage.getItem('adminAuth') === 'true') {
-            if (loginScreen) loginScreen.style.display = 'none';
-            if (dashboard) dashboard.classList.remove('hidden');
-            return;
         }
-        if (loginScreen) loginScreen.style.display = '';
-        if (dashboard) dashboard.classList.add('hidden');
-    }
+    });
     
     // Gestion du formulaire de connexion
     if (loginForm) {
@@ -69,14 +92,22 @@ function initLogin() {
             if (loginError) loginError.classList.add('hidden');
             
             try {
-                // Connexion via Firebase Auth
-                if (typeof firebase !== 'undefined' && firebase.auth) {
-                    await firebase.auth().signInWithEmailAndPassword(email, password);
-                    console.log('✅ Connexion Firebase réussie');
-                    // L'observer onAuthStateChanged gère l'affichage du dashboard
-                } else {
-                    throw new Error('Firebase Auth non disponible');
+                // Attendre que Firebase soit prêt si pas encore
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    // Attendre Firebase
+                    await new Promise((resolve, reject) => {
+                        waitForFirebase(function(ready) {
+                            if (ready) resolve();
+                            else reject(new Error('Firebase non disponible'));
+                        });
+                    });
                 }
+                
+                // Connexion via Firebase Auth
+                await firebase.auth().signInWithEmailAndPassword(email, password);
+                console.log('✅ Connexion Firebase réussie');
+                // L'observer onAuthStateChanged gère l'affichage du dashboard
+                
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error);
                 
@@ -133,6 +164,111 @@ function logoutAdmin() {
     } else {
         sessionStorage.removeItem('adminAuth');
         window.location.reload();
+    }
+}
+
+// Fonction de réinitialisation de mot de passe Firebase
+function initPasswordReset() {
+    const forgotBtn = document.getElementById('forgot-password-btn');
+    const resetForm = document.getElementById('reset-password-form');
+    const sendResetBtn = document.getElementById('send-reset-btn');
+    const cancelResetBtn = document.getElementById('cancel-reset-btn');
+    const resetEmail = document.getElementById('reset-email');
+    const resetMessage = document.getElementById('reset-message');
+    const loginEmail = document.getElementById('login-email');
+    
+    // Afficher le formulaire de réinitialisation
+    if (forgotBtn) {
+        forgotBtn.addEventListener('click', function() {
+            if (resetForm) {
+                resetForm.classList.remove('hidden');
+                // Pré-remplir avec l'email du login si disponible
+                if (loginEmail && loginEmail.value && resetEmail) {
+                    resetEmail.value = loginEmail.value;
+                }
+                resetEmail?.focus();
+            }
+        });
+    }
+    
+    // Annuler la réinitialisation
+    if (cancelResetBtn) {
+        cancelResetBtn.addEventListener('click', function() {
+            if (resetForm) resetForm.classList.add('hidden');
+            if (resetMessage) resetMessage.classList.add('hidden');
+        });
+    }
+    
+    // Envoyer l'email de réinitialisation
+    if (sendResetBtn) {
+        sendResetBtn.addEventListener('click', async function() {
+            const email = resetEmail?.value?.trim();
+            
+            if (!email) {
+                showResetMessage('Veuillez entrer votre adresse email', 'error');
+                return;
+            }
+            
+            // Désactiver le bouton
+            sendResetBtn.disabled = true;
+            sendResetBtn.textContent = 'Envoi en cours...';
+            
+            try {
+                // Attendre Firebase si nécessaire
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    await new Promise((resolve, reject) => {
+                        waitForFirebase(function(ready) {
+                            if (ready) resolve();
+                            else reject(new Error('Firebase non disponible'));
+                        });
+                    });
+                }
+                
+                // Envoyer l'email de réinitialisation
+                await firebase.auth().sendPasswordResetEmail(email);
+                
+                console.log('✅ Email de réinitialisation envoyé à:', email);
+                showResetMessage('✅ Email envoyé ! Vérifiez votre boîte de réception (et les spams)', 'success');
+                
+                // Masquer le formulaire après 5 secondes
+                setTimeout(() => {
+                    if (resetForm) resetForm.classList.add('hidden');
+                    if (resetMessage) resetMessage.classList.add('hidden');
+                }, 5000);
+                
+            } catch (error) {
+                console.error('❌ Erreur envoi email:', error);
+                
+                let errorMessage = 'Erreur lors de l\'envoi';
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = 'Adresse email invalide';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage = 'Aucun compte avec cet email';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Trop de tentatives. Réessayez plus tard';
+                        break;
+                    default:
+                        errorMessage = error.message || 'Erreur lors de l\'envoi';
+                }
+                showResetMessage(errorMessage, 'error');
+            } finally {
+                // Réactiver le bouton
+                sendResetBtn.disabled = false;
+                sendResetBtn.textContent = 'Envoyer le lien';
+            }
+        });
+    }
+    
+    function showResetMessage(message, type) {
+        if (resetMessage) {
+            resetMessage.textContent = message;
+            resetMessage.className = 'text-center mt-3 text-sm ' + 
+                (type === 'success' ? 'text-green-600' : 'text-red-500');
+            resetMessage.classList.remove('hidden');
+        }
     }
 }
 // ================= FIN MODULE AUTH =====================
@@ -389,6 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // === INITIALISATION DE TOUS LES MODULES ===
     initLogin();
+    initPasswordReset(); // Fonctionnalité mot de passe oublié
     
     // Événement du bouton de déconnexion
     const logoutBtn = document.getElementById('logout-btn');
