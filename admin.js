@@ -495,11 +495,26 @@ window.openCertificatTravailForm = function() {
         const phone = '+221 78 584 28 71';
         const email = 'kfsbtpproimmo@gmail.com';
         const today = new Date().toLocaleDateString('fr-FR');
+        // Extraction prénom
+        let prenom = '';
+        if (data.nom_salarie) {
+            const parts = data.nom_salarie.split(' ');
+            prenom = parts.length > 1 ? parts[1] : parts[0];
+        }
+        // Dates
+        const dateEmbauche = data.date_debut || '';
+        const dateFin = data.date_fin || '';
         return `
 <div style="max-width:720px;margin:40px auto;padding:40px;background:linear-gradient(135deg,#f8fafc 60%,#e0e7ff 100%);border-radius:32px;box-shadow:0 8px 32px rgba(30,58,138,0.13);border:2px solid #2563eb;font-family:'Inter',Arial,sans-serif;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
-        <img src="${logo}" alt="Logo KFS BTP" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
-        <img src="${drapeauSn}" alt="Drapeau Sénégal" style="width:48px;height:32px;border-radius:4px;box-shadow:0 1px 4px #0001;">
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <img src="${logo}" alt="Logo KFS BTP" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
+            <div style="margin-top:8px;font-size:1.05rem;color:#facc15;font-weight:700;letter-spacing:1px;">Un Peuple – Un But – Une Foi</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <img src="${drapeauSn}" alt="Drapeau Sénégal" style="width:48px;height:32px;border-radius:4px;box-shadow:0 1px 4px #0001;">
+            <div style="margin-top:8px;font-size:1rem;color:#1e3a8a;font-weight:600;">Un Peuple – Un But – Une Foi</div>
+        </div>
     </div>
     <div style="text-align:center;margin-bottom:24px;">
         <span style="font-size:2.2rem;font-weight:800;color:#1e3a8a;text-transform:uppercase;letter-spacing:2px;">CERTIFICAT DE TRAVAIL</span>
@@ -512,17 +527,17 @@ window.openCertificatTravailForm = function() {
     <div style="margin:32px 0 0 0;padding:24px 32px;background:#fff;border-radius:16px;box-shadow:0 2px 8px #2563eb22;">
         <div style="font-size:1.1rem;color:#222;line-height:1.8;text-align:left;">
             <p>Je soussigné(e), <b style="color:#1e3a8a;">Le Directeur Général de ${company}</b>, entreprise spécialisée dans le secteur du Bâtiment, des Travaux Publics et de l'Immobilier, dont le siège social est situé à <b>${address}</b>, immatriculée au RCCM sous le numéro <b>${rccm}</b>, NINEA <b>${ninea}</b>, certifie que :</p>
-            <p><b style="color:#2563eb;font-size:1.1rem;">${data.nom_salarie}</b>, demeurant à <b style="color:#2563eb;">${data.adresse_salarie || ''}</b>, a travaillé dans notre société en qualité de <b style="color:#2563eb;">${data.poste}</b> du <b style="color:#1e3a8a;">${data.date_debut}</b> au <b style="color:#1e3a8a;">${data.date_fin || 'à ce jour'}</b>.</p>
+            <p><b style="color:#2563eb;font-size:1.1rem;">${prenom}</b> (<b style="color:#2563eb;">${data.nom_salarie}</b>), demeurant à <b style="color:#2563eb;">${data.adresse_salarie || ''}</b>, a travaillé dans notre société en qualité de <b style="color:#2563eb;">${data.poste}</b> du <b style="color:#1e3a8a;">${dateEmbauche}</b> au <b style="color:#1e3a8a;">${dateFin || 'à ce jour'}</b>.</p>
             <p>Ce certificat est délivré à la demande de l’intéressé(e) pour servir et valoir ce que de droit, conformément à la législation du travail en vigueur au Sénégal.</p>
             <p>Motif de départ : <b style="color:#2563eb;">${data.motif_depart || ''}</b></p>
             <p>Numéro d’identification : <b style="color:#2563eb;">${data.num_identification || ''}</b></p>
         </div>
     </div>
-    <div style="margin-top:64px;text-align:right;font-size:1rem;color:#1e3a8a;">
+    <div style="margin-top:96px;text-align:right;font-size:1rem;color:#1e3a8a;">
         <div>Fait à Tambacounda, le <b>${today}</b></div>
-        <div style="margin-top:56px;font-size:1.15rem;color:#222;font-weight:600;">Signature et cachet de l’entreprise</div>
+        <div style="margin-top:72px;font-size:1.15rem;color:#222;font-weight:600;">Signature et cachet de l’entreprise</div>
     </div>
-    <hr style="border:none;border-top:2px solid #2563eb;margin:64px 0 0;">
+    <hr style="border:none;border-top:2px solid #2563eb;margin:96px 0 0;">
     <div style="text-align:center;color:#1e3a8a;font-size:1rem;margin-top:24px;letter-spacing:1px;">KFS BTP IMMO – Entreprise de BTP & Immobilier – Tambacounda, Sénégal</div>
 </div>
 `;
@@ -548,6 +563,8 @@ window.openCertificatTravailForm = function() {
             if (document.querySelector("#certif-travail-form input[name='poste']")) document.querySelector("#certif-travail-form input[name='poste']").value = emp.poste || '';
             if (document.querySelector("#certif-travail-form input[name='adresse_salarie']")) document.querySelector("#certif-travail-form input[name='adresse_salarie']").value = emp.adresse || '';
             if (document.querySelector("#certif-travail-form input[name='num_identification']")) document.querySelector("#certif-travail-form input[name='num_identification']").value = emp.cni || emp.id || '';
+            if (document.querySelector("#certif-travail-form input[name='date_debut']")) document.querySelector("#certif-travail-form input[name='date_debut']").value = emp.dateEmbauche || '';
+            if (document.querySelector("#certif-travail-form input[name='date_fin']")) document.querySelector("#certif-travail-form input[name='date_fin']").value = emp.dateFin || '';
         }
     });
 
@@ -555,9 +572,22 @@ window.openCertificatTravailForm = function() {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(this));
         const content = getCertifContent(data);
-        const pdfWindow = window.open('', '_blank');
-        pdfWindow.document.write(`<!DOCTYPE html><html><head><title>Certificat de travail</title><script src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'></script></head><body><div id='pdf-content'>${content}</div><script>setTimeout(function(){html2pdf().set({margin:10,filename:'Certificat_Travail_${data.nom_salarie ? data.nom_salarie.replace(/\s+/g,'_') : 'Employe'}.pdf',html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(document.getElementById('pdf-content')).save();window.close();},500);<\/script></body></html>`);
-        pdfWindow.document.close();
+        // Aperçu
+        document.getElementById('certif-travail-apercu').innerHTML = content;
+        // Téléchargement PDF automatique
+        setTimeout(() => {
+            if (window.html2pdf) {
+                html2pdf().set({
+                    margin: 10,
+                    filename: `Certificat_Travail_${data.nom_salarie ? data.nom_salarie.replace(/\s+/g,'_') : 'Employe'}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                }).from(content).save();
+            } else {
+                alert('html2pdf.js non chargé');
+            }
+        }, 300);
         window.closeKFSModal();
         showNotification('Document généré', 'Certificat de travail', 'success');
     };
