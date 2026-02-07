@@ -112,11 +112,31 @@ function initLogin() {
     // Affichage exclusif au chargement (corrigé)
     const dashboardMain = document.getElementById('dashboard-main');
     if (sessionStorage.getItem('adminAuth') === 'true') {
-        if (loginScreen) loginScreen.style.display = 'none';
-        if (dashboardMain) dashboardMain.style.display = '';
+        if (loginScreen) {
+            loginScreen.style.display = 'none';
+            loginScreen.style.setProperty('display', 'none', 'important');
+        }
+        if (dashboardMain) {
+            dashboardMain.style.display = '';
+            dashboardMain.style.setProperty('display', '', 'important');
+        }
+        // Masquer tous les modules si non connecté
+        document.querySelectorAll('.module-section').forEach(function(sec) {
+            if (!sec.classList.contains('active')) sec.style.display = 'none';
+        });
     } else {
-        if (loginScreen) loginScreen.style.display = '';
-        if (dashboardMain) dashboardMain.style.display = 'none';
+        if (loginScreen) {
+            loginScreen.style.display = '';
+            loginScreen.style.setProperty('display', '', 'important');
+        }
+        if (dashboardMain) {
+            dashboardMain.style.display = 'none';
+            dashboardMain.style.setProperty('display', 'none', 'important');
+        }
+        // Masquer tous les modules
+        document.querySelectorAll('.module-section').forEach(function(sec) {
+            sec.style.display = 'none';
+        });
     }
     
     // Attendre que Firebase soit prêt
