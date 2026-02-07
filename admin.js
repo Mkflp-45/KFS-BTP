@@ -364,7 +364,7 @@ const KFS_DOC_CATEGORIES = [
 ];
 
 // Initialisation du module (à appeler dans initDocuments)
-window.initKFSModeles = function() {
+window.initKFSModeles = async function() {
     renderKFSModelesList();
     document.getElementById('btn-add-modele')?.addEventListener('click', openKFSModeleForm);
 };
@@ -424,7 +424,7 @@ async function renderKFSModelesList() {
                 </div>
             </div>
             <div class="flex gap-2 mt-3 md:mt-0">
-                <button onclick="window.openKFSModeleForm(${i})" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Éditer</button>
+                <button onclick="(async () => { await window.openKFSModeleForm(${i}); })()" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Éditer</button>
                 <button onclick="window.deleteKFSModele(${i})" class="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200">Supprimer</button>
                 <button onclick="window.useKFSModele(${i})" class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Utiliser</button>
             </div>
@@ -438,7 +438,7 @@ function getKFSIcon(cat) {
 }
 
 // Ouvre le formulaire d'ajout/édition
-window.openKFSModeleForm = function(index = null) {
+window.openKFSModeleForm = async function(index = null) {
     let modeles = [];
     try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
     const tpl = (index !== null && modeles[index]) ? modeles[index] : { nom: '', description: '', categorie: '', fields: [], content: '' };
@@ -519,7 +519,7 @@ function renderKFSFieldRow(field = {}) {
 }
 
 // Suppression d'un modèle
-window.useKFSModele = function(index) {
+window.useKFSModele = async function(index) {
     let modeles = [];
     try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
     const tpl = modeles[index];
