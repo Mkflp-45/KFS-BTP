@@ -11,7 +11,7 @@ const FIREBASE_CONFIG = {
     authDomain: "kfs-btp-sn.firebaseapp.com",
     databaseURL: "https://kfs-btp-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "kfs-btp-sn",
-    storageBucket: "kfs-btp-sn.firebasestorage.app",
+    storageBucket: "kfs-btp-sn.appspot.com",
     messagingSenderId: "208534847953",
     appId: "1:208534847953:web:026a00d91b1834269ca0f0"
 };
@@ -32,11 +32,11 @@ let isFirebaseConfigured = false;
         return;
     }
     
-    // Charger les SDK Firebase (Realtime Database)
+    // Charger les SDK Firebase dans l'ordre correct
     const scripts = [
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js',
-        'https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js',
-        'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js'
+        'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js',
+        'https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js'
     ];
     
     let loaded = 0;
