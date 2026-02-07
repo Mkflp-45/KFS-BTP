@@ -496,32 +496,34 @@ window.openCertificatTravailForm = function() {
         const email = 'kfsbtpproimmo@gmail.com';
         const today = new Date().toLocaleDateString('fr-FR');
         return `
-<div style="max-width:700px;margin:40px auto;padding:32px;background:#fff;border-radius:24px;box-shadow:0 8px 32px rgba(30,58,138,0.12);border:2px solid #1e3a8a;font-family:'Inter',Arial,sans-serif;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <img src="${logo}" alt="Logo KFS BTP" style="width:70px;height:70px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
-        <img src="${drapeauSn}" alt="Drapeau Sénégal" style="width:40px;height:28px;border-radius:4px;box-shadow:0 1px 4px #0001;">
+<div style="max-width:720px;margin:40px auto;padding:40px;background:linear-gradient(135deg,#f8fafc 60%,#e0e7ff 100%);border-radius:32px;box-shadow:0 8px 32px rgba(30,58,138,0.13);border:2px solid #2563eb;font-family:'Inter',Arial,sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+        <img src="${logo}" alt="Logo KFS BTP" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
+        <img src="${drapeauSn}" alt="Drapeau Sénégal" style="width:48px;height:32px;border-radius:4px;box-shadow:0 1px 4px #0001;">
     </div>
-    <div style="color:#2563eb;font-size:1.1rem;font-weight:600;">${company}</div>
-    <div style="color:#1e3a8a;font-size:1rem;">${address}</div>
-    <div style="color:#1e3a8a;font-size:1rem;">NINEA: ${ninea} &nbsp; | &nbsp; RCCM: ${rccm}</div>
-    <div style="color:#1e3a8a;font-size:1rem;">Tel: ${phone} &nbsp; | &nbsp; Email: ${email}</div>
-    <hr style="border:none;border-top:2px solid #2563eb;margin:24px 0;">
     <div style="text-align:center;margin-bottom:24px;">
-        <span style="font-size:1.6rem;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:2px;">CERTIFICAT DE TRAVAIL</span>
+        <span style="font-size:2.2rem;font-weight:800;color:#1e3a8a;text-transform:uppercase;letter-spacing:2px;">CERTIFICAT DE TRAVAIL</span>
+        <hr style="border:none;border-top:3px solid #facc15;width:120px;margin:16px auto 0;">
     </div>
-    <div style="font-size:1.1rem;color:#222;line-height:1.7;text-align:left;">
-        <p>Je soussigné(e), <b style="color:#1e3a8a;">Le Directeur Général de ${company}</b>, entreprise spécialisée dans le secteur du Bâtiment, des Travaux Publics et de l'Immobilier, dont le siège social est situé à <b>${address}</b>, immatriculée au RCCM sous le numéro <b>${rccm}</b>, NINEA <b>${ninea}</b>, certifie que :</p>
-        <p><b style="color:#2563eb;font-size:1.1rem;">${data.nom_salarie}</b>, demeurant à <b style="color:#2563eb;">${data.adresse_salarie || ''}</b>, a travaillé dans notre société en qualité de <b style="color:#2563eb;">${data.poste}</b> du <b style="color:#1e3a8a;">${data.date_debut}</b> au <b style="color:#1e3a8a;">${data.date_fin || 'à ce jour'}</b>.</p>
-        <p>Ce certificat est délivré à la demande de l’intéressé(e) pour servir et valoir ce que de droit, conformément à la législation du travail en vigueur au Sénégal.</p>
-        <p>Motif de départ : <b style="color:#2563eb;">${data.motif_depart || ''}</b></p>
-        <p>Numéro d’identification : <b style="color:#2563eb;">${data.num_identification || ''}</b></p>
+    <div style="color:#2563eb;font-size:1.15rem;font-weight:600;text-align:center;margin-bottom:8px;">${company}</div>
+    <div style="color:#1e3a8a;font-size:1rem;text-align:center;">${address}</div>
+    <div style="color:#1e3a8a;font-size:1rem;text-align:center;">NINEA: ${ninea} &nbsp; | &nbsp; RCCM: ${rccm}</div>
+    <div style="color:#1e3a8a;font-size:1rem;text-align:center;">Tel: ${phone} &nbsp; | &nbsp; Email: ${email}</div>
+    <div style="margin:32px 0 0 0;padding:24px 32px;background:#fff;border-radius:16px;box-shadow:0 2px 8px #2563eb22;">
+        <div style="font-size:1.1rem;color:#222;line-height:1.8;text-align:left;">
+            <p>Je soussigné(e), <b style="color:#1e3a8a;">Le Directeur Général de ${company}</b>, entreprise spécialisée dans le secteur du Bâtiment, des Travaux Publics et de l'Immobilier, dont le siège social est situé à <b>${address}</b>, immatriculée au RCCM sous le numéro <b>${rccm}</b>, NINEA <b>${ninea}</b>, certifie que :</p>
+            <p><b style="color:#2563eb;font-size:1.1rem;">${data.nom_salarie}</b>, demeurant à <b style="color:#2563eb;">${data.adresse_salarie || ''}</b>, a travaillé dans notre société en qualité de <b style="color:#2563eb;">${data.poste}</b> du <b style="color:#1e3a8a;">${data.date_debut}</b> au <b style="color:#1e3a8a;">${data.date_fin || 'à ce jour'}</b>.</p>
+            <p>Ce certificat est délivré à la demande de l’intéressé(e) pour servir et valoir ce que de droit, conformément à la législation du travail en vigueur au Sénégal.</p>
+            <p>Motif de départ : <b style="color:#2563eb;">${data.motif_depart || ''}</b></p>
+            <p>Numéro d’identification : <b style="color:#2563eb;">${data.num_identification || ''}</b></p>
+        </div>
     </div>
-    <div style="margin-top:60px;text-align:right;font-size:1rem;color:#1e3a8a;">
+    <div style="margin-top:64px;text-align:right;font-size:1rem;color:#1e3a8a;">
         <div>Fait à Tambacounda, le <b>${today}</b></div>
-        <div style="margin-top:48px;font-size:1.1rem;color:#222;">Signature et cachet de l’entreprise</div>
+        <div style="margin-top:56px;font-size:1.15rem;color:#222;font-weight:600;">Signature et cachet de l’entreprise</div>
     </div>
     <hr style="border:none;border-top:2px solid #2563eb;margin:64px 0 0;">
-    <div style="text-align:center;color:#1e3a8a;font-size:0.95rem;margin-top:24px;">KFS BTP IMMO – Entreprise de BTP & Immobilier – Tambacounda, Sénégal</div>
+    <div style="text-align:center;color:#1e3a8a;font-size:1rem;margin-top:24px;letter-spacing:1px;">KFS BTP IMMO – Entreprise de BTP & Immobilier – Tambacounda, Sénégal</div>
 </div>
 `;
     }
