@@ -109,13 +109,14 @@ function initLogin() {
     const loginBtnText = document.getElementById('login-btn-text');
     const loginSpinner = document.getElementById('login-spinner');
     
-    // Affichage exclusif au chargement
+    // Affichage exclusif au chargement (corrigé)
+    const dashboardMain = document.getElementById('dashboard-main');
     if (sessionStorage.getItem('adminAuth') === 'true') {
         if (loginScreen) loginScreen.style.display = 'none';
-        if (dashboard) dashboard.classList.remove('hidden');
+        if (dashboardMain) dashboardMain.style.display = '';
     } else {
         if (loginScreen) loginScreen.style.display = '';
-        if (dashboard) dashboard.classList.add('hidden');
+        if (dashboardMain) dashboardMain.style.display = 'none';
     }
     
     // Attendre que Firebase soit prêt
@@ -124,23 +125,21 @@ function initLogin() {
             // Observer les changements d'état d'authentification Firebase
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
-                    // Utilisateur connecté via Firebase
                     sessionStorage.setItem('adminAuth', 'true');
                     sessionStorage.setItem('adminEmail', user.email);
                     if (loginScreen) loginScreen.style.display = 'none';
-                    if (dashboard) dashboard.classList.remove('hidden');
+                    if (dashboardMain) dashboardMain.style.display = '';
                 } else {
-                    // Utilisateur non connecté
                     sessionStorage.removeItem('adminAuth');
                     sessionStorage.removeItem('adminEmail');
                     if (loginScreen) loginScreen.style.display = '';
-                    if (dashboard) dashboard.classList.add('hidden');
+                    if (dashboardMain) dashboardMain.style.display = 'none';
                 }
             });
         } else {
             alert('Connexion Firebase impossible. L’admin nécessite une connexion à Firebase.');
             if (loginScreen) loginScreen.style.display = '';
-            if (dashboard) dashboard.classList.add('hidden');
+            if (dashboardMain) dashboardMain.style.display = 'none';
         }
     });
     
