@@ -17,12 +17,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const btn = document.getElementById('migrate-firebase-btn');
     if (hasLocalData && bar && btn) {
         bar.style.display = '';
-        btn.onclick = async function() {
+        btn.onclick = function() {
             btn.disabled = true;
             btn.textContent = 'Migration en cours...';
-            await migrateAllLocalStorageToFirebase();
-            btn.textContent = 'Migration terminée';
-            setTimeout(()=>{ bar.style.display = 'none'; }, 2000);
+            (async () => {
+                await migrateAllLocalStorageToFirebase();
+                btn.textContent = 'Migration terminée';
+                setTimeout(()=>{ bar.style.display = 'none'; }, 2000);
+            })();
         };
         // Automatiser la migration au chargement (optionnel, décommentez pour forcer)
         // migrateAllLocalStorageToFirebase();
