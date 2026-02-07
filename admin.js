@@ -358,7 +358,7 @@ window.initKFSModeles = function() {
 };
 
 // Affiche la liste des modèles
-function renderKFSModelesList() {
+async function renderKFSModelesList() {
     const container = document.getElementById('kfs-modeles-list');
     if (!container) return;
     let modeles = [];
