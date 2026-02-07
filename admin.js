@@ -101,38 +101,31 @@ function waitForFirebase(callback, maxAttempts = 50) {
 }
 
 function initLogin() {
-    const loginScreen = document.getElementById('login-screen');
-    const dashboard = document.getElementById('dashboard-container');
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
     const loginBtn = document.getElementById('login-btn');
     const loginBtnText = document.getElementById('login-btn-text');
     const loginSpinner = document.getElementById('login-spinner');
-    
-    // Affichage exclusif au chargement (corrigé)
-    const dashboardMain = document.getElementById('dashboard-main');
+
+    // Affichage exclusif au chargement (structure containers)
+    function showLoginOnly() {
+        if (loginContainer) loginContainer.style.display = '';
+        if (dashboardContainer) dashboardContainer.style.display = 'none';
+    }
+    function showDashboardOnly() {
+        if (loginContainer) loginContainer.style.display = 'none';
+        if (dashboardContainer) dashboardContainer.style.display = '';
+    }
     if (sessionStorage.getItem('adminAuth') === 'true') {
-        if (loginScreen) {
-            loginScreen.style.display = 'none';
-            loginScreen.style.setProperty('display', 'none', 'important');
-        }
-        if (dashboardMain) {
-            dashboardMain.style.display = '';
-            dashboardMain.style.setProperty('display', '', 'important');
-        }
+        showDashboardOnly();
         // Masquer tous les modules si non connecté
         document.querySelectorAll('.module-section').forEach(function(sec) {
             if (!sec.classList.contains('active')) sec.style.display = 'none';
         });
     } else {
-        if (loginScreen) {
-            loginScreen.style.display = '';
-            loginScreen.style.setProperty('display', '', 'important');
-        }
-        if (dashboardMain) {
-            dashboardMain.style.display = 'none';
-            dashboardMain.style.setProperty('display', 'none', 'important');
-        }
+        showLoginOnly();
         // Masquer tous les modules
         document.querySelectorAll('.module-section').forEach(function(sec) {
             sec.style.display = 'none';
@@ -147,19 +140,16 @@ function initLogin() {
                 if (user) {
                     sessionStorage.setItem('adminAuth', 'true');
                     sessionStorage.setItem('adminEmail', user.email);
-                    if (loginScreen) loginScreen.style.display = 'none';
-                    if (dashboardMain) dashboardMain.style.display = '';
+                    showDashboardOnly();
                 } else {
                     sessionStorage.removeItem('adminAuth');
                     sessionStorage.removeItem('adminEmail');
-                    if (loginScreen) loginScreen.style.display = '';
-                    if (dashboardMain) dashboardMain.style.display = 'none';
+                    showLoginOnly();
                 }
             });
         } else {
             alert('Connexion Firebase impossible. L’admin nécessite une connexion à Firebase.');
-            if (loginScreen) loginScreen.style.display = '';
-            if (dashboardMain) dashboardMain.style.display = 'none';
+            showLoginOnly();
         }
     });
     
