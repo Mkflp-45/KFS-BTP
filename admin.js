@@ -109,9 +109,14 @@ function initLogin() {
     const loginBtnText = document.getElementById('login-btn-text');
     const loginSpinner = document.getElementById('login-spinner');
     
-    // Afficher l'écran de connexion par défaut
-    if (loginScreen) loginScreen.style.display = '';
-    if (dashboard) dashboard.classList.add('hidden');
+    // Affichage exclusif au chargement
+    if (sessionStorage.getItem('adminAuth') === 'true') {
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (dashboard) dashboard.classList.remove('hidden');
+    } else {
+        if (loginScreen) loginScreen.style.display = '';
+        if (dashboard) dashboard.classList.add('hidden');
+    }
     
     // Attendre que Firebase soit prêt
     waitForFirebase(function(firebaseReady) {
@@ -120,14 +125,12 @@ function initLogin() {
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
                     // Utilisateur connecté via Firebase
-                    console.log('✅ Utilisateur Firebase connecté:', user.email);
                     sessionStorage.setItem('adminAuth', 'true');
                     sessionStorage.setItem('adminEmail', user.email);
                     if (loginScreen) loginScreen.style.display = 'none';
                     if (dashboard) dashboard.classList.remove('hidden');
                 } else {
                     // Utilisateur non connecté
-                    console.log('🔒 Aucun utilisateur Firebase connecté');
                     sessionStorage.removeItem('adminAuth');
                     sessionStorage.removeItem('adminEmail');
                     if (loginScreen) loginScreen.style.display = '';
@@ -135,8 +138,9 @@ function initLogin() {
                 }
             });
         } else {
-            // Plus de fallback localStorage : accès refusé si Firebase non dispo
             alert('Connexion Firebase impossible. L’admin nécessite une connexion à Firebase.');
+            if (loginScreen) loginScreen.style.display = '';
+            if (dashboard) dashboard.classList.add('hidden');
         }
     });
     
