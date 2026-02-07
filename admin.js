@@ -1,3 +1,70 @@
+// Affichage et automatisation du bouton de migration Firebase
+document.addEventListener('DOMContentLoaded', function() {
+    // Vérifier s'il existe des données locales à migrer
+    const keys = [
+        'annonces', 'messages', 'temoignages', 'clients', 'factures', 'rdv', 'employes',
+        'fichesPaie', 'documents', 'companyInfo', 'projects', 'comptabilite', 'depenses',
+        'revenus', 'apporteurs', 'carousel', 'faq', 'media', 'siteSettings', 'seoSettings', 'adminPassword'
+    ];
+    let hasLocalData = false;
+    for (const key of keys) {
+        if (localStorage.getItem(key)) {
+            hasLocalData = true;
+            break;
+        }
+    }
+    const bar = document.getElementById('firebase-migration-bar');
+    const btn = document.getElementById('migrate-firebase-btn');
+    if (hasLocalData && bar && btn) {
+        bar.style.display = '';
+        btn.onclick = async function() {
+            btn.disabled = true;
+            btn.textContent = 'Migration en cours...';
+            await migrateAllLocalStorageToFirebase();
+            btn.textContent = 'Migration terminée';
+            setTimeout(()=>{ bar.style.display = 'none'; }, 2000);
+        };
+        // Automatiser la migration au chargement (optionnel, décommentez pour forcer)
+        // migrateAllLocalStorageToFirebase();
+    }
+});
+// ================= MIGRATION TOTALE LOCALSTORAGE → FIREBASE =====================
+async function migrateAllLocalStorageToFirebase() {
+    if (!window.isFirebaseConfigured || !window.isFirebaseConfigured()) {
+        alert('Firebase non configuré. Migration impossible.');
+        return;
+    }
+    const keys = [
+        'annonces', 'messages', 'temoignages', 'clients', 'factures', 'rdv', 'employes',
+        'fichesPaie', 'documents', 'companyInfo', 'projects', 'comptabilite', 'depenses',
+        'revenus', 'apporteurs', 'carousel', 'faq', 'media', 'siteSettings', 'seoSettings', 'adminPassword'
+    ];
+    let migrated = [];
+    for (const key of keys) {
+        const value = localStorage.getItem(key);
+        if (value) {
+            try {
+                let parsed;
+                try { parsed = JSON.parse(value); } catch { parsed = value; }
+                if (Array.isArray(parsed)) {
+                    for (const item of parsed) {
+                        await window.DataStore.add(key, item);
+                    }
+                } else if (typeof parsed === 'object') {
+                    await window.DataStore.saveObject(key, parsed);
+                } else {
+                    // Pour les simples valeurs (ex: adminPassword)
+                    await window.DataStore.saveObject(key, { value: parsed });
+                }
+                migrated.push(key);
+                localStorage.removeItem(key);
+            } catch (e) {
+                console.warn('Erreur migration', key, e);
+            }
+        }
+    }
+    alert('Migration terminée. Données transférées : ' + migrated.join(', '));
+}
 // Correction bug : fonction dashboard manquante (empêche tout le JS de fonctionner)
 function initDashboard() {
     // Mettre à jour les statistiques du dashboard
@@ -26,7 +93,7 @@ function waitForFirebase(callback, maxAttempts = 50) {
         } else if (attempts < maxAttempts) {
             setTimeout(checkFirebase, 100); // Réessayer toutes les 100ms
         } else {
-            console.warn('⚠️ Firebase Auth non disponible après', attempts, 'tentatives');
+            alert('Firebase est requis pour accéder à l’admin. Veuillez vérifier la connexion.');
             callback(false);
         }
     };
@@ -68,12 +135,8 @@ function initLogin() {
                 }
             });
         } else {
-            // Fallback si Firebase n'est pas disponible - utiliser localStorage
-            console.log('⚠️ Mode fallback localStorage');
-            if (sessionStorage.getItem('adminAuth') === 'true') {
-                if (loginScreen) loginScreen.style.display = 'none';
-                if (dashboard) dashboard.classList.remove('hidden');
-            }
+            // Plus de fallback localStorage : accès refusé si Firebase non dispo
+            alert('Connexion Firebase impossible. L’admin nécessite une connexion à Firebase.');
         }
     });
     
@@ -297,7 +360,7 @@ function renderKFSModelesList() {
     if (!container) return;
     let modeles = [];
     try {
-        modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]');
+        modeles = await DataStore.getAll('documentTemplates');
     } catch(e) { modeles = []; }
     if (!Array.isArray(modeles)) modeles = [];
     // Toujours ajouter le modèle Certificat de travail en tête de liste
@@ -329,11 +392,11 @@ function renderKFSModelesList() {
     // Supprimer tout doublon
     modeles = modeles.filter(m => m.nom !== 'Certificat de travail');
     modeles.unshift(certifTravail);
-    localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+    await DataStore.saveObject('documentTemplates', modeles);
     // Si la liste est vide ou corrompue, forcer l'affichage du modèle Certificat de travail
     if (!modeles || !modeles.length) {
         modeles = [certifTravail];
-        localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+        await DataStore.saveObject('documentTemplates', modeles);
         if (window.showNotification) window.showNotification('Certificat de travail ajouté', 'Le modèle a été ajouté automatiquement.', 'success');
     }
     container.innerHTML = modeles.map((tpl, i) => `
@@ -362,7 +425,7 @@ function getKFSIcon(cat) {
 // Ouvre le formulaire d'ajout/édition
 window.openKFSModeleForm = function(index = null) {
     let modeles = [];
-    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
     const tpl = (index !== null && modeles[index]) ? modeles[index] : { nom: '', description: '', categorie: '', fields: [], content: '' };
     window.openKFSModal(`
         <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
@@ -411,9 +474,9 @@ window.openKFSModeleForm = function(index = null) {
             updatedAt: new Date().toISOString()
         };
         let modeles = [];
-        try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+        try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
         if (index !== null) modeles[index] = modele; else modeles.push(modele);
-        localStorage.setItem('documentTemplates', JSON.stringify(modeles));
+        await DataStore.saveObject('documentTemplates', modeles);
         window.closeKFSModal();
         renderKFSModelesList();
     };
@@ -444,7 +507,7 @@ function renderKFSFieldRow(field = {}) {
 window.deleteKFSModele = function(index) {
     if (!confirm('Supprimer ce modèle ?')) return;
     let modeles = [];
-    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
     const nom = modeles[index]?.nom || '';
     modeles.splice(index, 1);
     localStorage.setItem('documentTemplates', JSON.stringify(modeles));
@@ -457,7 +520,7 @@ window.deleteKFSModele = function(index) {
 window.openCertificatTravailForm = function() {
     // Récupérer la liste des employés
     let employes;
-    try { employes = JSON.parse(localStorage.getItem('employes') || '[]'); } catch(e) { employes = []; }
+    try { employes = await DataStore.getAll('employes'); } catch(e) { employes = []; }
     window.openKFSModal(`
         <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
         <div class='relative min-h-screen flex items-center justify-center p-4'>
@@ -675,7 +738,7 @@ window.closeKFSModal = function(modalId = 'kfs-modal') {
 };
 // --- AUTO-REMPLISSAGE CLIENT POUR FORMULAIRES BAIL/CONTRAT ---
 function populateClientSelect(selectId, onChangeCb) {
-    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const clients = await DataStore.getAll('clients');
     const select = document.getElementById(selectId);
     if (!select) return;
     select.innerHTML = '<option value="">Sélectionner un client...</option>' +
@@ -852,12 +915,12 @@ function initNavigation() {
 
 function updateStats() {
     // Récupérer toutes les données
-    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-    const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
-    const rdvs = JSON.parse(localStorage.getItem('rdvs') || '[]');
-    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-    const projets = JSON.parse(localStorage.getItem('projets') || '[]');
-    const employes = JSON.parse(localStorage.getItem('employes') || '[]');
+    const messages = await DataStore.getAll('messages');
+    const annonces = await DataStore.getAll('annonces');
+    const rdvs = await DataStore.getAll('rdvs');
+    const clients = await DataStore.getAll('clients');
+    const projets = await DataStore.getAll('projets');
+    const employes = await DataStore.getAll('employes');
     
     // Messages non lus
     const unreadMessages = messages.filter(m => !m.read).length;
@@ -901,7 +964,7 @@ function renderMessages() {
     const container = document.getElementById('messages-list');
     if (!container) return;
     
-    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+    const messages = await DataStore.getAll('messages');
     
     if (messages.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun message reçu.</p>';
@@ -931,7 +994,7 @@ function renderRecentMessages() {
     const container = document.getElementById('recent-messages');
     if (!container) return;
     
-    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+    const messages = await DataStore.getAll('messages');
     const recent = messages.slice(0, 5);
     
     if (recent.length === 0) {
@@ -958,9 +1021,9 @@ function renderRecentMessages() {
 // ===================================================
 
 function markAsRead(index) {
-    const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+    const messages = await DataStore.getAll('messages');
     messages[index].read = true;
-    localStorage.setItem('messages', JSON.stringify(messages));
+    await DataStore.saveObject('messages', messages);
     renderMessages();
     updateStats();
     renderRecentMessages();
@@ -968,9 +1031,9 @@ function markAsRead(index) {
 
 function deleteMessage(index) {
     if (confirm('Supprimer ce message ?')) {
-        const messages = JSON.parse(localStorage.getItem('messages') || '[]');
+        const messages = await DataStore.getAll('messages');
         messages.splice(index, 1);
-        localStorage.setItem('messages', JSON.stringify(messages));
+        await DataStore.saveObject('messages', messages);
         renderMessages();
         updateStats();
         renderRecentMessages();
@@ -994,7 +1057,7 @@ function initCatalogue() {
             e.preventDefault();
             
             const editIndex = document.getElementById('catalogue-edit-index').value;
-            const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
+            const annonces = await DataStore.getAll('annonces');
             
             // Combiner images existantes et nouvelles
             const allImages = [...catalogueExistingImages, ...catalogueTempImages];
@@ -1021,7 +1084,7 @@ function initCatalogue() {
                 showNotification('Annonce ajoutée', annonce.title, 'success');
             }
             
-            localStorage.setItem('annonces', JSON.stringify(annonces));
+            await DataStore.saveObject('annonces', annonces);
             
             // Reset du formulaire
             form.reset();
@@ -1171,7 +1234,7 @@ function renderCatalogue() {
     const container = document.getElementById('catalogue-list');
     if (!container) return;
     
-    const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
+    const annonces = await DataStore.getAll('annonces');
     
     if (annonces.length === 0) {
         container.innerHTML = '<p class="text-gray-400 col-span-2 text-center py-8">Aucune annonce</p>';
@@ -1232,9 +1295,9 @@ function editAnnonce(index) {
 
 function deleteAnnonce(index) {
     if (confirm('Supprimer cette annonce ?')) {
-        const annonces = JSON.parse(localStorage.getItem('annonces') || '[]');
+        const annonces = await DataStore.getAll('annonces');
         annonces.splice(index, 1);
-        localStorage.setItem('annonces', JSON.stringify(annonces));
+        await DataStore.saveObject('annonces', annonces);
         renderCatalogue();
         updateStats();
         showNotification('Annonce supprimée', '', 'success');
@@ -1258,7 +1321,7 @@ function initCarousel() {
         const imageUrl = document.getElementById('carousel-image-url').value;
         
         const saveSlide = (imageData) => {
-            const slides = JSON.parse(localStorage.getItem('carousel') || '[]');
+            const slides = await DataStore.getAll('carousel');
             const slide = {
                 title: document.getElementById('carousel-title').value,
                 subtitle: document.getElementById('carousel-subtitle').value,
@@ -1275,7 +1338,7 @@ function initCarousel() {
                 showNotification('Slide ajouté', slide.title, 'success');
             }
             
-            localStorage.setItem('carousel', JSON.stringify(slides));
+            await DataStore.saveObject('carousel', slides);
             form.reset();
             closeCarouselModal();
             renderCarousel();
@@ -1295,7 +1358,7 @@ function renderCarousel() {
     const container = document.getElementById('carousel-list');
     if (!container) return;
     
-    const slides = JSON.parse(localStorage.getItem('carousel') || '[]');
+    const slides = await DataStore.getAll('carousel');
     
     if (slides.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun slide configuré</p>';
@@ -1328,9 +1391,9 @@ function editSlide(index) {
 
 function deleteSlide(index) {
     if (confirm('Supprimer ce slide ?')) {
-        const slides = JSON.parse(localStorage.getItem('carousel') || '[]');
+        const slides = await DataStore.getAll('carousel');
         slides.splice(index, 1);
-        localStorage.setItem('carousel', JSON.stringify(slides));
+        await DataStore.saveObject('carousel', slides);
         renderCarousel();
         showNotification('Slide supprimé', '', 'success');
     }
@@ -1349,7 +1412,7 @@ function initTemoignages() {
         e.preventDefault();
         
         const editIndex = document.getElementById('temoignage-edit-index').value;
-        const temoignages = JSON.parse(localStorage.getItem('temoignages') || '[]');
+        const temoignages = await DataStore.getAll('temoignages');
         
         // Get note from radio buttons
         const noteRadio = document.querySelector('input[name="temoignage-note"]:checked');
@@ -1372,7 +1435,7 @@ function initTemoignages() {
             showNotification('Témoignage ajouté', temoignage.nom, 'success');
         }
         
-        localStorage.setItem('temoignages', JSON.stringify(temoignages));
+        await DataStore.saveObject('temoignages', temoignages);
         form.reset();
         document.getElementById('temoignage-edit-index').value = '';
         closeTemoignageModal();
@@ -1385,7 +1448,7 @@ function renderTemoignages() {
     const container = document.getElementById('temoignages-list');
     if (!container) return;
     
-    const temoignages = JSON.parse(localStorage.getItem('temoignages') || '[]');
+    const temoignages = await DataStore.getAll('temoignages');
     
     if (temoignages.length === 0) {
         container.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">Aucun témoignage</p>';
@@ -1414,18 +1477,18 @@ function editTemoignage(index) {
 }
 
 function toggleTemoignage(index) {
-    const temoignages = JSON.parse(localStorage.getItem('temoignages') || '[]');
+    const temoignages = await DataStore.getAll('temoignages');
     temoignages[index].visible = !temoignages[index].visible;
-    localStorage.setItem('temoignages', JSON.stringify(temoignages));
+    await DataStore.saveObject('temoignages', temoignages);
     renderTemoignages();
     showNotification('Visibilité modifiée', '', 'info');
 }
 
 function deleteTemoignage(index) {
     if (confirm('Supprimer ce témoignage ?')) {
-        const temoignages = JSON.parse(localStorage.getItem('temoignages') || '[]');
+        const temoignages = await DataStore.getAll('temoignages');
         temoignages.splice(index, 1);
-        localStorage.setItem('temoignages', JSON.stringify(temoignages));
+        await DataStore.saveObject('temoignages', temoignages);
         renderTemoignages();
         updateStats();
         showNotification('Témoignage supprimé', '', 'success');
@@ -1445,7 +1508,7 @@ function initFaq() {
         e.preventDefault();
         
         const editIndex = document.getElementById('faq-edit-index').value;
-        const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
+        const faqs = await DataStore.getAll('faq');
         
         const faq = {
             question: document.getElementById('faq-question').value,
@@ -1463,7 +1526,7 @@ function initFaq() {
             showNotification('Question ajoutée', '', 'success');
         }
         
-        localStorage.setItem('faq', JSON.stringify(faqs));
+        await DataStore.saveObject('faq', faqs);
         form.reset();
         document.getElementById('faq-edit-index').value = '';
         closeFaqModal();
@@ -1475,7 +1538,7 @@ function renderFaq() {
     const container = document.getElementById('faq-list');
     if (!container) return;
     
-    const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
+    const faqs = await DataStore.getAll('faq');
     
     if (faqs.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucune FAQ</p>';
@@ -1503,18 +1566,18 @@ function editFaq(index) {
 }
 
 function toggleFaq(index) {
-    const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
+    const faqs = await DataStore.getAll('faq');
     faqs[index].visible = faqs[index].visible === false ? true : false;
-    localStorage.setItem('faq', JSON.stringify(faqs));
+    await DataStore.saveObject('faq', faqs);
     renderFaq();
     showNotification('Visibilité modifiée', '', 'info');
 }
 
 function deleteFaq(index) {
     if (confirm('Supprimer cette question ?')) {
-        const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
+        const faqs = await DataStore.getAll('faq');
         faqs.splice(index, 1);
-        localStorage.setItem('faq', JSON.stringify(faqs));
+        await DataStore.saveObject('faq', faqs);
         renderFaq();
         showNotification('Question supprimée', '', 'success');
     }
@@ -1544,7 +1607,7 @@ function initMedia() {
         
         const reader = new FileReader();
         reader.onload = function(e) {
-            let media = JSON.parse(localStorage.getItem('media') || '[]');
+            let media = await DataStore.getAll('media');
             
             // Un seul logo possible
             if (type === 'logo') {
@@ -1560,7 +1623,7 @@ function initMedia() {
                 date: new Date().toISOString()
             });
             
-            localStorage.setItem('media', JSON.stringify(media));
+            await DataStore.saveObject('media', media);
             form.reset();
             closeMediaModal();
             renderMedia();
@@ -1575,7 +1638,7 @@ function renderMedia() {
     const container = document.getElementById('media-list');
     if (!container) return;
     
-    const media = JSON.parse(localStorage.getItem('media') || '[]');
+    const media = await DataStore.getAll('media');
     
     if (media.length === 0) {
         container.innerHTML = '<p class="text-gray-400 col-span-6 text-center py-8">Aucun média</p>';
@@ -1601,9 +1664,9 @@ function renderMedia() {
 
 function deleteMedia(index) {
     if (confirm('Supprimer ce média ?')) {
-        const media = JSON.parse(localStorage.getItem('media') || '[]');
+        const media = await DataStore.getAll('media');
         media.splice(index, 1);
-        localStorage.setItem('media', JSON.stringify(media));
+        await DataStore.saveObject('media', media);
         renderMedia();
         updateStats();
         showNotification('Média supprimé', '', 'success');
@@ -1615,7 +1678,7 @@ function deleteMedia(index) {
 // ===================================================
 function initSettings() {
     // Charger les paramètres existants
-    const settings = JSON.parse(localStorage.getItem('siteSettings') || '{}');
+    const settings = await DataStore.getObject('siteSettings');
     
     // Fonction helper pour remplir les champs
     const setVal = (id, val) => { 
@@ -1740,7 +1803,7 @@ function initSettings() {
             updatedAt: new Date().toISOString()
         };
         
-        localStorage.setItem('siteSettings', JSON.stringify(settings));
+        await DataStore.saveObject('siteSettings', settings);
         showNotification('✅ Paramètres sauvegardés', 'Les modifications seront appliquées sur le site public', 'success');
         updateSettingsPreview();
     });
@@ -1841,7 +1904,7 @@ window.resetSettingsToDefault = function() {
         available: true
     };
     
-    localStorage.setItem('siteSettings', JSON.stringify(defaultSettings));
+    await DataStore.saveObject('siteSettings', defaultSettings);
     initSettings();
     showNotification('🔄 Réinitialisé', 'Les paramètres par défaut ont été restaurés', 'success');
 };
@@ -1855,7 +1918,7 @@ window.testSettingsOnPublic = function() {
 // MODULE: SEO
 // ===================================================
 function initSeo() {
-    const seo = JSON.parse(localStorage.getItem('seoSettings') || '{}');
+    const seo = await DataStore.getObject('seoSettings');
     
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
     setVal('seo-analytics', seo.analytics);
@@ -1884,7 +1947,7 @@ function initSeo() {
             keywords: document.getElementById('seo-keywords').value
         };
         
-        localStorage.setItem('seoSettings', JSON.stringify(seo));
+        await DataStore.saveObject('seoSettings', seo);
         alert('Paramètres SEO sauvegardés !');
     });
 }
@@ -15555,76 +15618,76 @@ function escapeHtml(text) {
 // EXPOSITION GLOBALE - Toutes les fonctions onclick
 // ===================================================
 // Catalogue
-window.editAnnonce = typeof editAnnonce !== 'undefined' ? editAnnonce : function(i) { if (typeof openCatalogueModal === 'function') openCatalogueModal(i); };
-window.deleteAnnonce = typeof deleteAnnonce !== 'undefined' ? deleteAnnonce : function() {};
-window.openImageGallery = window.openImageGallery || function() {};
-window.removeCatalogueTempImage = window.removeCatalogueTempImage || function() {};
-window.removeCatalogueExistingImage = window.removeCatalogueExistingImage || function() {};
+window.editAnnonce = typeof editAnnonce !== 'undefined' ? editAnnonce : function(i) { if (typeof openCatalogueModal === 'function') openCatalogueModal(i); else alert('Fonction openCatalogueModal non implémentée'); };
+window.deleteAnnonce = typeof deleteAnnonce !== 'undefined' ? deleteAnnonce : function() { alert('Suppression d\'annonce non implémentée'); };
+window.openImageGallery = window.openImageGallery || function() { alert('Galerie d\'images non implémentée'); };
+window.removeCatalogueTempImage = window.removeCatalogueTempImage || function() { alert('Suppression image temporaire non implémentée'); };
+window.removeCatalogueExistingImage = window.removeCatalogueExistingImage || function() { alert('Suppression image existante non implémentée'); };
 
 // Carrousel
-window.editSlide = typeof editSlide !== 'undefined' ? editSlide : function(i) { if (typeof openCarouselModal === 'function') openCarouselModal(i); };
-window.deleteSlide = typeof deleteSlide !== 'undefined' ? deleteSlide : function() {};
+window.editSlide = typeof editSlide !== 'undefined' ? editSlide : function(i) { if (typeof openCarouselModal === 'function') openCarouselModal(i); else alert('Fonction openCarouselModal non implémentée'); };
+window.deleteSlide = typeof deleteSlide !== 'undefined' ? deleteSlide : function() { alert('Suppression de slide non implémentée'); };
 
 // Témoignages
-window.editTemoignage = typeof editTemoignage !== 'undefined' ? editTemoignage : function(i) { if (typeof openTemoignageModal === 'function') openTemoignageModal(i); };
-window.toggleTemoignage = typeof toggleTemoignage !== 'undefined' ? toggleTemoignage : function() {};
-window.deleteTemoignage = typeof deleteTemoignage !== 'undefined' ? deleteTemoignage : function() {};
+window.editTemoignage = typeof editTemoignage !== 'undefined' ? editTemoignage : function(i) { if (typeof openTemoignageModal === 'function') openTemoignageModal(i); else alert('Fonction openTemoignageModal non implémentée'); };
+window.toggleTemoignage = typeof toggleTemoignage !== 'undefined' ? toggleTemoignage : function() { alert('Activation/désactivation témoignage non implémentée'); };
+window.deleteTemoignage = typeof deleteTemoignage !== 'undefined' ? deleteTemoignage : function() { alert('Suppression témoignage non implémentée'); };
 
 // FAQ
-window.editFaq = typeof editFaq !== 'undefined' ? editFaq : function(i) { if (typeof openFaqModal === 'function') openFaqModal(i); };
-window.toggleFaq = typeof toggleFaq !== 'undefined' ? toggleFaq : function() {};
-window.deleteFaq = typeof deleteFaq !== 'undefined' ? deleteFaq : function() {};
+window.editFaq = typeof editFaq !== 'undefined' ? editFaq : function(i) { if (typeof openFaqModal === 'function') openFaqModal(i); else alert('Fonction openFaqModal non implémentée'); };
+window.toggleFaq = typeof toggleFaq !== 'undefined' ? toggleFaq : function() { alert('Activation/désactivation FAQ non implémentée'); };
+window.deleteFaq = typeof deleteFaq !== 'undefined' ? deleteFaq : function() { alert('Suppression FAQ non implémentée'); };
 
 // Médias
-window.deleteMedia = typeof deleteMedia !== 'undefined' ? deleteMedia : function() {};
+window.deleteMedia = typeof deleteMedia !== 'undefined' ? deleteMedia : function() { alert('Suppression média non implémentée'); };
 
 // Messages
-window.markAsRead = typeof markAsRead !== 'undefined' ? markAsRead : function() {};
-window.deleteMessage = typeof deleteMessage !== 'undefined' ? deleteMessage : function() {};
+window.markAsRead = typeof markAsRead !== 'undefined' ? markAsRead : function() { alert('Marquage comme lu non implémenté'); };
+window.deleteMessage = typeof deleteMessage !== 'undefined' ? deleteMessage : function() { alert('Suppression message non implémentée'); };
 
 // RDV
-window.editRdv = window.editRdv || function() {};
-window.deleteRdv = window.deleteRdv || function() {};
-window.selectCalendarDay = window.selectCalendarDay || function() {};
-window.goToToday = window.goToToday || function() { window.selectCalendarDay(new Date().toISOString().split('T')[0]); };
+window.editRdv = window.editRdv || function() { alert('Édition RDV non implémentée'); };
+window.deleteRdv = window.deleteRdv || function() { alert('Suppression RDV non implémentée'); };
+window.selectCalendarDay = window.selectCalendarDay || function() { alert('Sélection jour calendrier non implémentée'); };
+window.goToToday = window.goToToday || function() { if (typeof window.selectCalendarDay === 'function') window.selectCalendarDay(new Date().toISOString().split('T')[0]); else alert('Fonction selectCalendarDay non implémentée'); };
 
 // Comptabilité
-window.editCompta = typeof editCompta !== 'undefined' ? editCompta : function() {};
-window.deleteCompta = typeof deleteCompta !== 'undefined' ? deleteCompta : function() {};
+window.editCompta = typeof editCompta !== 'undefined' ? editCompta : function() { alert('Édition comptabilité non implémentée'); };
+window.deleteCompta = typeof deleteCompta !== 'undefined' ? deleteCompta : function() { alert('Suppression comptabilité non implémentée'); };
 
 // Factures
-window.viewFacture = typeof viewFacture !== 'undefined' ? viewFacture : function() {};
-window.printFacture = typeof printFacture !== 'undefined' ? printFacture : function() {};
-window.changeFactureStatus = typeof changeFactureStatus !== 'undefined' ? changeFactureStatus : function() {};
-window.deleteFacture = typeof deleteFacture !== 'undefined' ? deleteFacture : function() {};
-window.removeFactureLine = typeof removeFactureLine !== 'undefined' ? removeFactureLine : function() {};
+window.viewFacture = typeof viewFacture !== 'undefined' ? viewFacture : function() { alert('Affichage facture non implémenté'); };
+window.printFacture = typeof printFacture !== 'undefined' ? printFacture : function() { alert('Impression facture non implémentée'); };
+window.changeFactureStatus = typeof changeFactureStatus !== 'undefined' ? changeFactureStatus : function() { alert('Changement statut facture non implémenté'); };
+window.deleteFacture = typeof deleteFacture !== 'undefined' ? deleteFacture : function() { alert('Suppression facture non implémentée'); };
+window.removeFactureLine = typeof removeFactureLine !== 'undefined' ? removeFactureLine : function() { alert('Suppression ligne facture non implémentée'); };
 
 // Clients
-window.editClient = typeof editClient !== 'undefined' ? editClient : function() {};
-window.viewClientHistory = typeof viewClientHistory !== 'undefined' ? viewClientHistory : function() {};
-window.addClientInteraction = typeof addClientInteraction !== 'undefined' ? addClientInteraction : function() {};
-window.deleteClient = typeof deleteClient !== 'undefined' ? deleteClient : function() {};
+window.editClient = typeof editClient !== 'undefined' ? editClient : function() { alert('Édition client non implémentée'); };
+window.viewClientHistory = typeof viewClientHistory !== 'undefined' ? viewClientHistory : function() { alert('Historique client non implémenté'); };
+window.addClientInteraction = typeof addClientInteraction !== 'undefined' ? addClientInteraction : function() { alert('Ajout interaction client non implémenté'); };
+window.deleteClient = typeof deleteClient !== 'undefined' ? deleteClient : function() { alert('Suppression client non implémentée'); };
 
 // Projets
-window.viewProjet = typeof viewProjet !== 'undefined' ? viewProjet : function() {};
-window.editProjet = typeof editProjet !== 'undefined' ? editProjet : function() {};
-window.addProjetDepense = typeof addProjetDepense !== 'undefined' ? addProjetDepense : function() {};
-window.deleteProjet = typeof deleteProjet !== 'undefined' ? deleteProjet : function() {};
+window.viewProjet = typeof viewProjet !== 'undefined' ? viewProjet : function() { alert('Affichage projet non implémenté'); };
+window.editProjet = typeof editProjet !== 'undefined' ? editProjet : function() { alert('Édition projet non implémentée'); };
+window.addProjetDepense = typeof addProjetDepense !== 'undefined' ? addProjetDepense : function() { alert('Ajout dépense projet non implémenté'); };
+window.deleteProjet = typeof deleteProjet !== 'undefined' ? deleteProjet : function() { alert('Suppression projet non implémentée'); };
 
 // Employés
-window.editEmploye = typeof editEmploye !== 'undefined' ? editEmploye : function() {};
-window.deleteEmploye = typeof deleteEmploye !== 'undefined' ? deleteEmploye : function() {};
-window.viewEmployeFiche = typeof viewEmployeFiche !== 'undefined' ? viewEmployeFiche : function() {};
+window.editEmploye = typeof editEmploye !== 'undefined' ? editEmploye : function() { alert('Édition employé non implémentée'); };
+window.deleteEmploye = typeof deleteEmploye !== 'undefined' ? deleteEmploye : function() { alert('Suppression employé non implémentée'); };
+window.viewEmployeFiche = typeof viewEmployeFiche !== 'undefined' ? viewEmployeFiche : function() { alert('Fiche employé non implémentée'); };
 
 // Stocks
-window.editStock = typeof editStock !== 'undefined' ? editStock : function() {};
-window.deleteStock = typeof deleteStock !== 'undefined' ? deleteStock : function() {};
-window.adjustStock = typeof adjustStock !== 'undefined' ? adjustStock : function() {};
+window.editStock = typeof editStock !== 'undefined' ? editStock : function() { alert('Édition stock non implémentée'); };
+window.deleteStock = typeof deleteStock !== 'undefined' ? deleteStock : function() { alert('Suppression stock non implémentée'); };
+window.adjustStock = typeof adjustStock !== 'undefined' ? adjustStock : function() { alert('Ajustement stock non implémenté'); };
 
 // Documents
-window.editDocument = typeof editDocument !== 'undefined' ? editDocument : function() {};
-window.deleteDocument = typeof deleteDocument !== 'undefined' ? deleteDocument : function() {};
-window.downloadDocument = typeof downloadDocument !== 'undefined' ? downloadDocument : function() {};
+window.editDocument = typeof editDocument !== 'undefined' ? editDocument : function() { alert('Édition document non implémentée'); };
+window.deleteDocument = typeof deleteDocument !== 'undefined' ? deleteDocument : function() { alert('Suppression document non implémentée'); };
+window.downloadDocument = typeof downloadDocument !== 'undefined' ? downloadDocument : function() { alert('Téléchargement document non implémenté'); };
 
 // Fiche de paie - Aperçu modale
 window.fermerApercuFichePaie = typeof fermerApercuFichePaie !== 'undefined' ? fermerApercuFichePaie : function() {
