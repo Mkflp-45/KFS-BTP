@@ -100,6 +100,8 @@ function initLogin() {
 }
 // Affichage et automatisation du bouton de migration Firebase
 document.addEventListener('DOMContentLoaded', function() {
+        console.log('🟢 admin.js chargé et DOMContentLoaded exécuté');
+        alert('admin.js chargé et DOMContentLoaded exécuté');
     // Vérifier s'il existe des données locales à migrer
     const keys = [
         'annonces', 'messages', 'temoignages', 'clients', 'factures', 'rdv', 'employes',
