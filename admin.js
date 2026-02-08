@@ -15766,11 +15766,6 @@ window.gotoFichePaieModule = function() {
         showNotification('Module non disponible', 'Le module Fiche de paie n\'est pas disponible', 'warning');
     }
 };
-    } else {
-        console.warn('Module fiche-paie non trouvé');
-        showNotification('Module non disponible', 'Le module Fiche de paie n\'est pas disponible', 'warning');
-    }
-};
 
 // Exposer les fonctions fiche de paie
 window.initFicheDePaieModule = typeof initFicheDePaieModule !== 'undefined' ? initFicheDePaieModule : function() {};
