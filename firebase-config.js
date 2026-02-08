@@ -34,13 +34,11 @@ let isFirebaseConfigured = false;
         return;
     }
 
-    // Si le namespace firebase existe déjà, ne rien faire (évite les doublons)
+    // Si Firebase est déjà complètement initialisé avec des apps, ne rien faire
     if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
         console.warn('⚠️ Firebase déjà chargé, initialisation ignorée.');
-        return;
-    }
-    if (window.firebase && (!window.firebase.apps || window.firebase.apps.length === 0)) {
-        console.error('❌ Conflit de namespace Firebase détecté. Rechargez la page sans extension ou nettoyez le cache.');
+        // Firebase est déjà prêt, on initialise directement
+        initFirebase();
         return;
     }
 
@@ -51,15 +49,31 @@ let isFirebaseConfigured = false;
         'https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js'
     ];
 
+    // Filtrer les scripts déjà présents dans le DOM
+    const toLoad = scripts.filter(src => ![...document.scripts].some(s => s.src === src));
+
+    if (toLoad.length === 0) {
+        // Tous déjà chargés
+        setTimeout(initFirebase, 0);
+        return;
+    }
+
     let loaded = 0;
-    scripts.forEach(src => {
-        // Ne pas charger si déjà présent
-        if ([...document.scripts].some(s => s.src === src)) return;
+    toLoad.forEach(src => {
         const script = document.createElement('script');
         script.src = src;
+        script.async = false; // CRITIQUE : garantit l'ordre d'exécution (app → auth → database)
         script.onload = () => {
             loaded++;
-            if (loaded === scripts.length) {
+            console.log('✅ Script chargé:', src.split('/').pop(), '(' + loaded + '/' + toLoad.length + ')');
+            if (loaded === toLoad.length) {
+                initFirebase();
+            }
+        };
+        script.onerror = () => {
+            loaded++;
+            console.error('❌ Erreur chargement:', src);
+            if (loaded === toLoad.length) {
                 initFirebase();
             }
         };

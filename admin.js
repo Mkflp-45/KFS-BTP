@@ -158,6 +158,104 @@ function initLogin() {
         }
     });
 
+    // ===== BOUTON CONNEXION GOOGLE =====
+    const googleBtn = document.getElementById('google-signin-btn');
+    if (googleBtn) {
+        googleBtn.onclick = async function() {
+            if (typeof firebase === 'undefined' || !firebase.auth) {
+                alert('Firebase non disponible.');
+                return;
+            }
+            if (loginError) loginError.classList.add('hidden');
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await firebase.auth().signInWithPopup(provider);
+                console.log('✅ Connexion Google réussie');
+            } catch (error) {
+                console.error('❌ Erreur Google Sign-In:', error);
+                let msg = 'Erreur de connexion Google';
+                if (error.code === 'auth/popup-closed-by-user') {
+                    msg = 'Connexion annulée.';
+                } else if (error.code === 'auth/popup-blocked') {
+                    msg = 'Popup bloquée. Autorisez les popups pour ce site.';
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    msg = 'Ce domaine n\'est pas autorisé dans Firebase. Ajoutez-le dans la console Firebase > Authentication > Settings > Authorized domains.';
+                } else if (error.message) {
+                    msg = error.message;
+                }
+                if (loginError) {
+                    loginError.textContent = msg;
+                    loginError.classList.remove('hidden');
+                }
+            }
+        };
+    }
+
+    // ===== MOT DE PASSE OUBLIÉ =====
+    const forgotBtn = document.getElementById('forgot-password-btn');
+    const resetForm = document.getElementById('reset-password-form');
+    const sendResetBtn = document.getElementById('send-reset-btn');
+    const cancelResetBtn = document.getElementById('cancel-reset-btn');
+    const resetMessage = document.getElementById('reset-message');
+
+    if (forgotBtn && resetForm) {
+        forgotBtn.onclick = function() {
+            resetForm.classList.toggle('hidden');
+            // Pré-remplir avec l'email du login
+            const loginEmailVal = document.getElementById('login-email').value.trim();
+            if (loginEmailVal) {
+                document.getElementById('reset-email').value = loginEmailVal;
+            }
+        };
+    }
+    if (cancelResetBtn && resetForm) {
+        cancelResetBtn.onclick = function() {
+            resetForm.classList.add('hidden');
+            if (resetMessage) resetMessage.classList.add('hidden');
+        };
+    }
+    if (sendResetBtn) {
+        sendResetBtn.onclick = async function() {
+            const resetEmail = document.getElementById('reset-email').value.trim();
+            if (!resetEmail) {
+                if (resetMessage) {
+                    resetMessage.textContent = 'Veuillez entrer votre email.';
+                    resetMessage.className = 'text-center mt-3 text-sm text-red-600';
+                    resetMessage.classList.remove('hidden');
+                }
+                return;
+            }
+            if (typeof firebase === 'undefined' || !firebase.auth) {
+                alert('Firebase non disponible.');
+                return;
+            }
+            sendResetBtn.disabled = true;
+            sendResetBtn.textContent = 'Envoi...';
+            try {
+                await firebase.auth().sendPasswordResetEmail(resetEmail);
+                if (resetMessage) {
+                    resetMessage.textContent = '✅ Email de réinitialisation envoyé ! Vérifiez votre boîte de réception.';
+                    resetMessage.className = 'text-center mt-3 text-sm text-green-600';
+                    resetMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erreur reset password:', error);
+                let msg = 'Erreur lors de l\'envoi.';
+                if (error.code === 'auth/user-not-found') msg = 'Aucun compte trouvé avec cet email.';
+                if (error.code === 'auth/invalid-email') msg = 'Email invalide.';
+                if (resetMessage) {
+                    resetMessage.textContent = msg;
+                    resetMessage.className = 'text-center mt-3 text-sm text-red-600';
+                    resetMessage.classList.remove('hidden');
+                }
+            } finally {
+                sendResetBtn.disabled = false;
+                sendResetBtn.textContent = 'Envoyer le lien';
+            }
+        };
+    }
+
+    // ===== FORMULAIRE LOGIN EMAIL/PASSWORD =====
     if (loginForm) {
         loginForm.onsubmit = async function(e) {
             e.preventDefault();
@@ -177,6 +275,31 @@ function initLogin() {
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error);
                 let errorMessage = 'Erreur de connexion';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'Aucun compte trouvé avec cet email.';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Mot de passe incorrect.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Adresse email invalide.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'Ce compte a été désactivé.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Trop de tentatives. Réessayez plus tard.';
+                        break;
+                    case 'auth/invalid-credential':
+                        errorMessage = 'Email ou mot de passe incorrect.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+                        break;
+                    default:
+                        errorMessage = error.message || 'Erreur de connexion inconnue.';
+                }
                 if (loginError) {
                     loginError.textContent = errorMessage;
                     loginError.classList.remove('hidden');
@@ -1384,7 +1507,6 @@ async function toggleFaq(index) {
     showNotification('Visibilité modifiée', '', 'info');
 }
 
-function deleteFaq(index) {
 async function deleteFaq(index) {
     if (confirm('Supprimer cette question ?')) {
         const faqs = await DataStore.getAll('faq');
@@ -1471,7 +1593,6 @@ async function renderMedia() {
     `).join('');
 }
 
-function deleteMedia(index) {
 async function deleteMedia(index) {
     if (confirm('Supprimer ce média ?')) {
         const media = await DataStore.getAll('media');
@@ -1485,7 +1606,6 @@ async function deleteMedia(index) {
 // ===================================================
 // MODULE: PARAMÈTRES
 // ===================================================
-function initSettings() {
 async function initSettings() {
     // Charger les paramètres existants
     const settings = await DataStore.getObject('siteSettings');
@@ -1693,7 +1813,6 @@ window.previewSettingsChanges = function() {
 };
 
 // Réinitialiser les paramètres par défaut
-window.resetSettingsToDefault = function() {
 window.resetSettingsToDefault = async function() {
     if (!confirm('Réinitialiser tous les paramètres aux valeurs par défaut ?')) return;
     
@@ -1728,7 +1847,6 @@ window.testSettingsOnPublic = function() {
 // ===================================================
 // MODULE: SEO
 // ===================================================
-function initSeo() {
 async function initSeo() {
     const seo = await DataStore.getObject('seoSettings');
     
@@ -15596,7 +15714,4 @@ window.enregistrerFicheDePaie = typeof enregistrerFicheDePaie !== 'undefined' ? 
 
 console.log('✅ KFS BTP Admin: Toutes les fonctions exposées globalement');
 
-// Fin du script principal - Ajout de nouvelles fonctionnalités
-// Code de gestion des utilisateurs
-// Code de gestion des documentS etc...
-} 
+// Fin du script principal
