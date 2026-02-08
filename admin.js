@@ -15776,18 +15776,3 @@ window.enregistrerFicheDePaie = typeof enregistrerFicheDePaie !== 'undefined' ? 
 console.log('✅ KFS BTP Admin: Toutes les fonctions exposées globalement');
 
 // Fin du script principal
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
-}
