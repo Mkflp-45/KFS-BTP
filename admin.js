@@ -1488,7 +1488,7 @@ async function toggleTemoignage(index) {
     showNotification('Visibilité modifiée', '', 'info');
 }
 
-function deleteTemoignage(index) {
+// ...existing code...
 async function deleteTemoignage(index) {
     if (confirm('Supprimer ce témoignage ?')) {
         const temoignages = await DataStore.getAll('temoignages');
@@ -1538,7 +1538,7 @@ function initFaq() {
     });
 }
 
-function renderFaq() {
+// ...existing code...
 async function renderFaq() {
     const container = document.getElementById('faq-list');
     if (!container) return;
@@ -1567,7 +1567,7 @@ function editFaq(index) {
     openFaqModal(index);
 }
 
-function toggleFaq(index) {
+// ...existing code...
 async function toggleFaq(index) {
     const faqs = await DataStore.getAll('faq');
     faqs[index].visible = faqs[index].visible === false ? true : false;
@@ -1637,7 +1637,7 @@ function initMedia() {
     });
 }
 
-function renderMedia() {
+// ...existing code...
 async function renderMedia() {
     const container = document.getElementById('media-list');
     if (!container) return;
