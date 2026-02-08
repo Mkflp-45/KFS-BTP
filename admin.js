@@ -501,6 +501,11 @@ window.useKFSModele = async function(index) {
     `);
     // Add any additional logic for document generation here
 };
+
+// ===================================================
+// MODULE: CERTIFICAT DE TRAVAIL
+// ===================================================
+function initCertificatTravail() {
     function getCertifContent(data) {
         const logo = window.logoKFSBase64 || 'assets/logo-kfs-btp.jpeg';
         const drapeauSn = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Flag_of_Senegal.svg';
@@ -561,19 +566,23 @@ window.useKFSModele = async function(index) {
     }
 
     // Aperçu PDF
-    document.getElementById('btn-apercu-certif').onclick = function() {
-        const data = Object.fromEntries(new FormData(document.getElementById('certif-travail-form')));
-        const content = getCertifContent(data);
-        const previewWindow = window.open('', '_blank');
-        previewWindow.document.write(`<!DOCTYPE html><html><head><title>Aperçu Certificat de travail</title></head><body>${content}</body></html>`);
-        previewWindow.document.close();
-    };
+    var btnApercu = document.getElementById('btn-apercu-certif');
+    if (btnApercu) {
+        btnApercu.onclick = function() {
+            var data = Object.fromEntries(new FormData(document.getElementById('certif-travail-form')));
+            var content = getCertifContent(data);
+            var previewWindow = window.open('', '_blank');
+            if (previewWindow) {
+                previewWindow.document.write('<!DOCTYPE html><html><head><title>Aperçu Certificat de travail</title></head><body>' + content + '</body></html>');
+                previewWindow.document.close();
+            }
+        };
+    }
 
     // Génération PDF
     // Auto-remplissage employé
-    // employes déjà déclaré plus haut
-    const selectEmploye = document.querySelector("#certif-travail-form select[name='nom_salarie']");
-    selectEmploye.addEventListener('change', function() {
+    var selectEmploye = document.querySelector("#certif-travail-form select[name='nom_salarie']");
+    if (selectEmploye) selectEmploye.addEventListener('change', function() {
         const nom = this.value;
         const emp = employes.find(e => e.nom === nom);
         if (emp) {
@@ -593,7 +602,8 @@ window.useKFSModele = async function(index) {
         }
     });
 
-    document.getElementById('certif-travail-form').onsubmit = function(e) {
+    var certifForm = document.getElementById('certif-travail-form');
+    if (certifForm) certifForm.onsubmit = function(e) {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(this));
         const content = getCertifContent(data);
@@ -617,6 +627,15 @@ window.useKFSModele = async function(index) {
         if (typeof window.closeKFSModal === 'function') window.closeKFSModal();
         showNotification('Document généré', 'Certificat de travail', 'success');
     };
+
+    // Exposer openCertificatTravailForm sur window
+    window.openCertificatTravailForm = function() {
+        var certifSection = document.getElementById('certif-travail-section');
+        if (certifSection) certifSection.style.display = '';
+    };
+}
+// FIN initCertificatTravail
+
 window.useKFSModele = function(index) {
     let modeles = [];
     try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
@@ -753,6 +772,7 @@ async function initAllModules() {
         ['Employés', initEmployes],
         ['Stocks', initStocks],
         ['Documents', initDocuments],
+        ['Certificat Travail', initCertificatTravail],
         ['Updates', typeof initUpdates === 'function' ? initUpdates : null],
     ];
     
