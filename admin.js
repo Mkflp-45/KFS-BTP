@@ -146,10 +146,16 @@ function initLogin() {
                     showDashboardOnly();
                     sessionStorage.setItem('adminAuth', 'true');
                     sessionStorage.setItem('adminEmail', user.email || '');
+                    // Initialiser les modules du dashboard une fois authentifié
+                    if (!window._modulesInitialized) {
+                        window._modulesInitialized = true;
+                        initAllModules();
+                    }
                 } else {
                     showLoginOnly();
                     sessionStorage.removeItem('adminAuth');
                     sessionStorage.removeItem('adminEmail');
+                    window._modulesInitialized = false;
                 }
             });
         } else {
@@ -719,11 +725,9 @@ function autoFillClientFields(client, mapping) {
 // Version 3.1 - Avec Comptabilité avancée, IA, CRM, Gestion entreprise, Monitoring
 // ===================================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // === INITIALISATION DE TOUS LES MODULES ===
-    initLogin();
-    initPasswordReset(); // Fonctionnalité mot de passe oublié
+// Fonction centrale d'initialisation de tous les modules (appelée après auth)
+function initAllModules() {
+    console.log('🔧 Initialisation de tous les modules...');
     
     // Événement du bouton de déconnexion
     const logoutBtn = document.getElementById('logout-btn');
@@ -745,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSecurity();
     initRdv();
     initAnalytics();
-    initFinances(); // Module unifié Comptabilité + Bilans
+    initFinances();
     initFactures();
     initIAComptable();
     initClients();
@@ -753,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initEmployes();
     initStocks();
     initDocuments();
-    initUpdates();
+    if (typeof initUpdates === 'function') initUpdates();
     
     // Initialiser les modèles de documents (si le conteneur existe)
     if (document.getElementById('kfs-modeles-list')) {
@@ -761,6 +765,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('✅ KFS BTP Admin: Tous les modules initialisés');
+}
+
+// Fonction de déconnexion
+function logoutAdmin() {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().signOut().then(function() {
+            sessionStorage.removeItem('adminAuth');
+            sessionStorage.removeItem('adminEmail');
+            window._modulesInitialized = false;
+            showLoginOnly();
+            console.log('✅ Déconnexion réussie');
+        }).catch(function(error) {
+            console.error('Erreur déconnexion:', error);
+        });
+    } else {
+        sessionStorage.removeItem('adminAuth');
+        sessionStorage.removeItem('adminEmail');
+        window._modulesInitialized = false;
+        showLoginOnly();
+    }
+}
+window.logoutAdmin = logoutAdmin;
+
+// Si l'utilisateur est déjà auth en session et modules pas encore lancés,
+// les lancer dès que le DOM est prêt
+document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('adminAuth') === 'true' && !window._modulesInitialized) {
+        window._modulesInitialized = true;
+        initAllModules();
+    }
 });
 
 // ===================================================
