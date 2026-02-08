@@ -1007,7 +1007,7 @@ async function renderRecentMessages() {
 // FONCTIONS GLOBALES POUR LES MESSAGES
 // ===================================================
 
-function markAsRead(index) {
+// ...existing code...
 async function markAsRead(index) {
     const messages = await DataStore.getAll('messages');
     messages[index].read = true;
@@ -1017,7 +1017,7 @@ async function markAsRead(index) {
     renderRecentMessages();
 }
 
-function deleteMessage(index) {
+// ...existing code...
 async function deleteMessage(index) {
     if (confirm('Supprimer ce message ?')) {
         const messages = await DataStore.getAll('messages');
@@ -1219,7 +1219,7 @@ function renderCatalogueExistingImages() {
     `).join('');
 }
 
-function renderCatalogue() {
+// ...existing code...
 async function renderCatalogue() {
     const container = document.getElementById('catalogue-list');
     if (!container) return;
@@ -1283,7 +1283,7 @@ function editAnnonce(index) {
     openCatalogueModal(index);
 }
 
-function deleteAnnonce(index) {
+// ...existing code...
 async function deleteAnnonce(index) {
     if (confirm('Supprimer cette annonce ?')) {
         const annonces = await DataStore.getAll('annonces');
@@ -1345,7 +1345,7 @@ function initCarousel() {
     });
 }
 
-function renderCarousel() {
+// ...existing code...
 async function renderCarousel() {
     const container = document.getElementById('carousel-list');
     if (!container) return;
@@ -1374,12 +1374,12 @@ async function renderCarousel() {
     `).join('');
 }
 
-function editSlide(index) {
+// ...existing code...
 async function editSlide(index) {
     openCarouselModal(index);
 }
 
-function deleteSlide(index) {
+// ...existing code...
 async function deleteSlide(index) {
     if (confirm('Supprimer ce slide ?')) {
         const slides = await DataStore.getAll('carousel');
@@ -1434,7 +1434,7 @@ function initTemoignages() {
     });
 }
 
-function renderTemoignages() {
+// ...existing code...
 async function renderTemoignages() {
     const container = document.getElementById('temoignages-list');
     if (!container) return;
@@ -1460,12 +1460,12 @@ async function renderTemoignages() {
     `).join('');
 }
 
-function editTemoignage(index) {
+// ...existing code...
 async function editTemoignage(index) {
     openTemoignageModal(index);
 }
 
-function toggleTemoignage(index) {
+// ...existing code...
 async function toggleTemoignage(index) {
     const temoignages = await DataStore.getAll('temoignages');
     temoignages[index].visible = !temoignages[index].visible;
@@ -15758,12 +15758,14 @@ window.gotoFichePaieModule = function() {
         if (pageTitle) {
             pageTitle.innerHTML = '<span class="material-icons mr-3 text-2xl">payments</span>Fiche de Paie';
         }
-    }
-};
         }
-        
         // Mettre à jour la navigation active
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    } else {
+        console.warn('Module fiche-paie non trouvé');
+        showNotification('Module non disponible', 'Le module Fiche de paie n\'est pas disponible', 'warning');
+    }
+};
     } else {
         console.warn('Module fiche-paie non trouvé');
         showNotification('Module non disponible', 'Le module Fiche de paie n\'est pas disponible', 'warning');
@@ -15780,4 +15782,4 @@ console.log('✅ KFS BTP Admin: Toutes les fonctions exposées globalement');
 
 // Fin du script principal - Ajout de nouvelles fonctionnalités
 // Code de gestion des utilisateurs
-// Code de gestion des documents
+// Code de gestion des documentS etc...
