@@ -274,6 +274,7 @@ function initLogin() {
                 console.log('✅ Connexion Firebase réussie');
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error);
+                alert('ERREUR LOGIN: code=' + (error.code || 'inconnu') + ' message=' + (error.message || 'aucun'));
                 let errorMessage = 'Erreur de connexion';
                 switch (error.code) {
                     case 'auth/user-not-found':
@@ -773,6 +774,11 @@ async function initAllModules() {
         ['Stocks', initStocks],
         ['Documents', initDocuments],
         ['Certificat Travail', initCertificatTravail],
+        ['Notifications', typeof initNotifications === 'function' ? initNotifications : null],
+        ['Comptabilité', typeof initComptabilite === 'function' ? initComptabilite : null],
+        ['Bilans', typeof initBilans === 'function' ? initBilans : null],
+        ['PWA', typeof initPWA === 'function' ? initPWA : null],
+        ['Maintenance', typeof initMaintenance === 'function' ? initMaintenance : null],
         ['Updates', typeof initUpdates === 'function' ? initUpdates : null],
     ];
     
