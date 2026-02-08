@@ -187,59 +187,71 @@ function initLogin() {
     }
 }
 
-// ...existing code...
-    const loginEmail = document.getElementById('login-email');
-    
-    // Afficher le formulaire de réinitialisation
-    if (forgotBtn) {
-        forgotBtn.addEventListener('click', function() {
-            if (resetForm) {
-                resetForm.classList.remove('hidden');
-                // Pré-remplir avec l'email du login si disponible
-                if (loginEmail && loginEmail.value && resetEmail) {
-                    resetEmail.value = loginEmail.value;
-                }
-                resetEmail?.focus();
-            }
-        });
-    }
-    
-    // Annuler la réinitialisation
-    if (cancelResetBtn) {
-        cancelResetBtn.addEventListener('click', function() {
-            if (resetForm) resetForm.classList.add('hidden');
-            if (resetMessage) resetMessage.classList.add('hidden');
-        });
-    }
-    
-    // Envoyer l'email de réinitialisation
-    if (sendResetBtn) {
-        sendResetBtn.addEventListener('click', async function() {
-            const email = resetEmail?.value?.trim();
-            
-            if (!email) {
-                showResetMessage('Veuillez entrer votre adresse email', 'error');
-                return;
-            }
-            
-            // Désactiver le bouton
-            sendResetBtn.disabled = true;
-            sendResetBtn.textContent = 'Envoi en cours...';
-            
+    if (loginForm) {
+        loginForm.onsubmit = async function(e) {
+            console.log('🔎 Soumission du formulaire login détectée');
+            alert('Soumission du formulaire login détectée');
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (loginBtn) loginBtn.disabled = true;
+            if (loginBtnText) loginBtnText.textContent = 'Connexion...';
+            if (loginSpinner) loginSpinner.classList.remove('hidden');
+            if (loginError) loginError.classList.add('hidden');
+            if (loginSuccess) loginSuccess.classList.add('hidden');
+            let errorMessage = '';
             try {
-                // Attendre Firebase si nécessaire
                 if (typeof firebase === 'undefined' || !firebase.auth) {
-                    await new Promise((resolve, reject) => {
-                        waitForFirebase(function(ready) {
-                            if (ready) resolve();
-                            else reject(new Error('Firebase non disponible'));
-                        });
-                    });
+                    errorMessage = 'Firebase non disponible. Vérifiez le chargement du SDK ou la configuration.';
+                    alert(errorMessage);
+                    if (loginError) {
+                        loginError.textContent = errorMessage;
+                        loginError.classList.remove('hidden');
+                    }
+                    return;
                 }
-                
-                // Envoyer l'email de réinitialisation
-                await firebase.auth().sendPasswordResetEmail(email);
-                
+                await firebase.auth().signInWithEmailAndPassword(email, password);
+                console.log('✅ Connexion Firebase réussie');
+                if (loginSuccess) {
+                    loginSuccess.textContent = 'Connexion réussie !';
+                    loginSuccess.classList.remove('hidden');
+                    setTimeout(() => {
+                        loginSuccess.textContent = '';
+                        loginSuccess.classList.add('hidden');
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('❌ Erreur de connexion:', error);
+                errorMessage = 'Erreur de connexion';
+                // Diagnostic détaillé
+                if (error && error.code) {
+                    errorMessage += ' (' + error.code + ')';
+                }
+                if (error && error.message) {
+                    errorMessage += ' : ' + error.message;
+                }
+                alert('Diagnostic connexion : ' + errorMessage);
+                if (loginError) {
+                    loginError.textContent = errorMessage;
+                    loginError.classList.remove('hidden');
+                } else {
+                    // Affichage global si loginError absent
+                    const globalError = document.createElement('div');
+                    globalError.textContent = errorMessage;
+                    globalError.style.background = '#ffebee';
+                    globalError.style.color = '#b71c1c';
+                    globalError.style.padding = '16px';
+                    globalError.style.margin = '16px';
+                    globalError.style.fontWeight = 'bold';
+                    document.body.prepend(globalError);
+                }
+            } finally {
+                if (loginBtn) loginBtn.disabled = false;
+                if (loginBtnText) loginBtnText.textContent = 'Se connecter';
+                if (loginSpinner) loginSpinner.classList.add('hidden');
+            }
+        };
+    }
                 console.log('✅ Email de réinitialisation envoyé à:', email);
                 showResetMessage('✅ Email envoyé ! Vérifiez votre boîte de réception (et les spams)', 'success');
                 
