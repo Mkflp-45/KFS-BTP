@@ -15812,3 +15812,4 @@ console.log('✅ KFS BTP Admin: Toutes les fonctions exposées globalement');
 // Fin du script principal - Ajout de nouvelles fonctionnalités
 // Code de gestion des utilisateurs
 // Code de gestion des documentS etc...
+}
