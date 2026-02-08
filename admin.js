@@ -65,6 +65,10 @@ function initLogin() {
             try {
                 if (typeof firebase === 'undefined' || !firebase.auth) {
                     alert('Firebase non disponible.');
+                    if (loginError) {
+                        loginError.textContent = 'Firebase non disponible. Vérifiez le chargement du SDK ou la configuration.';
+                        loginError.classList.remove('hidden');
+                    }
                     return;
                 }
                 await firebase.auth().signInWithEmailAndPassword(email, password);
@@ -72,10 +76,18 @@ function initLogin() {
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error);
                 let errorMessage = 'Erreur de connexion';
+                // Diagnostic détaillé
+                if (error && error.code) {
+                    errorMessage += ' (' + error.code + ')';
+                }
+                if (error && error.message) {
+                    errorMessage += ' : ' + error.message;
+                }
                 if (loginError) {
                     loginError.textContent = errorMessage;
                     loginError.classList.remove('hidden');
                 }
+                alert('Diagnostic connexion : ' + errorMessage);
             } finally {
                 if (loginBtn) loginBtn.disabled = false;
                 if (loginBtnText) loginBtnText.textContent = 'Se connecter';
