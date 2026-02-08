@@ -15772,7 +15772,6 @@ window.gotoFichePaieModule = function() {
         if (pageTitle) {
             pageTitle.innerHTML = '<span class="material-icons mr-3 text-2xl">payments</span>Fiche de Paie';
         }
-        }
         // Mettre à jour la navigation active
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     } else {
