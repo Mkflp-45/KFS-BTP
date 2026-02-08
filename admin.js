@@ -18,9 +18,19 @@ function initLogin() {
     const dashboardContainer = document.getElementById('dashboard-container');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
+    const loginSuccess = document.getElementById('login-success');
     const loginBtn = document.getElementById('login-btn');
     const loginBtnText = document.getElementById('login-btn-text');
     const loginSpinner = document.getElementById('login-spinner');
+    // Diagnostic DOM
+    if (!loginContainer) console.error('login-container introuvable');
+    if (!dashboardContainer) console.error('dashboard-container introuvable');
+    if (!loginForm) console.error('login-form introuvable');
+    if (!loginError) console.error('login-error introuvable');
+    if (!loginSuccess) console.error('login-success introuvable');
+    if (!loginBtn) console.error('login-btn introuvable');
+    if (!loginBtnText) console.error('login-btn-text introuvable');
+    if (!loginSpinner) console.error('login-spinner introuvable');
 
     if (sessionStorage.getItem('adminAuth') === 'true') {
         showDashboardOnly();
@@ -64,6 +74,7 @@ function initLogin() {
             if (loginBtnText) loginBtnText.textContent = 'Connexion...';
             if (loginSpinner) loginSpinner.classList.remove('hidden');
             if (loginError) loginError.classList.add('hidden');
+            if (loginSuccess) loginSuccess.classList.add('hidden');
             try {
                 if (typeof firebase === 'undefined' || !firebase.auth) {
                     alert('Firebase non disponible.');
@@ -75,6 +86,14 @@ function initLogin() {
                 }
                 await firebase.auth().signInWithEmailAndPassword(email, password);
                 console.log('✅ Connexion Firebase réussie');
+                if (loginSuccess) {
+                    loginSuccess.textContent = 'Connexion réussie !';
+                    loginSuccess.classList.remove('hidden');
+                    setTimeout(() => {
+                        loginSuccess.textContent = '';
+                        loginSuccess.classList.add('hidden');
+                    }, 2000);
+                }
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error);
                 let errorMessage = 'Erreur de connexion';
