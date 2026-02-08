@@ -322,7 +322,7 @@ function initLogin() {
 // ================= MODAL UTILS =====================
 // ================= MODULE : MODÈLES DE DOCUMENTS =====================
 // Catégories et icônes disponibles
-const KFS_DOC_CATEGORIES = [
+var KFS_DOC_CATEGORIES = [
     { value: 'contrat', label: 'Contrat', icon: 'handshake' },
     { value: 'bail', label: 'Bail', icon: 'home' },
     { value: 'devis', label: 'Devis', icon: 'request_quote' },
@@ -1092,8 +1092,8 @@ window.initCatalogue = initCatalogue;
 // ===================================================
 
 // Variables globales pour le catalogue
-let catalogueTempImages = [];
-let catalogueExistingImages = [];
+var catalogueTempImages = [];
+var catalogueExistingImages = [];
 
 // Initialiser le drag & drop
 function initCatalogueDropzone() {
@@ -2798,8 +2798,8 @@ window.saveContactMessage = function(data) {
 // ===================================================
 // MODULE: RENDEZ-VOUS
 // ===================================================
-let currentCalendarDate = new Date();
-let selectedDate = null;
+var currentCalendarDate = new Date();
+var selectedDate = null;
 
 function initRdv() {
     renderCalendar();
@@ -3080,8 +3080,8 @@ function updateRdvBadge() {
 // ===================================================
 // MODULE: ANALYTICS
 // ===================================================
-let messagesChart = null;
-let servicesChart = null;
+var messagesChart = null;
+var servicesChart = null;
 
 function initAnalytics() {
     renderAnalyticsCharts();
@@ -3286,7 +3286,7 @@ function initFicheDePaieModule() {
 }
 
 // Constantes des cotisations sociales sénégalaises (taux 2024)
-const COTISATIONS_SN = {
+var COTISATIONS_SN = {
     // IPRES - Retraite Régime Général
     IPRES_RG: {
         tauxPatronal: 8.4,
@@ -4441,7 +4441,7 @@ function fermerApercuFichePaie() {
 }
 
 // Logo KFS BTP - Variable initialisée par logo-base64.js
-let logoKFSBase64 = null;
+var logoKFSBase64 = null;
 
 // Précharger le logo au démarrage de l'admin
 function preloadLogo() {
@@ -4922,8 +4922,8 @@ function downloadFile(content, filename, mimeType) {
 // ===================================================
 // MODULE: NOTIFICATIONS
 // ===================================================
-let notificationSound = null;
-let notificationEnabled = true;
+var notificationSound = null;
+var notificationEnabled = true;
 
 function initNotifications() {
     // Demander la permission pour les notifications navigateur
@@ -5008,13 +5008,13 @@ function updateTabTitle() {
 // ===================================================
 
 // Variables globales pour les charts
-let finChartEvolution = null;
-let finChartDepenses = null;
-let finChartComparaison = null;
-let finChartTendance = null;
-let finCurrentTab = 'overview';
-let finCurrentPage = 1;
-const finItemsPerPage = 10;
+var finChartEvolution = null;
+var finChartDepenses = null;
+var finChartComparaison = null;
+var finChartTendance = null;
+var finCurrentTab = 'overview';
+var finCurrentPage = 1;
+var finItemsPerPage = 10;
 
 function initFinances() {
     // Initialisation des filtres
@@ -5043,7 +5043,7 @@ function initFinances() {
     if (anneeSelect) anneeSelect.value = currentYear.toString();
     
     // Rendre le module
-    refreshFinances();
+    if (typeof window.refreshFinances === 'function') window.refreshFinances();
 }
 
 // Fonction de rafraîchissement global
@@ -6473,7 +6473,7 @@ window.deleteCompta = function(index) {
 // ===================================================
 // MODULE: FACTURES & DEVIS
 // ===================================================
-let factureLines = [];
+var factureLines = [];
 
 function initFactures() {
     renderFactures();
@@ -6931,8 +6931,8 @@ window.deleteFacture = function(index) {
 // ===================================================
 // MODULE: BILANS FINANCIERS
 // ===================================================
-let bilanChart = null;
-let bilanCategoriesChart = null;
+var bilanChart = null;
+var bilanCategoriesChart = null;
 
 function initBilans() {
     renderBilans();
@@ -12707,7 +12707,7 @@ function generateDevisProfessionnel(data) {
 // ===================================================
 
 // Icônes et couleurs disponibles pour les modèles
-const templateIcons = [
+var templateIcons = [
     { icon: 'description', color: 'blue', label: 'Document' },
     { icon: 'home', color: 'green', label: 'Immobilier' },
     { icon: 'request_quote', color: 'orange', label: 'Devis' },
@@ -15127,7 +15127,7 @@ function collectFormData() {
 // ===================================================
 // MODULE: PWA (Progressive Web App)
 // ===================================================
-let deferredPrompt = null;
+var deferredPrompt = null;
 
 function initPWA() {
     // Enregistrer le Service Worker
