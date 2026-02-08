@@ -1,8 +1,11 @@
 // Fonctions utilitaires pour affichage login/dashboard
 // Affichage et automatisation du bouton de migration Firebase
 document.addEventListener('DOMContentLoaded', function() {
-        console.log('🟢 admin.js chargé et DOMContentLoaded exécuté');
-        alert('admin.js chargé et DOMContentLoaded exécuté');
+    console.log('🟢 admin.js chargé et DOMContentLoaded exécuté');
+
+    // *** APPEL DE initLogin() pour activer le formulaire de connexion ***
+    initLogin();
+
     // Vérifier s'il existe des données locales à migrer
     const keys = [
         'annonces', 'messages', 'temoignages', 'clients', 'factures', 'rdv', 'employes',
