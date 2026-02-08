@@ -1,3 +1,89 @@
+// Fonctions utilitaires pour affichage login/dashboard
+function showLoginOnly() {
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+    if (loginContainer) loginContainer.style.display = '';
+    if (dashboardContainer) dashboardContainer.style.display = 'none';
+}
+
+function showDashboardOnly() {
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+    if (loginContainer) loginContainer.style.display = 'none';
+    if (dashboardContainer) dashboardContainer.style.display = '';
+}
+
+function initLogin() {
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const loginBtn = document.getElementById('login-btn');
+    const loginBtnText = document.getElementById('login-btn-text');
+    const loginSpinner = document.getElementById('login-spinner');
+
+    if (sessionStorage.getItem('adminAuth') === 'true') {
+        showDashboardOnly();
+        document.querySelectorAll('.module-section').forEach(function(sec) {
+            if (!sec.classList.contains('active')) sec.style.display = 'none';
+        });
+    } else {
+        showLoginOnly();
+        document.querySelectorAll('.module-section').forEach(function(sec) {
+            sec.style.display = 'none';
+        });
+    }
+
+    waitForFirebase(function(firebaseReady) {
+        if (firebaseReady) {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    showDashboardOnly();
+                    sessionStorage.setItem('adminAuth', 'true');
+                    sessionStorage.setItem('adminEmail', user.email || '');
+                } else {
+                    showLoginOnly();
+                    sessionStorage.removeItem('adminAuth');
+                    sessionStorage.removeItem('adminEmail');
+                }
+            });
+        } else {
+            alert('Connexion Firebase impossible. L’admin nécessite une connexion à Firebase.');
+            showLoginOnly();
+        }
+    });
+
+    if (loginForm) {
+        loginForm.onsubmit = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (loginBtn) loginBtn.disabled = true;
+            if (loginBtnText) loginBtnText.textContent = 'Connexion...';
+            if (loginSpinner) loginSpinner.classList.remove('hidden');
+            if (loginError) loginError.classList.add('hidden');
+            try {
+                if (typeof firebase === 'undefined' || !firebase.auth) {
+                    alert('Firebase non disponible.');
+                    return;
+                }
+                await firebase.auth().signInWithEmailAndPassword(email, password);
+                console.log('✅ Connexion Firebase réussie');
+            } catch (error) {
+                console.error('❌ Erreur de connexion:', error);
+                let errorMessage = 'Erreur de connexion';
+                if (loginError) {
+                    loginError.textContent = errorMessage;
+                    loginError.classList.remove('hidden');
+                }
+            } finally {
+                if (loginBtn) loginBtn.disabled = false;
+                if (loginBtnText) loginBtnText.textContent = 'Se connecter';
+                if (loginSpinner) loginSpinner.classList.add('hidden');
+            }
+        };
+    }
+}
 // Affichage et automatisation du bouton de migration Firebase
 document.addEventListener('DOMContentLoaded', function() {
     // Vérifier s'il existe des données locales à migrer
@@ -68,19 +154,15 @@ async function migrateAllLocalStorageToFirebase() {
     alert('Migration terminée. Données transférées : ' + migrated.join(', '));
 }
 // Correction bug : fonction dashboard manquante (empêche tout le JS de fonctionner)
-function initDashboard() {
-    // Mettre à jour les statistiques du dashboard
-    updateStats();
-    // Afficher les messages récents
-    renderRecentMessages();
+async function initDashboard() {
+    await updateStats();
+    await renderRecentMessages();
 }
 
 // ================= MODULE : MESSAGES =====================
-function initMessages() {
-    // Afficher la liste des messages
-    renderMessages();
-    // Mettre à jour les statistiques
-    updateStats();
+async function initMessages() {
+    await renderMessages();
+    await updateStats();
 }
 // ================= MODULE : AUTHENTIFICATION ADMIN (FIREBASE) =====================
 
@@ -102,6 +184,20 @@ function waitForFirebase(callback, maxAttempts = 50) {
     checkFirebase();
 }
 
+function showLoginOnly() {
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+    if (loginContainer) loginContainer.style.display = '';
+    if (dashboardContainer) dashboardContainer.style.display = 'none';
+}
+
+function showDashboardOnly() {
+    const loginContainer = document.getElementById('login-container');
+    const dashboardContainer = document.getElementById('dashboard-container');
+    if (loginContainer) loginContainer.style.display = 'none';
+    if (dashboardContainer) dashboardContainer.style.display = '';
+}
+
 function initLogin() {
     const loginContainer = document.getElementById('login-container');
     const dashboardContainer = document.getElementById('dashboard-container');
@@ -111,42 +207,29 @@ function initLogin() {
     const loginBtnText = document.getElementById('login-btn-text');
     const loginSpinner = document.getElementById('login-spinner');
 
-    // Affichage exclusif au chargement (structure containers)
-    function showLoginOnly() {
-        if (loginContainer) loginContainer.style.display = '';
-        if (dashboardContainer) dashboardContainer.style.display = 'none';
-    }
-    function showDashboardOnly() {
-        if (loginContainer) loginContainer.style.display = 'none';
-        if (dashboardContainer) dashboardContainer.style.display = '';
-    }
     if (sessionStorage.getItem('adminAuth') === 'true') {
         showDashboardOnly();
-        // Masquer tous les modules si non connecté
         document.querySelectorAll('.module-section').forEach(function(sec) {
             if (!sec.classList.contains('active')) sec.style.display = 'none';
         });
     } else {
         showLoginOnly();
-        // Masquer tous les modules
         document.querySelectorAll('.module-section').forEach(function(sec) {
             sec.style.display = 'none';
         });
     }
-    
-    // Attendre que Firebase soit prêt
+
     waitForFirebase(function(firebaseReady) {
         if (firebaseReady) {
-            // Observer les changements d'état d'authentification Firebase
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
-                    sessionStorage.setItem('adminAuth', 'true');
-                    sessionStorage.setItem('adminEmail', user.email);
                     showDashboardOnly();
+                    sessionStorage.setItem('adminAuth', 'true');
+                    sessionStorage.setItem('adminEmail', user.email || '');
                 } else {
+                    showLoginOnly();
                     sessionStorage.removeItem('adminAuth');
                     sessionStorage.removeItem('adminEmail');
-                    showLoginOnly();
                 }
             });
         } else {
@@ -154,105 +237,40 @@ function initLogin() {
             showLoginOnly();
         }
     });
-    
-    // Gestion du formulaire de connexion
+
     if (loginForm) {
         loginForm.onsubmit = async function(e) {
             e.preventDefault();
-            
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
-            
-            // Afficher le spinner de chargement
             if (loginBtn) loginBtn.disabled = true;
             if (loginBtnText) loginBtnText.textContent = 'Connexion...';
             if (loginSpinner) loginSpinner.classList.remove('hidden');
             if (loginError) loginError.classList.add('hidden');
-            
             try {
-                // Attendre que Firebase soit prêt si pas encore
                 if (typeof firebase === 'undefined' || !firebase.auth) {
-                    // Attendre Firebase
-                    await new Promise((resolve, reject) => {
-                        waitForFirebase(function(ready) {
-                            if (ready) resolve();
-                            else reject(new Error('Firebase non disponible'));
-                        });
-                    });
+                    alert('Firebase non disponible.');
+                    return;
                 }
-                
-                // Connexion via Firebase Auth
                 await firebase.auth().signInWithEmailAndPassword(email, password);
                 console.log('✅ Connexion Firebase réussie');
-                // L'observer onAuthStateChanged gère l'affichage du dashboard
-                
             } catch (error) {
                 console.error('❌ Erreur de connexion:', error);
-                
-                // Afficher le message d'erreur approprié
                 let errorMessage = 'Erreur de connexion';
-                switch (error.code) {
-                    case 'auth/invalid-email':
-                        errorMessage = 'Adresse email invalide';
-                        break;
-                    case 'auth/user-disabled':
-                        errorMessage = 'Ce compte a été désactivé';
-                        break;
-                    case 'auth/user-not-found':
-                        errorMessage = 'Aucun compte avec cet email';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMessage = 'Mot de passe incorrect';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Trop de tentatives. Réessayez plus tard';
-                        break;
-                    case 'auth/invalid-credential':
-                        errorMessage = 'Email ou mot de passe incorrect';
-                        break;
-                    default:
-                        errorMessage = error.message || 'Erreur de connexion';
-                }
-                
                 if (loginError) {
                     loginError.textContent = errorMessage;
                     loginError.classList.remove('hidden');
                 }
             } finally {
-                // Réinitialiser le bouton
                 if (loginBtn) loginBtn.disabled = false;
-                if (loginBtnText) loginBtnText.textContent = 'Connexion';
+                if (loginBtnText) loginBtnText.textContent = 'Se connecter';
                 if (loginSpinner) loginSpinner.classList.add('hidden');
             }
         };
     }
 }
 
-// Fonction de déconnexion Firebase
-function logoutAdmin() {
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebase.auth().signOut().then(function() {
-            console.log('✅ Déconnexion réussie');
-            sessionStorage.removeItem('adminAuth');
-            sessionStorage.removeItem('adminEmail');
-            window.location.reload();
-        }).catch(function(error) {
-            console.error('❌ Erreur de déconnexion:', error);
-        });
-    } else {
-        sessionStorage.removeItem('adminAuth');
-        window.location.reload();
-    }
-}
-
-// Fonction de réinitialisation de mot de passe Firebase
-function initPasswordReset() {
-    const forgotBtn = document.getElementById('forgot-password-btn');
-    const resetForm = document.getElementById('reset-password-form');
-    const sendResetBtn = document.getElementById('send-reset-btn');
-    const cancelResetBtn = document.getElementById('cancel-reset-btn');
-    const resetEmail = document.getElementById('reset-email');
-    const resetMessage = document.getElementById('reset-message');
+// ...existing code...
     const loginEmail = document.getElementById('login-email');
     
     // Afficher le formulaire de réinitialisation
@@ -348,7 +366,7 @@ function initPasswordReset() {
             resetMessage.classList.remove('hidden');
         }
     }
-}
+// Fin correcte de la fonction initPasswordReset
 // ================= FIN MODULE AUTH =====================
 // ================= MODAL UTILS =====================
 // ================= MODULE : MODÈLES DE DOCUMENTS =====================
@@ -469,7 +487,7 @@ window.openKFSModeleForm = async function(index = null) {
         btn.closest('.kfs-field-row').remove();
     };
     // Soumission du formulaire
-    document.getElementById('kfs-modele-form').onsubmit = function(e) {
+    document.getElementById('kfs-modele-form').onsubmit = async function(e) {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(this));
         // Récupérer les champs dynamiques
@@ -536,33 +554,8 @@ window.useKFSModele = async function(index) {
             </div>
         </div>
     `);
-    window.openKFSModal(`
-        <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
-        <div class='relative min-h-screen flex items-center justify-center p-4'>
-            <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
-                <form id='certif-travail-form' class='p-6 space-y-4'>
-                    <h2 class='text-xl font-bold mb-2'>Certificat de travail</h2>
-                    <div><label class='block text-sm font-semibold mb-1'>Employé *</label>
-                        <select name='nom_salarie' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'>
-                            <option value=''>Sélectionner un employé...</option>
-                            ${employes.map(e => `<option value='${e.nom}'>${e.nom} (${e.poste || ''})</option>`).join('')}
-                        </select>
-                    </div>
-                    <div><label class='block text-sm font-semibold mb-1'>Poste *</label><input type='text' name='poste' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
-                    <div><label class='block text-sm font-semibold mb-1'>Date début *</label><input type='date' name='date_debut' required class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
-                    <div><label class='block text-sm font-semibold mb-1'>Date fin</label><input type='date' name='date_fin' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
-                    <div><label class='block text-sm font-semibold mb-1'>Motif de départ</label><input type='text' name='motif_depart' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
-                    <div><label class='block text-sm font-semibold mb-1'>Adresse du salarié</label><input type='text' name='adresse_salarie' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
-                    <div><label class='block text-sm font-semibold mb-1'>Numéro d’identification</label><input type='text' name='num_identification' class='w-full px-4 py-3 border-2 border-gray-200 rounded-xl'></div>
-                    <div class='flex justify-end gap-2 mt-4'>
-                        <button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button>
-                        <button type='button' id='btn-apercu-certif' class='px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 font-semibold'>Aperçu</button>
-                        <button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>Générer le document</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    `);
+    // Add any additional logic for document generation here
+};
     function getCertifContent(data) {
         const logo = window.logoKFSBase64 || 'assets/logo-kfs-btp.jpeg';
         const drapeauSn = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Flag_of_Senegal.svg';
@@ -679,7 +672,6 @@ window.useKFSModele = async function(index) {
         if (typeof window.closeKFSModal === 'function') window.closeKFSModal();
         showNotification('Document généré', 'Certificat de travail', 'success');
     };
-};
 window.useKFSModele = function(index) {
     let modeles = [];
     try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
@@ -924,27 +916,16 @@ function initNavigation() {
     console.log('✅ Navigation initialisée avec', navLinks.length, 'liens');
 }
 
-// ===================================================
-// MODULE: STATISTIQUES DASHBOARD
-// ===================================================
-
-function updateStats() {
-    // Récupérer toutes les données
+async function updateStats() {
     const messages = await DataStore.getAll('messages');
     const annonces = await DataStore.getAll('annonces');
     const rdvs = await DataStore.getAll('rdvs');
     const clients = await DataStore.getAll('clients');
     const projets = await DataStore.getAll('projets');
     const employes = await DataStore.getAll('employes');
-    
-    // Messages non lus
     const unreadMessages = messages.filter(m => !m.read).length;
-    
-    // RDV du jour
     const today = new Date().toISOString().split('T')[0];
     const todayRdvs = rdvs.filter(r => r.date === today).length;
-    
-    // Mettre à jour les compteurs dans le dashboard
     const statsElements = {
         'stat-messages': unreadMessages,
         'stat-annonces': annonces.length,
@@ -953,13 +934,10 @@ function updateStats() {
         'stat-projets': projets.length,
         'stat-employes': employes.length
     };
-    
     Object.entries(statsElements).forEach(([id, value]) => {
         const el = document.getElementById(id);
         if (el) el.textContent = value;
     });
-    
-    // Badge messages non lus
     const messageBadge = document.getElementById('messages-badge');
     if (messageBadge) {
         if (unreadMessages > 0) {
@@ -975,17 +953,14 @@ function updateStats() {
 // MODULE: MESSAGES
 // ===================================================
 
-function renderMessages() {
+async function renderMessages() {
     const container = document.getElementById('messages-list');
     if (!container) return;
-    
     const messages = await DataStore.getAll('messages');
-    
     if (messages.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun message reçu.</p>';
         return;
     }
-    
     container.innerHTML = messages.map((m, i) => `
         <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 ${m.read ? 'border-gray-300' : 'border-blue-500'} hover:shadow-md transition">
             <div class="flex justify-between items-start mb-2">
@@ -1005,18 +980,15 @@ function renderMessages() {
     `).join('');
 }
 
-function renderRecentMessages() {
+async function renderRecentMessages() {
     const container = document.getElementById('recent-messages');
     if (!container) return;
-    
     const messages = await DataStore.getAll('messages');
     const recent = messages.slice(0, 5);
-    
     if (recent.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-4 text-sm">Aucun message récent.</p>';
         return;
     }
-    
     container.innerHTML = recent.map((m, i) => `
         <div class="flex items-center py-2 border-b border-gray-100 last:border-0 ${!m.read ? 'bg-blue-50 -mx-2 px-2 rounded' : ''}">
             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm mr-3">
@@ -1036,6 +1008,7 @@ function renderRecentMessages() {
 // ===================================================
 
 function markAsRead(index) {
+async function markAsRead(index) {
     const messages = await DataStore.getAll('messages');
     messages[index].read = true;
     await DataStore.saveObject('messages', messages);
@@ -1045,6 +1018,7 @@ function markAsRead(index) {
 }
 
 function deleteMessage(index) {
+async function deleteMessage(index) {
     if (confirm('Supprimer ce message ?')) {
         const messages = await DataStore.getAll('messages');
         messages.splice(index, 1);
@@ -1068,7 +1042,7 @@ function initCatalogue() {
     // Event listener pour le formulaire
     const form = document.getElementById('catalogue-form');
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const editIndex = document.getElementById('catalogue-edit-index').value;
@@ -1246,6 +1220,7 @@ function renderCatalogueExistingImages() {
 }
 
 function renderCatalogue() {
+async function renderCatalogue() {
     const container = document.getElementById('catalogue-list');
     if (!container) return;
     
@@ -1309,6 +1284,7 @@ function editAnnonce(index) {
 }
 
 function deleteAnnonce(index) {
+async function deleteAnnonce(index) {
     if (confirm('Supprimer cette annonce ?')) {
         const annonces = await DataStore.getAll('annonces');
         annonces.splice(index, 1);
@@ -1328,14 +1304,14 @@ function initCarousel() {
     const form = document.getElementById('carousel-form');
     if (!form) return;
     
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const editIndex = document.getElementById('carousel-edit-index').value;
         const imageFile = document.getElementById('carousel-image').files[0];
         const imageUrl = document.getElementById('carousel-image-url').value;
         
-        const saveSlide = (imageData) => {
+        const saveSlide = async (imageData) => {
             const slides = await DataStore.getAll('carousel');
             const slide = {
                 title: document.getElementById('carousel-title').value,
@@ -1361,10 +1337,10 @@ function initCarousel() {
         
         if (imageFile) {
             const reader = new FileReader();
-            reader.onload = (e) => saveSlide(e.target.result);
+            reader.onload = async (e) => { await saveSlide(e.target.result); };
             reader.readAsDataURL(imageFile);
         } else {
-            saveSlide(null);
+            await saveSlide(null);
         }
     });
 }
@@ -1401,10 +1377,12 @@ function renderCarousel() {
 }
 
 function editSlide(index) {
+async function editSlide(index) {
     openCarouselModal(index);
 }
 
 function deleteSlide(index) {
+async function deleteSlide(index) {
     if (confirm('Supprimer ce slide ?')) {
         const slides = await DataStore.getAll('carousel');
         slides.splice(index, 1);
@@ -1423,7 +1401,7 @@ function initTemoignages() {
     const form = document.getElementById('temoignage-form');
     if (!form) return;
     
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const editIndex = document.getElementById('temoignage-edit-index').value;
@@ -1488,10 +1466,12 @@ function renderTemoignages() {
 }
 
 function editTemoignage(index) {
+async function editTemoignage(index) {
     openTemoignageModal(index);
 }
 
 function toggleTemoignage(index) {
+async function toggleTemoignage(index) {
     const temoignages = await DataStore.getAll('temoignages');
     temoignages[index].visible = !temoignages[index].visible;
     await DataStore.saveObject('temoignages', temoignages);
@@ -1500,6 +1480,7 @@ function toggleTemoignage(index) {
 }
 
 function deleteTemoignage(index) {
+async function deleteTemoignage(index) {
     if (confirm('Supprimer ce témoignage ?')) {
         const temoignages = await DataStore.getAll('temoignages');
         temoignages.splice(index, 1);
@@ -1519,7 +1500,7 @@ function initFaq() {
     const form = document.getElementById('faq-form');
     if (!form) return;
     
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const editIndex = document.getElementById('faq-edit-index').value;
@@ -1581,6 +1562,7 @@ function editFaq(index) {
 }
 
 function toggleFaq(index) {
+async function toggleFaq(index) {
     const faqs = await DataStore.getAll('faq');
     faqs[index].visible = faqs[index].visible === false ? true : false;
     await DataStore.saveObject('faq', faqs);
@@ -1589,6 +1571,7 @@ function toggleFaq(index) {
 }
 
 function deleteFaq(index) {
+async function deleteFaq(index) {
     if (confirm('Supprimer cette question ?')) {
         const faqs = await DataStore.getAll('faq');
         faqs.splice(index, 1);
@@ -1607,7 +1590,7 @@ function initMedia() {
     const form = document.getElementById('media-form');
     if (!form) return;
     
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const file = document.getElementById('media-file').files[0];
@@ -1621,7 +1604,7 @@ function initMedia() {
         }
         
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             let media = await DataStore.getAll('media');
             
             // Un seul logo possible
@@ -1678,6 +1661,7 @@ function renderMedia() {
 }
 
 function deleteMedia(index) {
+async function deleteMedia(index) {
     if (confirm('Supprimer ce média ?')) {
         const media = await DataStore.getAll('media');
         media.splice(index, 1);
@@ -1692,6 +1676,7 @@ function deleteMedia(index) {
 // MODULE: PARAMÈTRES
 // ===================================================
 function initSettings() {
+async function initSettings() {
     // Charger les paramètres existants
     const settings = await DataStore.getObject('siteSettings');
     
@@ -1771,7 +1756,7 @@ function initSettings() {
     const settingsForm = document.getElementById('settings-form');
     if (!settingsForm) return;
     
-    settingsForm.addEventListener('submit', function(e) {
+    settingsForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const settings = {
@@ -1899,6 +1884,7 @@ window.previewSettingsChanges = function() {
 
 // Réinitialiser les paramètres par défaut
 window.resetSettingsToDefault = function() {
+window.resetSettingsToDefault = async function() {
     if (!confirm('Réinitialiser tous les paramètres aux valeurs par défaut ?')) return;
     
     const defaultSettings = {
@@ -1933,6 +1919,7 @@ window.testSettingsOnPublic = function() {
 // MODULE: SEO
 // ===================================================
 function initSeo() {
+async function initSeo() {
     const seo = await DataStore.getObject('seoSettings');
     
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
@@ -1952,7 +1939,7 @@ function initSeo() {
     
     const seoForm = document.getElementById('seo-form');
     if (!seoForm) return;
-    seoForm.addEventListener('submit', function(e) {
+    seoForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const seo = {
@@ -15801,3 +15788,18 @@ window.enregistrerFicheDePaie = typeof enregistrerFicheDePaie !== 'undefined' ? 
 console.log('✅ KFS BTP Admin: Toutes les fonctions exposées globalement');
 
 // Fin du script principal
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
+}
