@@ -735,33 +735,41 @@ function initAllModules() {
         logoutBtn.addEventListener('click', logoutAdmin);
     }
     
-    initNavigation();
-    initDashboard();
-    initMessages();
-    initCatalogue();
-    initCarousel();
-    initTemoignages();
-    initFaq();
-    initMedia();
-    initSettings();
-    initSeo();
-    initBackup();
-    initSecurity();
-    initRdv();
-    initAnalytics();
-    initFinances();
-    initFactures();
-    initIAComptable();
-    initClients();
-    initProjets();
-    initEmployes();
-    initStocks();
-    initDocuments();
-    if (typeof initUpdates === 'function') initUpdates();
+    // Liste des modules à initialiser — chaque erreur est catchée pour ne pas bloquer les autres
+    const modules = [
+        ['Navigation', initNavigation],
+        ['Dashboard', initDashboard],
+        ['Messages', initMessages],
+        ['Catalogue', initCatalogue],
+        ['Carousel', initCarousel],
+        ['Témoignages', initTemoignages],
+        ['FAQ', initFaq],
+        ['Médias', initMedia],
+        ['Paramètres', initSettings],
+        ['SEO', initSeo],
+        ['Backup', initBackup],
+        ['Sécurité', initSecurity],
+        ['RDV', initRdv],
+        ['Analytics', initAnalytics],
+        ['Finances', initFinances],
+        ['Factures', initFactures],
+        ['IA Comptable', initIAComptable],
+        ['Clients', initClients],
+        ['Projets', initProjets],
+        ['Employés', initEmployes],
+        ['Stocks', initStocks],
+        ['Documents', initDocuments],
+        ['Updates', typeof initUpdates === 'function' ? initUpdates : null],
+    ];
+    
+    for (const [name, fn] of modules) {
+        if (!fn) continue;
+        try { fn(); } catch (e) { console.warn('⚠️ Erreur init ' + name + ':', e.message); }
+    }
     
     // Initialiser les modèles de documents (si le conteneur existe)
     if (document.getElementById('kfs-modeles-list')) {
-        window.initKFSModeles();
+        try { window.initKFSModeles(); } catch(e) { console.warn('⚠️ Erreur init Modèles:', e.message); }
     }
     
     console.log('✅ KFS BTP Admin: Tous les modules initialisés');
@@ -2044,7 +2052,7 @@ function initSecurity() {
     renderSecurityDashboard();
     renderEmployeeAccessList();
     renderSecurityLogs();
-    runSecurityAudit();
+    if (typeof window.runSecurityAudit === 'function') window.runSecurityAudit();
     
     // Formulaire de changement de mot de passe admin
     const securityForm = document.getElementById('security-form');
