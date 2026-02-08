@@ -94,7 +94,7 @@ function waitForFirebase(callback, maxAttempts = 50) {
         } else if (attempts < maxAttempts) {
             setTimeout(checkFirebase, 100); // Réessayer toutes les 100ms
         } else {
-            alert('Firebase est requis pour accéder à l’admin. Veuillez vérifier la connexion.');
+            alert('Firebase est requis pour accéder à l\'admin. Veuillez vérifier la connexion.');
             callback(false);
         }
     };
@@ -150,7 +150,7 @@ function initLogin() {
                 }
             });
         } else {
-            alert('Connexion Firebase impossible. L’admin nécessite une connexion à Firebase.');
+            alert('Connexion Firebase impossible. L\'admin nécessite une connexion à Firebase.');
             showLoginOnly();
         }
     });
@@ -186,116 +186,6 @@ function initLogin() {
         };
     }
 }
-
-    if (loginForm) {
-        loginForm.onsubmit = async function(e) {
-            console.log('🔎 Soumission du formulaire login détectée');
-            alert('Soumission du formulaire login détectée');
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-            if (loginBtn) loginBtn.disabled = true;
-            if (loginBtnText) loginBtnText.textContent = 'Connexion...';
-            if (loginSpinner) loginSpinner.classList.remove('hidden');
-            if (loginError) loginError.classList.add('hidden');
-            if (loginSuccess) loginSuccess.classList.add('hidden');
-            let errorMessage = '';
-            try {
-                if (typeof firebase === 'undefined' || !firebase.auth) {
-                    errorMessage = 'Firebase non disponible. Vérifiez le chargement du SDK ou la configuration.';
-                    alert(errorMessage);
-                    if (loginError) {
-                        loginError.textContent = errorMessage;
-                        loginError.classList.remove('hidden');
-                    }
-                    return;
-                }
-                await firebase.auth().signInWithEmailAndPassword(email, password);
-                console.log('✅ Connexion Firebase réussie');
-                if (loginSuccess) {
-                    loginSuccess.textContent = 'Connexion réussie !';
-                    loginSuccess.classList.remove('hidden');
-                    setTimeout(() => {
-                        loginSuccess.textContent = '';
-                        loginSuccess.classList.add('hidden');
-                    }, 2000);
-                }
-            } catch (error) {
-                console.error('❌ Erreur de connexion:', error);
-                errorMessage = 'Erreur de connexion';
-                // Diagnostic détaillé
-                if (error && error.code) {
-                    errorMessage += ' (' + error.code + ')';
-                }
-                if (error && error.message) {
-                    errorMessage += ' : ' + error.message;
-                }
-                alert('Diagnostic connexion : ' + errorMessage);
-                if (loginError) {
-                    loginError.textContent = errorMessage;
-                    loginError.classList.remove('hidden');
-                } else {
-                    // Affichage global si loginError absent
-                    const globalError = document.createElement('div');
-                    globalError.textContent = errorMessage;
-                    globalError.style.background = '#ffebee';
-                    globalError.style.color = '#b71c1c';
-                    globalError.style.padding = '16px';
-                    globalError.style.margin = '16px';
-                    globalError.style.fontWeight = 'bold';
-                    document.body.prepend(globalError);
-                }
-            } finally {
-                if (loginBtn) loginBtn.disabled = false;
-                if (loginBtnText) loginBtnText.textContent = 'Se connecter';
-                if (loginSpinner) loginSpinner.classList.add('hidden');
-            }
-        };
-    }
-                console.log('✅ Email de réinitialisation envoyé à:', email);
-                showResetMessage('✅ Email envoyé ! Vérifiez votre boîte de réception (et les spams)', 'success');
-                
-                // Masquer le formulaire après 5 secondes
-                setTimeout(() => {
-                    if (resetForm) resetForm.classList.add('hidden');
-                    if (resetMessage) resetMessage.classList.add('hidden');
-                }, 5000);
-                
-            } catch (error) {
-                console.error('❌ Erreur envoi email:', error);
-                
-                let errorMessage = 'Erreur lors de l\'envoi';
-                switch (error.code) {
-                    case 'auth/invalid-email':
-                        errorMessage = 'Adresse email invalide';
-                        break;
-                    case 'auth/user-not-found':
-                        errorMessage = 'Aucun compte avec cet email';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Trop de tentatives. Réessayez plus tard';
-                        break;
-                    default:
-                        errorMessage = error.message || 'Erreur lors de l\'envoi';
-                }
-                showResetMessage(errorMessage, 'error');
-            } finally {
-                // Réactiver le bouton
-                sendResetBtn.disabled = false;
-                sendResetBtn.textContent = 'Envoyer le lien';
-            }
-        });
-    }
-    
-    function showResetMessage(message, type) {
-        if (resetMessage) {
-            resetMessage.textContent = message;
-            resetMessage.className = 'text-center mt-3 text-sm ' + 
-                (type === 'success' ? 'text-green-600' : 'text-red-500');
-            resetMessage.classList.remove('hidden');
-        }
-    }
-// Fin correcte de la fonction initPasswordReset
 // ================= FIN MODULE AUTH =====================
 // ================= MODAL UTILS =====================
 // ================= MODULE : MODÈLES DE DOCUMENTS =====================
@@ -337,7 +227,7 @@ async function renderKFSModelesList() {
             { name: 'Date fin', type: 'date', required: false, placeholder: '' },
             { name: 'Motif de départ', type: 'text', required: false, placeholder: 'Ex: Fin de contrat' },
             { name: 'Adresse du salarié', type: 'text', required: false, placeholder: '' },
-            { name: 'Numéro d’identification', type: 'text', required: false, placeholder: 'Ex: N° CNPS' }
+            { name: 'Numéro d\'identification', type: 'text', required: false, placeholder: 'Ex: N° CNPS' }
         ],
         content: `<div style='font-family:Inter,sans-serif;font-size:16px;'>
 <h2 style='text-align:center;font-weight:bold;'>CERTIFICAT DE TRAVAIL</h2>
