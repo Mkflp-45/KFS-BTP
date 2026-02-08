@@ -55,6 +55,8 @@ function initLogin() {
 
     if (loginForm) {
         loginForm.onsubmit = async function(e) {
+            console.log('🔎 Soumission du formulaire login détectée');
+            alert('Soumission du formulaire login détectée');
             e.preventDefault();
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
