@@ -1299,7 +1299,7 @@ async function deleteAnnonce(index) {
 // MODULE: CARROUSEL
 // ===================================================
 function initCarousel() {
-    renderCarousel();
+    renderCarousel().then(()=>{});
     
     const form = document.getElementById('carousel-form');
     if (!form) return;
@@ -1332,7 +1332,7 @@ function initCarousel() {
             await DataStore.saveObject('carousel', slides);
             form.reset();
             closeCarouselModal();
-            renderCarousel();
+            renderCarousel().then(()=>{});
         };
         
         if (imageFile) {
@@ -1346,16 +1346,14 @@ function initCarousel() {
 }
 
 function renderCarousel() {
+async function renderCarousel() {
     const container = document.getElementById('carousel-list');
     if (!container) return;
-    
     const slides = await DataStore.getAll('carousel');
-    
     if (slides.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucun slide configuré</p>';
         return;
     }
-    
     container.innerHTML = slides.map((s, i) => `
         <div class="flex items-center bg-white rounded-xl shadow-sm p-4 border border-gray-100 hover:shadow-md transition" draggable="true" data-index="${i}">
             <span class="material-icons text-gray-400 mr-4 cursor-move">drag_indicator</span>
@@ -1387,7 +1385,7 @@ async function deleteSlide(index) {
         const slides = await DataStore.getAll('carousel');
         slides.splice(index, 1);
         await DataStore.saveObject('carousel', slides);
-        renderCarousel();
+        renderCarousel().then(()=>{});
         showNotification('Slide supprimé', '', 'success');
     }
 }
@@ -1396,7 +1394,7 @@ async function deleteSlide(index) {
 // MODULE: TÉMOIGNAGES
 // ===================================================
 function initTemoignages() {
-    renderTemoignages();
+    renderTemoignages().then(()=>{});
     
     const form = document.getElementById('temoignage-form');
     if (!form) return;
@@ -1432,22 +1430,19 @@ function initTemoignages() {
         form.reset();
         document.getElementById('temoignage-edit-index').value = '';
         closeTemoignageModal();
-        renderTemoignages();
-        updateStats();
+        renderTemoignages().then(()=>{updateStats();});
     });
 }
 
 function renderTemoignages() {
+async function renderTemoignages() {
     const container = document.getElementById('temoignages-list');
     if (!container) return;
-    
     const temoignages = await DataStore.getAll('temoignages');
-    
     if (temoignages.length === 0) {
         container.innerHTML = '<p class="text-gray-400 col-span-3 text-center py-8">Aucun témoignage</p>';
         return;
     }
-    
     container.innerHTML = temoignages.map((t, i) => `
         <div class="bg-white rounded-lg shadow-sm p-2 border border-gray-100 hover:shadow transition text-xs">
             <div class="flex justify-between items-center mb-1">
@@ -1475,7 +1470,7 @@ async function toggleTemoignage(index) {
     const temoignages = await DataStore.getAll('temoignages');
     temoignages[index].visible = !temoignages[index].visible;
     await DataStore.saveObject('temoignages', temoignages);
-    renderTemoignages();
+    renderTemoignages().then(()=>{});
     showNotification('Visibilité modifiée', '', 'info');
 }
 
@@ -1485,8 +1480,7 @@ async function deleteTemoignage(index) {
         const temoignages = await DataStore.getAll('temoignages');
         temoignages.splice(index, 1);
         await DataStore.saveObject('temoignages', temoignages);
-        renderTemoignages();
-        updateStats();
+        renderTemoignages().then(()=>{updateStats();});
         showNotification('Témoignage supprimé', '', 'success');
     }
 }
@@ -1495,7 +1489,7 @@ async function deleteTemoignage(index) {
 // MODULE: FAQ
 // ===================================================
 function initFaq() {
-    renderFaq();
+    renderFaq().then(()=>{});
     
     const form = document.getElementById('faq-form');
     if (!form) return;
@@ -1526,21 +1520,19 @@ function initFaq() {
         form.reset();
         document.getElementById('faq-edit-index').value = '';
         closeFaqModal();
-        renderFaq();
+        renderFaq().then(()=>{});
     });
 }
 
 function renderFaq() {
+async function renderFaq() {
     const container = document.getElementById('faq-list');
     if (!container) return;
-    
     const faqs = await DataStore.getAll('faq');
-    
     if (faqs.length === 0) {
         container.innerHTML = '<p class="text-gray-400 text-center py-8">Aucune FAQ</p>';
         return;
     }
-    
     container.innerHTML = faqs.map((f, i) => `
         <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition">
             <div class="flex justify-between items-start mb-2">
@@ -1566,7 +1558,7 @@ async function toggleFaq(index) {
     const faqs = await DataStore.getAll('faq');
     faqs[index].visible = faqs[index].visible === false ? true : false;
     await DataStore.saveObject('faq', faqs);
-    renderFaq();
+    renderFaq().then(()=>{});
     showNotification('Visibilité modifiée', '', 'info');
 }
 
@@ -1576,7 +1568,7 @@ async function deleteFaq(index) {
         const faqs = await DataStore.getAll('faq');
         faqs.splice(index, 1);
         await DataStore.saveObject('faq', faqs);
-        renderFaq();
+        renderFaq().then(()=>{});
         showNotification('Question supprimée', '', 'success');
     }
 }
@@ -1585,7 +1577,7 @@ async function deleteFaq(index) {
 // MODULE: MÉDIAS
 // ===================================================
 function initMedia() {
-    renderMedia();
+    renderMedia().then(()=>{});
     
     const form = document.getElementById('media-form');
     if (!form) return;
@@ -1624,8 +1616,7 @@ function initMedia() {
             await DataStore.saveObject('media', media);
             form.reset();
             closeMediaModal();
-            renderMedia();
-            updateStats();
+            renderMedia().then(()=>{updateStats();});
             showNotification('Média ajouté', file.name, 'success');
         };
         reader.readAsDataURL(file);
@@ -1633,16 +1624,14 @@ function initMedia() {
 }
 
 function renderMedia() {
+async function renderMedia() {
     const container = document.getElementById('media-list');
     if (!container) return;
-    
     const media = await DataStore.getAll('media');
-    
     if (media.length === 0) {
         container.innerHTML = '<p class="text-gray-400 col-span-6 text-center py-8">Aucun média</p>';
         return;
     }
-    
     container.innerHTML = media.map((m, i) => `
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 group relative hover:shadow-md transition">
             ${m.type === 'video' ? 
@@ -1666,8 +1655,7 @@ async function deleteMedia(index) {
         const media = await DataStore.getAll('media');
         media.splice(index, 1);
         await DataStore.saveObject('media', media);
-        renderMedia();
-        updateStats();
+        renderMedia().then(()=>{updateStats();});
         showNotification('Média supprimé', '', 'success');
     }
 }
