@@ -129,14 +129,8 @@ function initLogin() {
 
     if (sessionStorage.getItem('adminAuth') === 'true') {
         showDashboardOnly();
-        document.querySelectorAll('.module-section').forEach(function(sec) {
-            if (!sec.classList.contains('active')) sec.style.display = 'none';
-        });
     } else {
         showLoginOnly();
-        document.querySelectorAll('.module-section').forEach(function(sec) {
-            sec.style.display = 'none';
-        });
     }
 
     waitForFirebase(function(firebaseReady) {
@@ -855,6 +849,7 @@ function initNavigation() {
         // Cacher toutes les sections
         moduleSections.forEach(section => {
             section.classList.remove('active');
+            section.style.display = '';  // Nettoyer tout style inline résiduel
         });
         
         // Retirer la classe active de tous les liens
