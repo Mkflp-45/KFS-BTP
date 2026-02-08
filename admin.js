@@ -726,7 +726,7 @@ function autoFillClientFields(client, mapping) {
 // ===================================================
 
 // Fonction centrale d'initialisation de tous les modules (appelée après auth)
-function initAllModules() {
+async function initAllModules() {
     console.log('🔧 Initialisation de tous les modules...');
     
     // Événement du bouton de déconnexion
@@ -762,17 +762,25 @@ function initAllModules() {
         ['Updates', typeof initUpdates === 'function' ? initUpdates : null],
     ];
     
+    let ok = 0, fail = 0;
     for (const [name, fn] of modules) {
         if (!fn) continue;
-        try { fn(); } catch (e) { console.warn('⚠️ Erreur init ' + name + ':', e.message); }
+        try {
+            await fn();
+            console.log('✅ ' + name);
+            ok++;
+        } catch (e) {
+            console.error('❌ ' + name + ':', e.message || e);
+            fail++;
+        }
     }
     
     // Initialiser les modèles de documents (si le conteneur existe)
     if (document.getElementById('kfs-modeles-list')) {
-        try { window.initKFSModeles(); } catch(e) { console.warn('⚠️ Erreur init Modèles:', e.message); }
+        try { await window.initKFSModeles(); console.log('✅ Modèles'); ok++; } catch(e) { console.error('❌ Modèles:', e.message); fail++; }
     }
     
-    console.log('✅ KFS BTP Admin: Tous les modules initialisés');
+    console.log('🏁 Modules: ' + ok + ' OK, ' + fail + ' erreurs');
 }
 
 // Fonction de déconnexion
