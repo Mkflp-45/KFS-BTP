@@ -25,6 +25,10 @@
         * { font-family: 'Inter', sans-serif; }
         body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); }
         .sidebar { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%); }
+        /* Sidebar mobile : fond opaque + scroll */
+        #sidebar { background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 50%, #1e40af 100%) !important; }
+        #sidebar nav { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        body.sidebar-open { overflow: hidden; }
         .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
         .glass-dark { background: rgba(30,41,59,0.8); backdrop-filter: blur(10px); }
         .stat-card { transition: all 0.3s ease; }
@@ -144,7 +148,7 @@
         <!-- Dashboard complet -->
         <div class="flex min-h-screen">
             <!-- Sidebar fixe -->
-            <aside class="fixed top-0 left-0 w-72 h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 z-40 flex flex-col shadow-2xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300" id="sidebar">
+            <aside class="fixed top-0 left-0 w-72 h-screen z-40 flex flex-col shadow-2xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300" id="sidebar" style="max-height: 100vh; overflow: hidden;">
                 <!-- Logo / En-tête sidebar -->
                 <div class="p-6 border-b border-white/10">
                     <div class="flex items-center space-x-3">
@@ -314,11 +318,40 @@
             <!-- Contenu principal -->
             <main id="dashboard-main" class="flex-1 ml-0 lg:ml-72 p-4 lg:p-8 pt-20 lg:pt-8">
                 <!-- Bouton hamburger mobile -->
-                <button id="sidebar-toggle" class="fixed top-4 left-4 z-50 lg:hidden bg-blue-700 hover:bg-blue-800 text-white p-2 rounded-xl shadow-lg transition" onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')">
+                <button id="sidebar-toggle" class="fixed top-4 left-4 z-50 lg:hidden bg-blue-700 hover:bg-blue-800 text-white p-2 rounded-xl shadow-lg transition" onclick="toggleMobileSidebar()">
                     <span class="material-icons">menu</span>
                 </button>
                 <!-- Overlay mobile sidebar -->
-                <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden" onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden');"></div>
+                <div id="sidebar-overlay" class="fixed inset-0 z-30 hidden lg:hidden" style="background: rgba(0,0,0,0.6);" onclick="closeMobileSidebar()"></div>
+                <script>
+                function toggleMobileSidebar() {
+                    var sb = document.getElementById('sidebar');
+                    var ov = document.getElementById('sidebar-overlay');
+                    var isOpen = !sb.classList.contains('-translate-x-full');
+                    if (isOpen) {
+                        closeMobileSidebar();
+                    } else {
+                        sb.classList.remove('-translate-x-full');
+                        ov.classList.remove('hidden');
+                        document.body.classList.add('sidebar-open');
+                    }
+                }
+                function closeMobileSidebar() {
+                    var sb = document.getElementById('sidebar');
+                    var ov = document.getElementById('sidebar-overlay');
+                    sb.classList.add('-translate-x-full');
+                    ov.classList.add('hidden');
+                    document.body.classList.remove('sidebar-open');
+                }
+                // Fermer la sidebar au clic sur un lien (mobile)
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.querySelectorAll('#sidebar .nav-link').forEach(function(link) {
+                        link.addEventListener('click', function() {
+                            if (window.innerWidth < 1024) closeMobileSidebar();
+                        });
+                    });
+                });
+                </script>
 
                 <!-- Bouton de migration Firebase -->
                 <div id="firebase-migration-bar" class="w-full flex justify-center items-center py-2 bg-yellow-400 text-blue-900 font-bold animate__animated animate__fadeInUp" style="display:none;z-index:1000;">
