@@ -15934,15 +15934,15 @@ function initMaintenance() {
     loadErrorLogs();
     loadHealthCheck();
     
-    // Toggle maintenance options
-    const toggle = document.getElementById('maintenance-toggle');
+    // Toggle maintenance
+    var toggle = document.getElementById('maintenance-toggle');
     if (toggle) {
         toggle.addEventListener('change', function() {
-            const options = document.getElementById('maintenance-options');
+            var options = document.getElementById('maintenance-options');
             if (this.checked) {
-                options.classList.remove('hidden');
+                if (options) options.classList.remove('hidden');
             } else {
-                options.classList.add('hidden');
+                if (options) options.classList.add('hidden');
                 deactivateMaintenance();
             }
         });
@@ -15956,12 +15956,31 @@ function renderMaintenanceModule() {
 }
 
 function loadMaintenanceStatus() {
-    const status = JSON.parse(localStorage.getItem('maintenanceMode') || '{}');
-    const toggle = document.getElementById('maintenance-toggle');
-    if (toggle && status.active) {
-        toggle.checked = true;
-        document.getElementById('maintenance-options')?.classList.remove('hidden');
-        document.getElementById('maintenance-message').value = status.message || '';
+    // Charger depuis Firebase d'abord, puis localStorage
+    function applyStatus(status) {
+        var toggle = document.getElementById('maintenance-toggle');
+        if (toggle && status && status.active) {
+            toggle.checked = true;
+            var opt = document.getElementById('maintenance-options');
+            if (opt) opt.classList.remove('hidden');
+            var msg = document.getElementById('maintenance-message');
+            if (msg && status.message) msg.value = status.message;
+            var dur = document.getElementById('maintenance-duration');
+            if (dur && status.duration) dur.value = status.duration;
+            updateMaintenanceUI(true);
+        }
+    }
+    
+    if (typeof DataStore !== 'undefined' && DataStore.getObject) {
+        DataStore.getObject('maintenanceMode').then(function(status) {
+            applyStatus(status);
+        }).catch(function() {
+            var status = JSON.parse(localStorage.getItem('maintenanceMode') || '{}');
+            applyStatus(status);
+        });
+    } else {
+        var status = JSON.parse(localStorage.getItem('maintenanceMode') || '{}');
+        applyStatus(status);
     }
 }
 

@@ -76,6 +76,9 @@
             var db = firebase.database();
             console.log('🌐 Firebase public initialisé');
 
+            // Vérifier le mode maintenance AVANT de charger les données
+            checkMaintenanceMode(db);
+
             // Charger les données publiques
             loadPublicData(db);
 
@@ -145,5 +148,24 @@
             console.warn('Erreur envoi message Firebase:', e);
         }
     };
+
+    // =====================================================
+    // VÉRIFICATION DU MODE MAINTENANCE
+    // =====================================================
+    function checkMaintenanceMode(db) {
+        // Ne pas rediriger si on est déjà sur maintenance.html ou admin.html
+        var path = window.location.pathname.toLowerCase();
+        if (path.indexOf('maintenance') !== -1 || path.indexOf('admin') !== -1) return;
+
+        db.ref('maintenanceMode').once('value').then(function(snap) {
+            var data = snap.val();
+            if (data && data.active === true) {
+                // Rediriger vers la page de maintenance
+                window.location.href = 'maintenance.html';
+            }
+        }).catch(function() {
+            // En cas d'erreur, ne pas bloquer le site
+        });
+    }
 
 })();
