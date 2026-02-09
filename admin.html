@@ -353,12 +353,6 @@
                 });
                 </script>
 
-                <!-- Bouton de migration Firebase -->
-                <div id="firebase-migration-bar" class="w-full flex justify-center items-center py-2 bg-yellow-400 text-blue-900 font-bold animate__animated animate__fadeInUp" style="display:none;z-index:1000;">
-                    <span class="mr-4">Migration des données locales vers Firebase disponible.</span>
-                    <button id="migrate-firebase-btn" class="px-4 py-2 bg-blue-900 text-yellow-400 rounded hover:bg-blue-700 transition">Migrer vers Firebase</button>
-                </div>
-                
                 <!-- Header -->
                 <header class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4">
                     <div class="flex items-center gap-4">
@@ -1276,6 +1270,15 @@
                                 <p class="text-green-600 text-sm mb-4">Restaurez vos données à partir d'un fichier de sauvegarde</p>
                                 <input type="file" id="backup-import" accept=".json" class="mb-3">
                                 <p id="backup-message" class="text-sm"></p>
+                            </div>
+                            <div id="firebase-migration-bar" class="p-6 bg-yellow-50 rounded-xl border border-yellow-300" style="display:none;">
+                                <h4 class="font-semibold text-yellow-800 mb-3 flex items-center">
+                                    <span class="material-icons mr-2 text-yellow-600">cloud_upload</span>Migration vers Firebase
+                                </h4>
+                                <p class="text-yellow-700 text-sm mb-4">Des données locales ont été détectées. Migrez-les vers Firebase pour les synchroniser avec le site public.</p>
+                                <button id="migrate-firebase-btn" class="px-6 py-3 bg-yellow-500 text-blue-900 rounded-xl font-semibold hover:bg-yellow-400 transition">
+                                    <span class="material-icons align-middle mr-1">cloud_upload</span>Migrer vers Firebase
+                                </button>
                             </div>
                             <div class="p-6 bg-red-50 rounded-xl border border-red-200">
                                 <h4 class="font-semibold text-red-800 mb-3">Réinitialiser</h4>
