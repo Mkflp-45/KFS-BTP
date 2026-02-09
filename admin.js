@@ -667,10 +667,14 @@ function initCertificatTravail() {
                             <p class="text-sm text-gray-500 mb-4">Remplissez les informations pour générer le certificat officiel.</p>
                             
                             <div>
-                                <label class="block text-sm font-semibold mb-1">Nom du salarié *</label>
-                                <select name="nom_salarie" id="certif-select-employe" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                                <label class="block text-sm font-semibold mb-1">Sélectionner un employé</label>
+                                <select id="certif-select-employe" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 mb-2">
                                     ${optionsHtml}
                                 </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Nom du salarié * <span class="text-xs text-gray-400 font-normal">(modifiable)</span></label>
+                                <input type="text" name="nom_salarie" id="certif-nom" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Prénom et Nom du salarié">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold mb-1">Poste occupé *</label>
@@ -716,11 +720,13 @@ function initCertificatTravail() {
                 selectEmp.addEventListener('change', function() {
                     var opt = this.options[this.selectedIndex];
                     if (opt && opt.value) {
+                        var nomInput = document.getElementById('certif-nom');
                         var posteInput = document.getElementById('certif-poste');
                         var adresseInput = document.getElementById('certif-adresse');
                         var numidInput = document.getElementById('certif-numid');
                         var dateDebutInput = document.getElementById('certif-date-debut');
                         var dateFinInput = document.getElementById('certif-date-fin');
+                        if (nomInput) nomInput.value = opt.value;
                         if (posteInput && opt.dataset.poste) posteInput.value = opt.dataset.poste;
                         if (adresseInput && opt.dataset.adresse) adresseInput.value = opt.dataset.adresse;
                         if (numidInput && opt.dataset.cni) numidInput.value = opt.dataset.cni;
