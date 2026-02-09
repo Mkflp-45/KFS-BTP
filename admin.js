@@ -483,24 +483,15 @@ function renderKFSFieldRow(field = {}) {
 }
 
 // Suppression d'un modèle
-window.useKFSModele = async function(index) {
+window.deleteKFSModele = async function(index) {
+    if (!confirm('Supprimer ce modèle ?')) return;
     let modeles = [];
-    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
-    const tpl = modeles[index];
-    if (!tpl) return;
-    window.openKFSModal(`
-        <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
-        <div class='relative min-h-screen flex items-center justify-center p-4'>
-            <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
-                <form id='kfs-use-form' class='p-6 space-y-4'>
-                    <h2 class='text-xl font-bold mb-2'>${tpl.nom}</h2>
-                    ${(tpl.fields||[]).map(f => renderKFSUseField(f)).join('')}
-                    <div class='flex justify-end gap-2 mt-4'><button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button><button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>Générer le document</button></div>
-                </form>
-            </div>
-        </div>
-    `);
-    // Add any additional logic for document generation here
+    try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
+    if (!Array.isArray(modeles)) modeles = [];
+    modeles.splice(index, 1);
+    await DataStore.saveObject('documentTemplates', modeles);
+    renderKFSModelesList();
+    if (window.showNotification) showNotification('Modèle supprimé', '', 'success');
 };
 
 // ===================================================
@@ -629,24 +620,174 @@ function initCertificatTravail() {
         showNotification('Document généré', 'Certificat de travail', 'success');
     };
 
-    // Exposer openCertificatTravailForm sur window
+    // Exposer openCertificatTravailForm sur window — crée un formulaire modal dynamique
     window.openCertificatTravailForm = function() {
-        var certifSection = document.getElementById('certif-travail-section');
-        if (certifSection) certifSection.style.display = '';
+        // Récupérer la liste des employés pour le select
+        var employesList = [];
+        try {
+            if (typeof DataStore !== 'undefined' && DataStore.getAll) {
+                DataStore.getAll('employes').then(function(list) {
+                    employesList = Array.isArray(list) ? list : [];
+                    openCertifModal(employesList);
+                }).catch(function() { openCertifModal([]); });
+            } else {
+                try { employesList = JSON.parse(localStorage.getItem('employes') || '[]'); } catch(e) { employesList = []; }
+                openCertifModal(employesList);
+            }
+        } catch(e) { openCertifModal([]); }
+
+        function openCertifModal(empList) {
+            var optionsHtml = '<option value="">-- Sélectionner un employé --</option>';
+            empList.forEach(function(emp) {
+                optionsHtml += '<option value="' + (emp.nom || '') + '" data-poste="' + (emp.poste || '') + '" data-adresse="' + (emp.adresse || '') + '" data-cni="' + (emp.cni || emp.id || '') + '" data-date-embauche="' + (emp.dateEmbauche || '') + '" data-date-fin="' + (emp.dateFin || '') + '">' + (emp.nom || 'Employé') + '</option>';
+            });
+
+            window.openKFSModal(`
+                <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="window.closeKFSModal()"></div>
+                <div class="relative min-h-screen flex items-center justify-center p-4">
+                    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                        <form id="certif-travail-form" class="p-6 space-y-4 overflow-y-auto" style="max-height:85vh;">
+                            <div class="flex items-center justify-between mb-2">
+                                <h2 class="text-xl font-bold text-blue-900">📄 Certificat de Travail</h2>
+                                <button type="button" onclick="window.closeKFSModal()" class="p-2 hover:bg-gray-100 rounded-full"><span class="material-icons">close</span></button>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Remplissez les informations pour générer le certificat officiel.</p>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Nom du salarié *</label>
+                                <select name="nom_salarie" id="certif-select-employe" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                                    ${optionsHtml}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Poste occupé *</label>
+                                <input type="text" name="poste" id="certif-poste" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: Maçon, Chef de chantier...">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">Date début *</label>
+                                    <input type="date" name="date_debut" id="certif-date-debut" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">Date fin</label>
+                                    <input type="date" name="date_fin" id="certif-date-fin" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Adresse du salarié</label>
+                                <input type="text" name="adresse_salarie" id="certif-adresse" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Adresse complète">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Motif de départ</label>
+                                <input type="text" name="motif_depart" id="certif-motif" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: Fin de contrat, Démission...">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">N° d'identification</label>
+                                <input type="text" name="num_identification" id="certif-numid" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="N° CNPS, CNI...">
+                            </div>
+                            
+                            <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
+                                <button type="button" onclick="window.closeKFSModal()" class="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium">Annuler</button>
+                                <button type="button" id="btn-apercu-certif" class="px-5 py-2.5 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 font-medium">👁 Aperçu</button>
+                                <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700">📄 Générer PDF</button>
+                            </div>
+                        </form>
+                        <div id="certif-travail-apercu" class="hidden p-4"></div>
+                    </div>
+                </div>
+            `);
+
+            // Auto-remplissage au choix d'un employé
+            var selectEmp = document.getElementById('certif-select-employe');
+            if (selectEmp) {
+                selectEmp.addEventListener('change', function() {
+                    var opt = this.options[this.selectedIndex];
+                    if (opt && opt.value) {
+                        var posteInput = document.getElementById('certif-poste');
+                        var adresseInput = document.getElementById('certif-adresse');
+                        var numidInput = document.getElementById('certif-numid');
+                        var dateDebutInput = document.getElementById('certif-date-debut');
+                        var dateFinInput = document.getElementById('certif-date-fin');
+                        if (posteInput && opt.dataset.poste) posteInput.value = opt.dataset.poste;
+                        if (adresseInput && opt.dataset.adresse) adresseInput.value = opt.dataset.adresse;
+                        if (numidInput && opt.dataset.cni) numidInput.value = opt.dataset.cni;
+                        if (dateDebutInput && opt.dataset.dateEmbauche) dateDebutInput.value = opt.dataset.dateEmbauche;
+                        if (dateFinInput && opt.dataset.dateFin) dateFinInput.value = opt.dataset.dateFin;
+                    }
+                });
+            }
+
+            // Aperçu
+            var btnApercu = document.getElementById('btn-apercu-certif');
+            if (btnApercu) {
+                btnApercu.onclick = function() {
+                    var data = Object.fromEntries(new FormData(document.getElementById('certif-travail-form')));
+                    var content = getCertifContent(data);
+                    var previewDiv = document.getElementById('certif-travail-apercu');
+                    if (previewDiv) {
+                        previewDiv.innerHTML = content;
+                        previewDiv.classList.remove('hidden');
+                        previewDiv.scrollIntoView({ behavior: 'smooth' });
+                    }
+                };
+            }
+
+            // Soumission = génération PDF
+            var certifForm = document.getElementById('certif-travail-form');
+            if (certifForm) {
+                certifForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    var data = Object.fromEntries(new FormData(this));
+                    var content = getCertifContent(data);
+                    // Téléchargement PDF
+                    if (window.html2pdf) {
+                        var el = document.createElement('div');
+                        el.innerHTML = content;
+                        document.body.appendChild(el);
+                        html2pdf().set({
+                            margin: 10,
+                            filename: 'Certificat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\\s+/g, '_') : 'Employe') + '.pdf',
+                            image: { type: 'jpeg', quality: 0.98 },
+                            html2canvas: { scale: 2 },
+                            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        }).from(el).save().then(function() {
+                            document.body.removeChild(el);
+                        });
+                    } else {
+                        // Fallback : ouvrir dans une nouvelle fenêtre pour impression
+                        var printWindow = window.open('', '_blank');
+                        if (printWindow) {
+                            printWindow.document.write('<!DOCTYPE html><html><head><title>Certificat de Travail</title></head><body>' + content + '<scr' + 'ipt>setTimeout(function(){window.print();},500);</scr' + 'ipt></body></html>');
+                            printWindow.document.close();
+                        }
+                    }
+                    window.closeKFSModal();
+                    if (typeof showNotification === 'function') showNotification('Document généré', 'Certificat de travail', 'success');
+                };
+            }
+        }
     };
 }
 // FIN initCertificatTravail
 
-window.useKFSModele = function(index) {
+window.useKFSModele = async function(index) {
     let modeles = [];
-    try { modeles = JSON.parse(localStorage.getItem('documentTemplates') || '[]'); } catch(e) { modeles = []; }
+    try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
+    if (!Array.isArray(modeles)) modeles = [];
     const tpl = modeles[index];
-    if (!tpl) return;
+    if (!tpl) { alert('Modèle introuvable (index ' + index + '). Rechargez la page.'); return; }
+    
+    // Si c'est le certificat de travail (index 0), ouvrir le formulaire dédié
+    if (tpl.nom === 'Certificat de travail' && typeof window.openCertificatTravailForm === 'function') {
+        window.openCertificatTravailForm();
+        return;
+    }
+    
     window.openKFSModal(`
         <div class='fixed inset-0 bg-black/60 backdrop-blur-sm' onclick='window.closeKFSModal()'></div>
         <div class='relative min-h-screen flex items-center justify-center p-4'>
             <div class='relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden'>
-                <form id='kfs-use-form' class='p-6 space-y-4'>
+                <form id='kfs-use-form' class='p-6 space-y-4 overflow-y-auto' style='max-height:85vh;'>
                     <h2 class='text-xl font-bold mb-2'>${tpl.nom}</h2>
                     ${(tpl.fields||[]).map(f => renderKFSUseField(f)).join('')}
                     <div class='flex justify-end gap-2 mt-4'><button type='button' onclick='window.closeKFSModal()' class='px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300'>Annuler</button><button type='submit' class='px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold'>Générer le document</button></div>
@@ -659,16 +800,18 @@ window.useKFSModele = function(index) {
         const data = Object.fromEntries(new FormData(this));
         let content = tpl.content;
         (tpl.fields||[]).forEach(f => {
-            const regex = new RegExp(`\\{\\{${f.name}\\}\}`, 'g');
+            const regex = new RegExp('\\{\\{' + f.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\}\\}', 'g');
             content = content.replace(regex, data[f.name] || '');
         });
-        content = content.replace(/\\{\\{date\\}\}/g, new Date().toLocaleDateString('fr-FR'));
-        content = content.replace(/\\{\\{entreprise\\}\}/g, 'KFS BTP');
+        content = content.replace(/\{\{date\}\}/g, new Date().toLocaleDateString('fr-FR'));
+        content = content.replace(/\{\{entreprise\}\}/g, 'KFS BTP');
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`<!DOCTYPE html><html><head><title>${tpl.nom}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:0;}@media print{body{margin:20px;}}</style></head><body>${content}<script>setTimeout(()=>window.print(),500);<\/script></body></html>`);
-        printWindow.document.close();
+        if (printWindow) {
+            printWindow.document.write('<!DOCTYPE html><html><head><title>' + tpl.nom + '</title><style>body{font-family:Arial,sans-serif;margin:0;padding:0;}@media print{body{margin:20px;}}</style></head><body>' + content + '<scr' + 'ipt>setTimeout(function(){window.print();},500);</scr' + 'ipt></body></html>');
+            printWindow.document.close();
+        }
         window.closeKFSModal();
-        showNotification('Document généré', tpl.nom, 'success');
+        if (typeof showNotification === 'function') showNotification('Document généré', tpl.nom, 'success');
     };
 };
 
