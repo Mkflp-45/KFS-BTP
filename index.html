@@ -425,7 +425,14 @@
             });
         }
         loadTestimonials();
+
+        // Re-charger les témoignages quand Firebase est prêt
+        window.addEventListener('firebase-data-loaded', function() {
+            console.log('🔄 Re-chargement des témoignages (Firebase)');
+            loadTestimonials();
+        });
     </script>
+    <script src="firebase-public.js"></script>
     <script src="performance.js"></script>
     <script src="error-handler.js"></script>
     <script src="utils.js"></script>

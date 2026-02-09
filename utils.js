@@ -542,26 +542,15 @@
         }
     }
     
-    // Attend le chargement du DOM
-    document.addEventListener('DOMContentLoaded', function() {
+    // Fonction centrale de rendu des annonces
+    function renderAll() {
         const category = getCurrentCategory();
         
         // Cherche le conteneur de catalogue
         const catalogueSection = document.getElementById('catalogue');
         if (catalogueSection) {
             const grid = catalogueSection.querySelector('.grid');
-            if (grid) {
-                renderPublicAnnonces(grid, category, {});
-                
-                // Ajouter les event listeners pour les filtres
-                const searchInput = document.getElementById('filter-search');
-                const typeSelect = document.getElementById('filter-type');
-                const budgetSelect = document.getElementById('filter-budget');
-                
-                if (searchInput) searchInput.addEventListener('input', applyFilters);
-                if (typeSelect) typeSelect.addEventListener('change', applyFilters);
-                if (budgetSelect) budgetSelect.addEventListener('change', applyFilters);
-            }
+            if (grid) renderPublicAnnonces(grid, category, {});
         }
         
         // Pour la page d'accueil
@@ -570,6 +559,26 @@
             const grid = indexCatalogue.querySelector('.grid');
             if (grid) renderPublicAnnonces(grid, null, {});
         }
+    }
+
+    // Attend le chargement du DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        renderAll();
+        
+        // Ajouter les event listeners pour les filtres
+        const searchInput = document.getElementById('filter-search');
+        const typeSelect = document.getElementById('filter-type');
+        const budgetSelect = document.getElementById('filter-budget');
+        
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (typeSelect) typeSelect.addEventListener('change', applyFilters);
+        if (budgetSelect) budgetSelect.addEventListener('change', applyFilters);
+    });
+
+    // Re-render quand les données Firebase arrivent
+    window.addEventListener('firebase-data-loaded', function() {
+        console.log('🔄 Re-rendu des annonces (données Firebase)');
+        renderAll();
     });
 })();
 
@@ -588,23 +597,32 @@
         const container = faqSection.querySelector('.space-y-6, .max-w-3xl, .max-w-2xl');
         if (!container) return;
         
-        const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
-        // Seulement les FAQ visibles
-        const filtered = faqs.filter(f => f.visible === true || (f.status !== 'inactif' && f.actif !== false));
-        
-        if (filtered.length === 0) return; // Garder le contenu existant
-        
-        container.innerHTML = filtered.map(f => {
-            const question = f.question || '';
-            const reponse = f.reponse || f.answer || '';
+        function renderFAQ() {
+            const faqs = JSON.parse(localStorage.getItem('faq') || '[]');
+            // Seulement les FAQ visibles
+            const filtered = faqs.filter(f => f.visible === true || (f.status !== 'inactif' && f.actif !== false));
             
-            return `
-                <div class="bg-blue-100 rounded-xl p-6 shadow animate__animated animate__fadeInUp">
-                    <h3 class="font-semibold text-blue-800 mb-2">${question}</h3>
-                    <p class="text-gray-700">${reponse}</p>
-                </div>
-            `;
-        }).join('');
+            if (filtered.length === 0) return; // Garder le contenu existant
+            
+            container.innerHTML = filtered.map(f => {
+                const question = f.question || '';
+                const reponse = f.reponse || f.answer || '';
+                
+                return `
+                    <div class="bg-blue-100 rounded-xl p-6 shadow animate__animated animate__fadeInUp">
+                        <h3 class="font-semibold text-blue-800 mb-2">${question}</h3>
+                        <p class="text-gray-700">${reponse}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        renderFAQ();
+
+        // Re-render quand les données Firebase arrivent
+        window.addEventListener('firebase-data-loaded', function() {
+            renderFAQ();
+        });
     });
 })();
 
@@ -618,9 +636,9 @@
         
         const slides = JSON.parse(localStorage.getItem('carousel') || '[]');
         
-        // Si des slides sont définis dans l'admin, les utiliser
-        if (slides.length > 0) {
-            swiperWrapper.innerHTML = slides.map(s => {
+        function renderCarousel(slidesData) {
+            if (!slidesData || slidesData.length === 0) return;
+            swiperWrapper.innerHTML = slidesData.map(s => {
                 const image = s.image || s.imageUrl || '';
                 const title = s.title || '';
                 const subtitle = s.subtitle || '';
@@ -652,6 +670,20 @@
                 });
             }
         }
+
+        // Si des slides sont définis dans l'admin, les utiliser
+        if (slides.length > 0) {
+            renderCarousel(slides);
+        }
+
+        // Re-render quand les données Firebase arrivent
+        window.addEventListener('firebase-data-loaded', function() {
+            var freshSlides = JSON.parse(localStorage.getItem('carousel') || '[]');
+            if (freshSlides.length > 0) {
+                console.log('🔄 Re-rendu du carrousel (données Firebase)');
+                renderCarousel(freshSlides);
+            }
+        });
     });
 })();
 
@@ -695,7 +727,7 @@
                 
                 // Sauvegarder dans localStorage pour l'admin
                 const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-                messages.push({
+                const msgData = {
                     nom: nom,
                     email: email,
                     telephone: tel,
@@ -704,8 +736,14 @@
                     date: new Date().toISOString(),
                     lu: false,
                     source: window.location.pathname
-                });
+                };
+                messages.push(msgData);
                 localStorage.setItem('messages', JSON.stringify(messages));
+                
+                // Envoyer aussi à Firebase
+                if (typeof window.saveMessageToFirebase === 'function') {
+                    window.saveMessageToFirebase(msgData);
+                }
                 
                 // Afficher le succès
                 const successEl = form.querySelector('#contact-success, .success-message');

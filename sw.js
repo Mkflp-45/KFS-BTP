@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
     '/admin.html',
     '/admin.js',
     '/utils.js',
+    '/firebase-public.js',
     '/fragments.js',
     '/script.js',
     '/performance.js',

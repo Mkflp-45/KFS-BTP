@@ -56,7 +56,7 @@ document.querySelectorAll('form').forEach(form => {
         
         // Sauvegarder en local pour l'admin (backup)
         const messages = JSON.parse(localStorage.getItem('messages') || '[]');
-        messages.unshift({
+        const msgData = {
             name: nom,
             email: email,
             phone: telephone,
@@ -64,8 +64,14 @@ document.querySelectorAll('form').forEach(form => {
             service: sujet,
             date: new Date().toISOString(),
             read: false
-        });
+        };
+        messages.unshift(msgData);
         localStorage.setItem('messages', JSON.stringify(messages));
+        
+        // Envoyer aussi à Firebase pour que l'admin le voie
+        if (typeof window.saveMessageToFirebase === 'function') {
+            window.saveMessageToFirebase(msgData);
+        }
         
         // Créer le message WhatsApp
         const whatsappMessage = `🏗️ *NOUVEAU CONTACT - KFS BTP*
