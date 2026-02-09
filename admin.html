@@ -2486,6 +2486,12 @@
                                     <span class="text-xs text-green-500 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
                                 </button>
                                 <script>document.querySelector('button[onclick*="certificatTravail"]').onclick = function(){window.openCertificatTravailForm();};</script>
+                                <button id="btn-contrat-travail" class="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition group border-2 border-blue-200">
+                                    <span class="material-icons text-blue-700 text-2xl mb-2">description</span>
+                                    <span class="text-blue-900 text-sm font-semibold">Contrat de travail</span>
+                                    <span class="text-xs text-blue-500 mt-1 opacity-0 group-hover:opacity-100 transition">CDD / CDI</span>
+                                </button>
+                                <script>document.getElementById('btn-contrat-travail').onclick = function(){if(window.openContratTravailForm) window.openContratTravailForm(); else alert('Module en cours de chargement...');};</script>
                                 <button onclick="gotoFichePaieModule()" class="flex flex-col items-center p-4 bg-indigo-100 hover:bg-indigo-200 rounded-xl transition group">
                                     <span class="material-icons text-indigo-600 text-2xl mb-2">payments</span>
                                     <span class="text-indigo-900 text-sm font-semibold">Fiche de paie</span>
