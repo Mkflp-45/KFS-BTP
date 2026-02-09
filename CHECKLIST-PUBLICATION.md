@@ -7,7 +7,7 @@
 - [x] ✅ Mise à jour des références dans tous les fichiers HTML/JS
 
 ### URLs et SEO
-- [x] ✅ Unification du domaine vers `https://kfs-btp.sn`
+- [x] ✅ Unification du domaine vers `https://kfs-btp.com`
 - [x] ✅ Mise à jour de sitemap.xml avec dates et fréquences
 - [x] ✅ Mise à jour de robots.txt
 - [x] ✅ Suppression de admin.html du sitemap (pages publiques uniquement)
@@ -19,7 +19,7 @@
 
 ### Contact
 - [x] ✅ Numéro de téléphone mis à jour : +221 78 584 28 71
-- [x] ✅ Email mis à jour : contact@kfs-btp.sn
+- [x] ✅ Email mis à jour : contact@kfs-btp.com
 - [x] ✅ WhatsApp mis à jour
 
 ### Pages légales
@@ -34,7 +34,7 @@
 ## ⚠️ CE QUE VOUS DEVEZ FAIRE MANUELLEMENT
 
 ### 1. Acheter et configurer le domaine
-- [ ] Acheter le domaine `kfs-btp.sn` (ou utiliser un autre)
+- [ ] Acheter le domaine `kfs-btp.com` (ou utiliser un autre)
 - [ ] Configurer le DNS vers votre hébergeur
 
 ### 2. Choisir un hébergeur et déployer
@@ -61,7 +61,7 @@ vercel --prod
 2. Ajoutez votre propriété (domaine)
 3. Vérifiez avec la balise HTML
 4. ✅ **DÉJÀ FAIT** - Code de vérification: `oy3NvVwRaOri6w8iCcRwmjWWKlH3Y70VtY6vdrThE04`
-5. Soumettez votre sitemap: `https://kfs-btp.sn/sitemap.xml`
+5. Soumettez votre sitemap: `https://kfs-btp.com/sitemap.xml`
 
 ### 5. Configurer EmailJS (pour les formulaires)
 1. Créez un compte sur https://www.emailjs.com/
@@ -113,7 +113,7 @@ Créez les pages et mettez à jour les liens dans `fragments.js` :
 ## 📞 CONTACTS UTILES
 
 - **Téléphone** : +221 78 584 28 71
-- **Email** : contact@kfs-btp.sn
+- **Email** : contact@kfs-btp.com
 - **WhatsApp** : https://wa.me/221785842871
 
 ---

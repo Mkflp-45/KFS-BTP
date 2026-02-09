@@ -79,7 +79,7 @@ document.querySelectorAll('form').forEach(form => {
 ${message}
 
 ---
-_Envoyé depuis kfs-btp.sn_`;
+_Envoyé depuis kfs-btp.com_`;
 
         // Numéro WhatsApp KFS BTP (sans le +)
         const whatsappNumber = '221785842871';

@@ -62,7 +62,7 @@ Ou utilisez un service en ligne :
 - [TinyPNG](https://tinypng.com)
 
 ### URL du site
-Remplacez `https://kfs-btp.sn` par votre vraie URL dans :
+Remplacez `https://kfs-btp.com` par votre vraie URL dans :
 - Schema.org (index.html)
 - Liens canoniques
 - Sitemap.xml

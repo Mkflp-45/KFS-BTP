@@ -4,7 +4,7 @@ Disallow: /reset-admin.html
 Allow: /
 
 # Sitemap
-Sitemap: https://kfs-btp.sn/sitemap.xml
+Sitemap: https://kfs-btp.com/sitemap.xml
 
 # Crawl-delay pour éviter la surcharge
 Crawl-delay: 10

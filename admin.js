@@ -2341,7 +2341,7 @@ function renderEmployeeAccessList(searchTerm = '') {
                 </div>
                 <div>
                     <p class="font-bold text-gray-800">Administrateur Principal</p>
-                    <p class="text-sm text-gray-500">admin@kfsbtp.sn • Accès complet</p>
+                    <p class="text-sm text-gray-500">admin@kfs-btp.com • Accès complet</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -11309,7 +11309,7 @@ function getCompanyInfo() {
         adresse: settings.companyAddress || 'Villa 123 MC, Quartier Medinacoura, Tambacounda',
         telephone: settings.companyPhone || '+221 78 584 28 71 / +33 6 05 84 68 07',
         email: settings.companyEmail || 'kfsbtpproimmo@gmail.com',
-        site: settings.companySite || 'www.kfs-btp.sn',
+        site: settings.companySite || 'www.kfs-btp.com',
         capital: settings.companyCapital || '',
         banque: settings.companyBank || '',
         ninea: '009468499',

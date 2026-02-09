@@ -34,8 +34,8 @@ const SITE_CONFIG = {
     
     // === SITE WEB ===
     site: {
-        url: "https://kfs-btp.sn",
-        domaine: "kfs-btp.sn"
+        url: "https://kfs-btp.com",
+        domaine: "kfs-btp.com"
     },
     
     // === RÉSEAUX SOCIAUX ===

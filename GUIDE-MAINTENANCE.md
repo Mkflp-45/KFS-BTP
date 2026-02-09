@@ -285,7 +285,7 @@ location.reload(true);
 
 ### Support technique
 - **Développeur** : [Votre contact]
-- **Email** : contact@kfs-btp.sn
+- **Email** : contact@kfs-btp.com
 - **Téléphone** : +221 78 584 28 71
 
 ### Hébergeur
