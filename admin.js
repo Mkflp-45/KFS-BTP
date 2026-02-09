@@ -369,7 +369,20 @@ async function renderKFSModelesList() {
         updatedAt: new Date().toISOString()
     };
     // Supprimer tout doublon
-    modeles = modeles.filter(m => m.nom !== 'Certificat de travail');
+    modeles = modeles.filter(m => m.nom !== 'Certificat de travail' && m.nom !== 'Contrat de travail');
+    
+    // Modèle Contrat de travail
+    const contratTravail = {
+        nom: 'Contrat de travail',
+        categorie: 'contrat',
+        description: 'Contrat de travail CDD/CDI conforme au Code du travail sénégalais',
+        fields: [],
+        content: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    modeles.unshift(contratTravail);
     modeles.unshift(certifTravail);
     await DataStore.saveObject('documentTemplates', modeles);
     // Si la liste est vide ou corrompue, forcer l'affichage du modèle Certificat de travail
@@ -770,6 +783,415 @@ function initCertificatTravail() {
 }
 // FIN initCertificatTravail
 
+// ===================================================
+// MODULE: CONTRAT DE TRAVAIL
+// ===================================================
+function initContratTravail() {
+
+    function getContratContent(data) {
+        var logo = window.logoKFSBase64 || 'assets/logo-kfs-btp.jpeg';
+        var company = 'KFS BTP IMMO';
+        var address = 'Villa 123 MC, Quartier Medinacoura, Tambacounda';
+        var ninea = '009468499';
+        var rccm = 'SN TBC 2025 M 1361';
+        var phone = '+221 78 584 28 71';
+        var emailEnt = 'kfsbtpproimmo@gmail.com';
+        var today = new Date().toLocaleDateString('fr-FR');
+        var typeContrat = data.type_contrat || 'CDD';
+        var dureeContrat = data.duree_contrat || '';
+        var dateDebut = data.date_debut ? new Date(data.date_debut).toLocaleDateString('fr-FR') : '';
+        var dateFin = data.date_fin ? new Date(data.date_fin).toLocaleDateString('fr-FR') : '';
+        var periodeEssai = data.periode_essai || '';
+        var lieuTravail = data.lieu_travail || 'Tambacounda';
+        var horaires = data.horaires || '08h00 - 17h00, du lundi au vendredi';
+        var salaireNum = parseFloat(data.salaire_brut) || 0;
+        var salaireFmt = salaireNum.toLocaleString('fr-FR');
+
+        return '<div style="max-width:780px;margin:0 auto;padding:48px 56px;font-family:Inter,Arial,sans-serif;font-size:14px;color:#1a1a2e;line-height:1.7;background:#fff;">' +
+
+        // EN-TÊTE
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #1e3a8a;">' +
+            '<div style="display:flex;align-items:center;gap:16px;">' +
+                '<img src="' + logo + '" alt="Logo KFS BTP" style="width:72px;height:72px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 12px rgba(37,99,235,0.2);">' +
+                '<div>' +
+                    '<div style="font-size:22px;font-weight:800;color:#1e3a8a;letter-spacing:1px;">' + company + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;margin-top:2px;">Entreprise de BTP & Immobilier</div>' +
+                    '<div style="font-size:11px;color:#64748b;">NINEA: ' + ninea + ' | RCCM: ' + rccm + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;">' + address + '</div>' +
+                    '<div style="font-size:11px;color:#64748b;">T\u00e9l: ' + phone + ' | ' + emailEnt + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div style="text-align:right;">' +
+                '<div style="font-size:11px;color:#94a3b8;">R\u00e9f: CT-' + Date.now().toString(36).toUpperCase() + '</div>' +
+                '<div style="font-size:11px;color:#94a3b8;">Date: ' + today + '</div>' +
+            '</div>' +
+        '</div>' +
+
+        // TITRE
+        '<div style="text-align:center;margin:32px 0 40px;">' +
+            '<div style="display:inline-block;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:12px 48px;border-radius:12px;font-size:20px;font-weight:800;letter-spacing:3px;text-transform:uppercase;">CONTRAT DE TRAVAIL</div>' +
+            '<div style="margin-top:8px;font-size:15px;font-weight:600;color:#2563eb;">' + typeContrat + (dureeContrat ? ' \u2014 Dur\u00e9e: ' + dureeContrat : '') + '</div>' +
+        '</div>' +
+
+        // PARTIES
+        '<div style="background:#f8fafc;border-radius:16px;padding:24px 28px;margin-bottom:28px;border-left:4px solid #facc15;">' +
+            '<div style="font-weight:700;color:#1e3a8a;font-size:15px;margin-bottom:12px;">ENTRE LES PARTIES</div>' +
+            '<div style="display:flex;gap:40px;flex-wrap:wrap;">' +
+                '<div style="flex:1;min-width:250px;">' +
+                    '<div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">L\u2019Employeur</div>' +
+                    '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">' + company + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">' + address + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">NINEA: ' + ninea + ' | RCCM: ' + rccm + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">Repr\u00e9sent\u00e9 par: <b>' + (data.representant || 'Le Directeur G\u00e9n\u00e9ral') + '</b></div>' +
+                '</div>' +
+                '<div style="flex:1;min-width:250px;">' +
+                    '<div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Le Salari\u00e9</div>' +
+                    '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">' + (data.nom_salarie || '') + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">N\u00e9(e) le: ' + (data.date_naissance ? new Date(data.date_naissance).toLocaleDateString('fr-FR') : '') + ' \u00e0 ' + (data.lieu_naissance || '') + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">Adresse: ' + (data.adresse_salarie || '') + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">CNI/Passeport: ' + (data.num_identification || '') + '</div>' +
+                    '<div style="color:#475569;font-size:13px;">Nationalit\u00e9: ' + (data.nationalite || 'S\u00e9n\u00e9galaise') + '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+
+        // ARTICLES
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">1</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">OBJET DU CONTRAT</div>' +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;">' + company + ' engage <b>' + (data.nom_salarie || '') + '</b> en qualit\u00e9 de <b>' + (data.poste || '') + '</b> dans le cadre d\u2019un contrat \u00e0 dur\u00e9e <b>' + (typeContrat === 'CDI' ? 'ind\u00e9termin\u00e9e (CDI)' : 'd\u00e9termin\u00e9e (CDD)' + (dureeContrat ? ' de ' + dureeContrat : '')) + '</b>, conform\u00e9ment au Code du travail s\u00e9n\u00e9galais (Loi n\u00b0 97-17 du 1er d\u00e9cembre 1997).</p>' +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">2</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">PRISE D\u2019EFFET ET DUR\u00c9E</div>' +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;">Le pr\u00e9sent contrat prend effet \u00e0 compter du <b>' + dateDebut + '</b>' + (typeContrat === 'CDD' && dateFin ? ' et prendra fin le <b>' + dateFin + '</b>' : '') + '.</p>' +
+            (periodeEssai ? '<p style="margin-left:44px;color:#334155;">Une p\u00e9riode d\u2019essai de <b>' + periodeEssai + '</b> est convenue. Durant cette p\u00e9riode, chacune des parties peut mettre fin au contrat sans pr\u00e9avis ni indemnit\u00e9.</p>' : '') +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">3</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">LIEU DE TRAVAIL ET HORAIRES</div>' +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;">Le salari\u00e9 exercera ses fonctions \u00e0 <b>' + lieuTravail + '</b>. Les horaires de travail sont: <b>' + horaires + '</b>, soit 40 heures hebdomadaires, conform\u00e9ment \u00e0 la r\u00e9glementation en vigueur.</p>' +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">4</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">R\u00c9MUN\u00c9RATION</div>' +
+            '</div>' +
+            '<div style="margin-left:44px;background:#f0fdf4;border-radius:12px;padding:16px 20px;border:1px solid #bbf7d0;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                    '<span style="color:#334155;">Salaire mensuel brut:</span>' +
+                    '<span style="font-size:20px;font-weight:800;color:#059669;">' + salaireFmt + ' FCFA</span>' +
+                '</div>' +
+                (data.avantages ? '<div style="margin-top:8px;color:#475569;font-size:13px;">Avantages: ' + data.avantages + '</div>' : '') +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;margin-top:8px;">Le salaire est payable mensuellement, au plus tard le 5 du mois suivant, par virement bancaire ou tout autre moyen convenu.</p>' +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">5</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">OBLIGATIONS DU SALARI\u00c9</div>' +
+            '</div>' +
+            '<div style="margin-left:44px;color:#334155;">' +
+                '<p>Le salari\u00e9 s\u2019engage \u00e0 :</p>' +
+                '<ul style="padding-left:20px;">' +
+                    '<li>Ex\u00e9cuter les t\u00e2ches li\u00e9es \u00e0 son poste avec diligence et professionnalisme</li>' +
+                    '<li>Respecter le r\u00e8glement int\u00e9rieur de l\u2019entreprise et les consignes de s\u00e9curit\u00e9</li>' +
+                    '<li>Pr\u00e9server la confidentialit\u00e9 des informations relatives \u00e0 l\u2019entreprise</li>' +
+                    '<li>Informer l\u2019employeur de toute absence dans les plus brefs d\u00e9lais</li>' +
+                '</ul>' +
+            '</div>' +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">6</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">CONG\u00c9S ET ABSENCES</div>' +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;">Le salari\u00e9 b\u00e9n\u00e9ficie de <b>24 jours ouvrables</b> de cong\u00e9s pay\u00e9s par an, conform\u00e9ment aux dispositions du Code du travail s\u00e9n\u00e9galais.</p>' +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">7</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">RUPTURE DU CONTRAT</div>' +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;">' + (typeContrat === 'CDI' ? 'Chacune des parties peut mettre fin au pr\u00e9sent contrat en respectant un pr\u00e9avis de <b>un (1) mois</b>, conform\u00e9ment aux articles L.48 \u00e0 L.54 du Code du travail.' : 'Le pr\u00e9sent CDD prendra fin \u00e0 son terme sans formalit\u00e9 particuli\u00e8re. Toute rupture anticip\u00e9e devra respecter les dispositions de l\u2019article L.47 du Code du travail.') + '</p>' +
+        '</div>' +
+
+        '<div style="margin-bottom:20px;">' +
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
+                '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">8</div>' +
+                '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">DISPOSITIONS G\u00c9N\u00c9RALES</div>' +
+            '</div>' +
+            '<p style="margin-left:44px;color:#334155;">Le pr\u00e9sent contrat est r\u00e9gi par la l\u00e9gislation du travail en vigueur au S\u00e9n\u00e9gal. Tout litige sera port\u00e9 devant le Tribunal du travail comp\u00e9tent de Tambacounda. Le contrat est \u00e9tabli en deux exemplaires originaux, un pour chaque partie.</p>' +
+            (data.clauses_particulieres ? '<div style="margin-left:44px;margin-top:12px;padding:12px 16px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;"><div style="font-weight:600;color:#92400e;font-size:13px;margin-bottom:4px;">Clauses particuli\u00e8res:</div><p style="color:#78350f;font-size:13px;margin:0;">' + data.clauses_particulieres + '</p></div>' : '') +
+        '</div>' +
+
+        // SIGNATURES
+        '<div style="margin-top:56px;padding-top:24px;border-top:2px solid #e2e8f0;">' +
+            '<p style="text-align:center;color:#475569;margin-bottom:32px;">Fait \u00e0 <b>Tambacounda</b>, le <b>' + today + '</b>, en deux exemplaires originaux.</p>' +
+            '<div style="display:flex;justify-content:space-between;gap:40px;">' +
+                '<div style="flex:1;text-align:center;padding:24px;border:2px dashed #cbd5e1;border-radius:12px;">' +
+                    '<div style="font-weight:700;color:#1e3a8a;margin-bottom:8px;">L\u2019Employeur</div>' +
+                    '<div style="font-size:13px;color:#64748b;">' + company + '</div>' +
+                    '<div style="height:80px;"></div>' +
+                    '<div style="font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;">Signature et cachet</div>' +
+                '</div>' +
+                '<div style="flex:1;text-align:center;padding:24px;border:2px dashed #cbd5e1;border-radius:12px;">' +
+                    '<div style="font-weight:700;color:#1e3a8a;margin-bottom:8px;">Le Salari\u00e9</div>' +
+                    '<div style="font-size:13px;color:#64748b;">' + (data.nom_salarie || '') + '</div>' +
+                    '<div style="height:80px;"></div>' +
+                    '<div style="font-size:12px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px;">Lu et approuv\u00e9, signature</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+
+        // PIED DE PAGE
+        '<div style="margin-top:48px;padding-top:16px;border-top:3px solid #1e3a8a;text-align:center;">' +
+            '<div style="color:#facc15;font-weight:700;font-size:12px;letter-spacing:2px;">CONSTRUIRE \u2013 G\u00c9RER \u2013 VALORISER</div>' +
+            '<div style="color:#94a3b8;font-size:11px;margin-top:4px;">' + company + ' | ' + address + ' | T\u00e9l: ' + phone + ' | ' + emailEnt + '</div>' +
+        '</div>' +
+
+        '</div>';
+    }
+
+    // Exposer le formulaire modal
+    window.openContratTravailForm = function() {
+        // R\u00e9cup\u00e9rer les employ\u00e9s
+        var employesList = [];
+        try {
+            if (typeof DataStore !== 'undefined' && DataStore.getAll) {
+                DataStore.getAll('employes').then(function(list) {
+                    employesList = Array.isArray(list) ? list : [];
+                    openContratModal(employesList);
+                }).catch(function() { openContratModal([]); });
+            } else {
+                try { employesList = JSON.parse(localStorage.getItem('employes') || '[]'); } catch(e2) { employesList = []; }
+                openContratModal(employesList);
+            }
+        } catch(e) { openContratModal([]); }
+
+        function openContratModal(empList) {
+            var optionsHtml = '<option value="">-- S\u00e9lectionner ou saisir manuellement --</option>';
+            empList.forEach(function(emp) {
+                optionsHtml += '<option value="' + (emp.nom || '') + '" data-poste="' + (emp.poste || '') + '" data-adresse="' + (emp.adresse || '') + '" data-cni="' + (emp.cni || emp.id || '') + '" data-date-embauche="' + (emp.dateEmbauche || '') + '">' + (emp.nom || 'Employ\u00e9') + '</option>';
+            });
+
+            window.openKFSModal(
+                '<div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="window.closeKFSModal()"></div>' +
+                '<div class="relative min-h-screen flex items-center justify-center p-4">' +
+                    '<div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl" style="max-height:92vh;display:flex;flex-direction:column;">' +
+                        // Header fixe
+                        '<div class="flex items-center justify-between p-6 pb-4 border-b border-gray-200 flex-shrink-0">' +
+                            '<div class="flex items-center gap-3">' +
+                                '<div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center"><span class="material-icons text-white">description</span></div>' +
+                                '<div><h2 class="text-xl font-bold text-blue-900">Contrat de Travail</h2><p class="text-xs text-gray-500">CDD / CDI - Code du travail s\u00e9n\u00e9galais</p></div>' +
+                            '</div>' +
+                            '<button type="button" onclick="window.closeKFSModal()" class="p-2 hover:bg-gray-100 rounded-full"><span class="material-icons text-gray-500">close</span></button>' +
+                        '</div>' +
+                        // Corps scrollable
+                        '<form id="contrat-travail-form" class="overflow-y-auto flex-1 p-6 space-y-5" style="-webkit-overflow-scrolling:touch;">' +
+
+                            // TYPE DE CONTRAT
+                            '<div class="bg-blue-50 rounded-xl p-4 border border-blue-200">' +
+                                '<div class="font-semibold text-blue-900 mb-3 flex items-center gap-2"><span class="material-icons text-blue-600 text-lg">gavel</span> Type de contrat</div>' +
+                                '<div class="grid grid-cols-2 gap-4">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Type *</label>' +
+                                        '<select name="type_contrat" id="contrat-type" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800 focus:border-blue-500">' +
+                                            '<option value="CDD">CDD - Dur\u00e9e d\u00e9termin\u00e9e</option>' +
+                                            '<option value="CDI">CDI - Dur\u00e9e ind\u00e9termin\u00e9e</option>' +
+                                        '</select>' +
+                                    '</div>' +
+                                    '<div id="contrat-duree-wrap"><label class="block text-sm font-medium text-gray-700 mb-1">Dur\u00e9e</label>' +
+                                        '<input type="text" name="duree_contrat" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: 12 mois, 2 ans">' +
+                                    '</div>' +
+                                '</div>' +
+                                '<div class="grid grid-cols-3 gap-4 mt-3">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Date d\u00e9but *</label><input type="date" name="date_debut" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Date fin</label><input type="date" name="date_fin" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">P\u00e9riode d\'essai</label><input type="text" name="periode_essai" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: 3 mois"></div>' +
+                                '</div>' +
+                            '</div>' +
+
+                            // INFORMATIONS SALARI\u00c9
+                            '<div class="bg-green-50 rounded-xl p-4 border border-green-200">' +
+                                '<div class="font-semibold text-green-900 mb-3 flex items-center gap-2"><span class="material-icons text-green-600 text-lg">person</span> Informations du salari\u00e9</div>' +
+                                '<div class="mb-3"><label class="block text-sm font-medium text-gray-700 mb-1">Employ\u00e9 existant</label><select id="contrat-select-employe" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800">' + optionsHtml + '</select></div>' +
+                                '<div class="grid grid-cols-2 gap-4">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label><input type="text" name="nom_salarie" id="contrat-nom" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Pr\u00e9nom Nom"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Poste *</label><input type="text" name="poste" id="contrat-poste" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: Ma\u00e7on"></div>' +
+                                '</div>' +
+                                '<div class="grid grid-cols-2 gap-4 mt-3">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Date de naissance</label><input type="date" name="date_naissance" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Lieu de naissance</label><input type="text" name="lieu_naissance" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: Dakar"></div>' +
+                                '</div>' +
+                                '<div class="grid grid-cols-2 gap-4 mt-3">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label><input type="text" name="adresse_salarie" id="contrat-adresse" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Adresse compl\u00e8te"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">CNI / Passeport</label><input type="text" name="num_identification" id="contrat-numid" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="N\u00b0 pi\u00e8ce d\'identit\u00e9"></div>' +
+                                '</div>' +
+                                '<div class="mt-3"><label class="block text-sm font-medium text-gray-700 mb-1">Nationalit\u00e9</label><input type="text" name="nationalite" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="S\u00e9n\u00e9galaise"></div>' +
+                            '</div>' +
+
+                            // CONDITIONS
+                            '<div class="bg-yellow-50 rounded-xl p-4 border border-yellow-200">' +
+                                '<div class="font-semibold text-yellow-900 mb-3 flex items-center gap-2"><span class="material-icons text-yellow-600 text-lg">payments</span> Conditions de travail</div>' +
+                                '<div class="grid grid-cols-2 gap-4">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Salaire brut mensuel (FCFA) *</label><input type="number" name="salaire_brut" required class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: 150000"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Lieu de travail</label><input type="text" name="lieu_travail" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="Tambacounda"></div>' +
+                                '</div>' +
+                                '<div class="grid grid-cols-2 gap-4 mt-3">' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Horaires</label><input type="text" name="horaires" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="08h00 - 17h00, du lundi au vendredi"></div>' +
+                                    '<div><label class="block text-sm font-medium text-gray-700 mb-1">Avantages</label><input type="text" name="avantages" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Ex: Transport, logement..."></div>' +
+                                '</div>' +
+                                '<div class="mt-3"><label class="block text-sm font-medium text-gray-700 mb-1">Repr\u00e9sentant de l\'employeur</label><input type="text" name="representant" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" value="Le Directeur G\u00e9n\u00e9ral"></div>' +
+                                '<div class="mt-3"><label class="block text-sm font-medium text-gray-700 mb-1">Clauses particuli\u00e8res</label><textarea name="clauses_particulieres" rows="2" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-800" placeholder="Clauses sp\u00e9cifiques au contrat (optionnel)"></textarea></div>' +
+                            '</div>' +
+
+                            // Aper\u00e7u int\u00e9gr\u00e9
+                            '<div id="contrat-apercu-zone" class="hidden"></div>' +
+
+                        '</form>' +
+                        // Footer fixe
+                        '<div class="flex justify-end gap-3 p-6 pt-4 border-t border-gray-200 flex-shrink-0">' +
+                            '<button type="button" onclick="window.closeKFSModal()" class="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 font-medium">Annuler</button>' +
+                            '<button type="button" id="btn-apercu-contrat" class="px-5 py-2.5 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 font-medium flex items-center gap-2"><span class="material-icons text-lg">visibility</span> Aper\u00e7u</button>' +
+                            '<button type="button" id="btn-generer-contrat" class="px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 flex items-center gap-2"><span class="material-icons text-lg">picture_as_pdf</span> G\u00e9n\u00e9rer PDF</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            );
+
+            // Auto-remplissage au choix d'un employe
+            var selectEmp = document.getElementById('contrat-select-employe');
+            if (selectEmp) {
+                selectEmp.addEventListener('change', function() {
+                    var opt = this.options[this.selectedIndex];
+                    if (opt && opt.value) {
+                        var nomInput = document.getElementById('contrat-nom');
+                        var posteInput = document.getElementById('contrat-poste');
+                        var adresseInput = document.getElementById('contrat-adresse');
+                        var numidInput = document.getElementById('contrat-numid');
+                        if (nomInput) nomInput.value = opt.value;
+                        if (posteInput && opt.dataset.poste) posteInput.value = opt.dataset.poste;
+                        if (adresseInput && opt.dataset.adresse) adresseInput.value = opt.dataset.adresse;
+                        if (numidInput && opt.dataset.cni) numidInput.value = opt.dataset.cni;
+                    }
+                });
+            }
+
+            // Toggle duree si CDI
+            var typeSelect = document.getElementById('contrat-type');
+            if (typeSelect) {
+                typeSelect.addEventListener('change', function() {
+                    var dureeWrap = document.getElementById('contrat-duree-wrap');
+                    if (dureeWrap) dureeWrap.style.display = this.value === 'CDI' ? 'none' : '';
+                });
+            }
+
+            // APERCU
+            var btnApercu = document.getElementById('btn-apercu-contrat');
+            if (btnApercu) {
+                btnApercu.onclick = function() {
+                    var form = document.getElementById('contrat-travail-form');
+                    if (!form) return;
+                    var data = Object.fromEntries(new FormData(form));
+                    if (!data.nom_salarie || !data.poste) { alert('Veuillez remplir au moins le nom et le poste.'); return; }
+                    var content = getContratContent(data);
+                    var zone = document.getElementById('contrat-apercu-zone');
+                    if (zone) {
+                        zone.innerHTML = '<div class="border-2 border-blue-300 rounded-xl overflow-hidden mt-4"><div class="bg-blue-600 text-white px-4 py-2 flex items-center justify-between"><span class="font-semibold">Aper\u00e7u du contrat</span><button type="button" onclick="document.getElementById(\'contrat-apercu-zone\').classList.add(\'hidden\')" class="hover:bg-blue-700 rounded p-1"><span class="material-icons">close</span></button></div><div style="background:#fff;padding:16px;max-height:500px;overflow-y:auto;">' + content + '</div></div>';
+                        zone.classList.remove('hidden');
+                        zone.scrollIntoView({ behavior: 'smooth' });
+                    }
+                };
+            }
+
+            // GENERER PDF
+            var btnGenerer = document.getElementById('btn-generer-contrat');
+            if (btnGenerer) {
+                btnGenerer.onclick = async function() {
+                    var form = document.getElementById('contrat-travail-form');
+                    if (!form) return;
+                    var data = Object.fromEntries(new FormData(form));
+                    if (!data.nom_salarie || !data.poste || !data.date_debut || !data.salaire_brut) {
+                        alert('Veuillez remplir les champs obligatoires: nom, poste, date d\u00e9but et salaire.');
+                        return;
+                    }
+                    var content = getContratContent(data);
+                    var filename = 'Contrat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\\s+/g, '_') : 'Employe') + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+
+                    // Cr\u00e9er un div temporaire pour le rendu PDF
+                    var el = document.createElement('div');
+                    el.innerHTML = content;
+                    document.body.appendChild(el);
+
+                    if (window.html2pdf) {
+                        try {
+                            await html2pdf().set({
+                                margin: [8, 8, 12, 8],
+                                filename: filename,
+                                image: { type: 'jpeg', quality: 0.98 },
+                                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                            }).from(el).save();
+                        } catch(err) {
+                            console.error('Erreur PDF:', err);
+                        }
+                    } else {
+                        // Fallback imprimer
+                        var printWindow = window.open('', '_blank');
+                        if (printWindow) {
+                            printWindow.document.write('<!DOCTYPE html><html><head><title>Contrat de Travail</title></head><body>' + content + '<scr' + 'ipt>setTimeout(function(){window.print();},500);</scr' + 'ipt></body></html>');
+                            printWindow.document.close();
+                        }
+                    }
+                    document.body.removeChild(el);
+
+                    // Sauvegarder dans les documents
+                    try {
+                        var docs = await DataStore.getAll('documents');
+                        if (!Array.isArray(docs)) docs = [];
+                        docs.push({
+                            nom: 'Contrat de travail - ' + data.nom_salarie,
+                            type: 'contrat',
+                            categorie: 'contrat',
+                            date: new Date().toISOString(),
+                            description: data.type_contrat + ' | ' + data.poste + ' | Salaire: ' + parseFloat(data.salaire_brut || 0).toLocaleString('fr-FR') + ' FCFA',
+                            content: content,
+                            fileName: filename,
+                            employe: data.nom_salarie,
+                            poste: data.poste,
+                            salaire: data.salaire_brut,
+                            typeContrat: data.type_contrat,
+                            createdAt: new Date().toISOString()
+                        });
+                        await DataStore.saveObject('documents', docs);
+                    } catch(e) {
+                        console.error('Erreur sauvegarde document:', e);
+                    }
+
+                    window.closeKFSModal();
+                    if (typeof showNotification === 'function') showNotification('Contrat g\u00e9n\u00e9r\u00e9 et sauvegard\u00e9', 'Le PDF a \u00e9t\u00e9 t\u00e9l\u00e9charg\u00e9 et enregistr\u00e9 dans les documents.', 'success');
+                    // Rafra\u00eechir la liste des documents si visible
+                    if (typeof renderDocuments === 'function') renderDocuments();
+                };
+            }
+        }
+    };
+}
+// FIN initContratTravail
+
 window.useKFSModele = async function(index) {
     let modeles = [];
     try { modeles = await DataStore.getAll('documentTemplates'); } catch(e) { modeles = []; }
@@ -780,6 +1202,12 @@ window.useKFSModele = async function(index) {
     // Si c'est le certificat de travail (index 0), ouvrir le formulaire dédié
     if (tpl.nom === 'Certificat de travail' && typeof window.openCertificatTravailForm === 'function') {
         window.openCertificatTravailForm();
+        return;
+    }
+    
+    // Si c'est le contrat de travail, ouvrir le formulaire dédié
+    if (tpl.nom === 'Contrat de travail' && typeof window.openContratTravailForm === 'function') {
+        window.openContratTravailForm();
         return;
     }
     
@@ -917,6 +1345,7 @@ async function initAllModules() {
         ['Stocks', initStocks],
         ['Documents', initDocuments],
         ['Certificat Travail', initCertificatTravail],
+        ['Contrat Travail', initContratTravail],
         ['Notifications', typeof initNotifications === 'function' ? initNotifications : null],
         ['Comptabilité', typeof initComptabilite === 'function' ? initComptabilite : null],
         ['Bilans', typeof initBilans === 'function' ? initBilans : null],
