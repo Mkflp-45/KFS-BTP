@@ -101,11 +101,16 @@
                     if (OBJECT_COLLECTIONS.indexOf(col) !== -1) {
                         // Objet simple (siteSettings, etc.)
                         localStorage.setItem(col, JSON.stringify(data));
+                    } else if (Array.isArray(data)) {
+                        // Déjà un tableau (sauvé directement)
+                        localStorage.setItem(col, JSON.stringify(data));
                     } else {
-                        // Collection → convertir en tableau
-                        var arr = Object.keys(data).map(function(k) {
-                            return typeof data[k] === 'object' ? Object.assign({ id: k }, data[k]) : data[k];
-                        });
+                        // Objet Firebase → convertir en tableau, filtrer les métadonnées
+                        var arr = Object.keys(data)
+                            .filter(function(k) { return typeof data[k] === 'object' && data[k] !== null; })
+                            .map(function(k) {
+                                return Object.assign({ id: k }, data[k]);
+                            });
                         localStorage.setItem(col, JSON.stringify(arr));
                     }
                     console.log('📥 ' + col + ': chargé depuis Firebase');

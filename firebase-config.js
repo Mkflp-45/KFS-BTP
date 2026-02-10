@@ -289,10 +289,15 @@ const DataStore = {
         
         if (isFirebaseConfigured) {
             try {
-                await firebaseDb.ref(key).set({
-                    ...obj,
-                    updatedAt: new Date().toISOString()
-                });
+                // Si c'est un tableau, ne pas polluer avec updatedAt
+                if (Array.isArray(obj)) {
+                    await firebaseDb.ref(key).set(obj);
+                } else {
+                    await firebaseDb.ref(key).set({
+                        ...obj,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
             } catch (e) {
                 console.warn('Firebase saveObject error:', e);
             }
