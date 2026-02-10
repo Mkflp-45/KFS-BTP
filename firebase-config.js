@@ -150,8 +150,15 @@ const DataStore = {
                 const snapshot = await firebaseDb.ref(collectionName).once('value');
                 const data = snapshot.val();
                 if (data) {
-                    // Convertir l'objet en tableau
-                    const dataArray = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                    // Si c'est déjà un tableau (sauvegardé via saveObject avec un array)
+                    if (Array.isArray(data)) {
+                        localStorage.setItem(collectionName, JSON.stringify(data));
+                        return data;
+                    }
+                    // Convertir l'objet en tableau, en filtrant les métadonnées (updatedAt, etc.)
+                    const dataArray = Object.keys(data)
+                        .filter(key => typeof data[key] === 'object' && data[key] !== null)
+                        .map(key => ({ id: key, ...data[key] }));
                     // Mettre à jour le localStorage
                     localStorage.setItem(collectionName, JSON.stringify(dataArray));
                     return dataArray;

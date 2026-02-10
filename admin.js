@@ -1678,7 +1678,13 @@ function initCatalogue() {
                 showNotification('Annonce ajoutée', annonce.title, 'success');
             }
             
-            await DataStore.saveObject('annonces', annonces);
+            // Sauvegarder sans pollution updatedAt
+            localStorage.setItem('annonces', JSON.stringify(annonces));
+            if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+                try {
+                    await firebaseDb.ref('annonces').set(annonces);
+                } catch(e) { console.warn('Erreur sauvegarde annonces Firebase:', e); }
+            }
             
             // Reset du formulaire
             form.reset();
@@ -1891,9 +1897,22 @@ function editAnnonce(index) {
 // ...existing code...
 async function deleteAnnonce(index) {
     if (confirm('Supprimer cette annonce ?')) {
-        const annonces = await DataStore.getAll('annonces');
+        var annonces = await DataStore.getAll('annonces');
+        if (index < 0 || index >= annonces.length) return;
+        var annonce = annonces[index];
         annonces.splice(index, 1);
-        await DataStore.saveObject('annonces', annonces);
+        // Sauvegarder le tableau sans pollution updatedAt
+        localStorage.setItem('annonces', JSON.stringify(annonces));
+        if (typeof firebaseDb !== 'undefined' && firebaseDb) {
+            try {
+                // Supprimer l'entrée par sa clé Firebase si elle existe
+                if (annonce && annonce.id) {
+                    await firebaseDb.ref('annonces/' + annonce.id).remove();
+                }
+                // Aussi nettoyer la clé updatedAt parasite
+                await firebaseDb.ref('annonces/updatedAt').remove();
+            } catch(e) { console.warn('Erreur suppression Firebase:', e); }
+        }
         renderCatalogue();
         updateStats();
         showNotification('Annonce supprimée', '', 'success');
