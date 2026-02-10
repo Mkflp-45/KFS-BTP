@@ -12326,7 +12326,7 @@ function generateContratPrestation(data) {
     const montantHT = parseFloat(data.montantHT) || 0;
     const tva = data.avecTVA ? montantHT * 0.18 : 0;
     const montantTTC = montantHT + tva;
-    const acompte = montantTTC * (parseFloat(data.pourcentageAcompte) || 30) / 100;
+    const acompte = montantTTC * (parseFloat(data.pourcentageAcompte) || 0) / 100;
     
     return {
         numero: numero,
@@ -12498,13 +12498,13 @@ function generateContratPrestation(data) {
         <p style="text-align: justify; font-size: 13px;"><strong>3.2. Modalités de paiement</strong></p>
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 10px 0;">
             <table style="width: 100%; font-size: 13px;">
-                <tr>
-                    <td style="padding: 8px 0;">▸ Acompte à la signature (${data.pourcentageAcompte || 30}%)</td>
+                ${(parseFloat(data.pourcentageAcompte) > 0) ? `<tr>
+                    <td style="padding: 8px 0;">▸ Acompte à la signature (${data.pourcentageAcompte}%)</td>
                     <td style="text-align: right; font-weight: bold;">${formatMontant(acompte)}</td>
-                </tr>
+                </tr>` : ''}
                 ${data.echeancier ? data.echeancier.split('\n').map(e => `<tr><td style="padding: 8px 0;">▸ ${e}</td><td></td></tr>`).join('') : `
                 <tr>
-                    <td style="padding: 8px 0;">▸ Solde à la réception des travaux (${100 - (parseFloat(data.pourcentageAcompte) || 30)}%)</td>
+                    <td style="padding: 8px 0;">▸ ${(parseFloat(data.pourcentageAcompte) > 0) ? 'Solde à la réception des travaux (' + (100 - (parseFloat(data.pourcentageAcompte) || 0)) + '%)' : 'Paiement intégral à la réception des travaux'}</td>
                     <td style="text-align: right; font-weight: bold;">${formatMontant(montantTTC - acompte)}</td>
                 </tr>
                 `}
@@ -13214,11 +13214,10 @@ function generateDevisProfessionnel(data) {
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
             <h4 style="margin: 0 0 10px 0; font-size: 12px; color: #1e3a8a; text-transform: uppercase;">💰 Conditions de paiement</h4>
             <ul style="margin: 0; padding-left: 20px; font-size: 11px; color: #555;">
-                <li>Acompte à la commande: <strong>${data.acompte || '30'}%</strong> soit ${formatMontant(totalTTC * (parseFloat(data.acompte) || 30) / 100)}</li>
-                ${data.echeancier ? data.echeancier.split('\n').map(e => `<li>${e}</li>`).join('') : `
-                <li>Situation intermédiaire: <strong>40%</strong></li>
-                <li>Solde à la réception: <strong>30%</strong></li>
-                `}
+                ${(parseFloat(data.acompte) > 0) ? `<li>Acompte à la commande: <strong>${data.acompte}%</strong> soit ${formatMontant(totalTTC * parseFloat(data.acompte) / 100)}</li>` : ''}
+                ${data.echeancier ? data.echeancier.split('\n').map(e => `<li>${e}</li>`).join('') : (parseFloat(data.acompte) > 0 ? `
+                <li>Solde à la réception: <strong>${100 - (parseFloat(data.acompte) || 0)}%</strong></li>
+                ` : `<li>Paiement intégral à la réception des travaux</li>`)}
             </ul>
             <p style="margin: 10px 0 0 0; font-size: 11px; color: #666;">
                 Mode de paiement: ${data.modePaiement || 'Virement, chèque, espèces, Wave, Orange Money'}
@@ -14042,7 +14041,7 @@ function generateContratForm(clients, projets) {
                 </div>
                 <div>
                     <label class="block text-blue-800 text-sm font-bold mb-2">Acompte à la signature (%)</label>
-                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
+                    <input type="number" id="doc-acompte" min="0" max="100" placeholder="Ex: 30" class="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl text-gray-800 focus:border-blue-500">
                 </div>
                 <div>
                     <label class="block text-blue-800 text-sm font-bold mb-2">Durée garantie (mois)</label>
@@ -14520,7 +14519,7 @@ function generateDevisForm(clients, projets) {
                 </div>
                 <div>
                     <label class="block text-yellow-800 text-sm font-medium mb-1">Acompte (%)</label>
-                    <input type="number" id="doc-acompte" value="30" min="0" max="100" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
+                    <input type="number" id="doc-acompte" min="0" max="100" placeholder="Ex: 30" class="w-full px-4 py-3 border-2 border-yellow-300 rounded-xl text-gray-800 bg-white">
                 </div>
                 <div>
                     <label class="block text-yellow-800 text-sm font-medium mb-1">Délai d'exécution</label>
@@ -14929,7 +14928,7 @@ function generateDocumentHTML(type, data, isPreview) {
         const montantHT = parseFloat(data.montantHT) || 0;
         const tva = data.avecTVA ? montantHT * 0.18 : 0;
         const montantTTC = montantHT + tva;
-        const pourcentageAcompte = parseFloat(data.pourcentageAcompte) || 30;
+        const pourcentageAcompte = parseFloat(data.pourcentageAcompte) || 0;
         const acompte = montantTTC * pourcentageAcompte / 100;
         const solde = montantTTC - acompte;
         const dureeGarantie = data.dureeGarantie || 12;
@@ -15009,14 +15008,17 @@ function generateDocumentHTML(type, data, isPreview) {
         <p style="text-align: justify; font-size: 13px;"><strong>3.2. Modalités de paiement</strong></p>
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 10px 0;">
             <table style="width: 100%; font-size: 13px;">
-                <tr>
+                ${pourcentageAcompte > 0 ? `<tr>
                     <td style="padding: 8px 0;">▸ Acompte à la signature (${pourcentageAcompte}%)</td>
                     <td style="text-align: right; font-weight: bold;">${acompte.toLocaleString('fr-FR')} FCFA</td>
                 </tr>
                 <tr>
                     <td style="padding: 8px 0;">▸ Solde à la réception des travaux (${100 - pourcentageAcompte}%)</td>
                     <td style="text-align: right; font-weight: bold;">${solde.toLocaleString('fr-FR')} FCFA</td>
-                </tr>
+                </tr>` : `<tr>
+                    <td style="padding: 8px 0;">▸ Paiement intégral à la réception des travaux</td>
+                    <td style="text-align: right; font-weight: bold;">${montantTTC.toLocaleString('fr-FR')} FCFA</td>
+                </tr>`}
             </table>
         </div>
         
@@ -15386,7 +15388,7 @@ function generateDocumentHTML(type, data, isPreview) {
         const totalApresRemise = totalHT - remise;
         const tva = data.avecTVA ? totalApresRemise * 0.18 : 0;
         const totalTTC = totalApresRemise + tva;
-        const acompte = totalTTC * (parseFloat(data.acompte) || 30) / 100;
+        const acompte = totalTTC * (parseFloat(data.acompte) || 0) / 100;
         
         html += `
     <!-- INFORMATIONS CLIENT -->
@@ -15405,7 +15407,7 @@ function generateDocumentHTML(type, data, isPreview) {
         <h4 style="color: #b45309; margin: 0 0 15px 0; font-size: 14px;">CONDITIONS</h4>
         <ul style="font-size: 13px; margin: 0; padding-left: 20px;">
             <li>Validité du devis: <strong>${data.validite || 30} jours</strong></li>
-            <li>Acompte à la commande: <strong>${data.acompte || 30}%</strong> soit ${acompte.toLocaleString('fr-FR')} FCFA</li>
+            ${(parseFloat(data.acompte) > 0) ? `<li>Acompte à la commande: <strong>${data.acompte}%</strong> soit ${acompte.toLocaleString('fr-FR')} FCFA</li>` : ''}
             ${data.delaiExecution ? `<li>Délai d'exécution: <strong>${data.delaiExecution} ${data.uniteDelai || 'jours ouvrés'}</strong></li>` : ''}
             ${data.dateDebut ? `<li>Date de début prévue: <strong>${new Date(data.dateDebut).toLocaleDateString('fr-FR')}</strong></li>` : ''}
         </ul>
@@ -15691,7 +15693,7 @@ function collectFormData() {
         data.dateFin = document.getElementById('doc-date-fin')?.value || '';
         data.montantHT = document.getElementById('doc-montant-ht')?.value || 0;
         data.avecTVA = document.getElementById('doc-avec-tva')?.value === 'oui';
-        data.pourcentageAcompte = document.getElementById('doc-acompte')?.value || 30;
+        data.pourcentageAcompte = document.getElementById('doc-acompte')?.value || '';
         data.dureeGarantie = document.getElementById('doc-garantie')?.value || 12;
         data.echeancier = document.getElementById('doc-echeancier')?.value || '';
         data.clausesParticulieres = document.getElementById('doc-clauses')?.value || '';
@@ -15777,7 +15779,7 @@ function collectFormData() {
         data.avecTVA = document.getElementById('doc-avec-tva')?.value === 'oui';
         data.remise = document.getElementById('doc-remise')?.value || 0;
         data.validite = document.getElementById('doc-validite')?.value || 30;
-        data.acompte = document.getElementById('doc-acompte')?.value || 30;
+        data.acompte = document.getElementById('doc-acompte')?.value || '';
         data.delaiExecution = document.getElementById('doc-delai')?.value || '';
         data.uniteDelai = document.getElementById('doc-unite-delai')?.value || 'jours ouvrés';
         data.dateDebut = document.getElementById('doc-date-debut')?.value || '';
