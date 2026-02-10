@@ -1,6 +1,36 @@
+// =============================================================
+// HELPER: Sauvegarde locale + sync Firebase automatique
+// =============================================================
+function localSave(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+    if (typeof DataStore !== 'undefined' && DataStore.saveObject) {
+        DataStore.saveObject(key, data).catch(function(e) {
+            console.warn('Firebase sync error for ' + key + ':', e);
+        });
+    }
+}
+
+// Sync Firebase → localStorage au démarrage pour les collections non encore migrées
+function syncAllCollectionsFromFirebase() {
+    if (typeof DataStore === 'undefined' || !DataStore.getObject) return;
+    var collectionsToSync = [
+        'rdvs', 'fichesPaie', 'comptabilite', 'documents',
+        'securityLogs', 'employeeAccess', 'securitySettings', 'seoSettings'
+    ];
+    collectionsToSync.forEach(function(key) {
+        DataStore.getObject(key).then(function(data) {
+            if (data && ((Array.isArray(data) && data.length > 0) || (!Array.isArray(data) && Object.keys(data).length > 1))) {
+                localStorage.setItem(key, JSON.stringify(data));
+            }
+        }).catch(function() {});
+    });
+}
+
 // Fonctions utilitaires pour affichage login/dashboard
 // Affichage et automatisation du bouton de migration Firebase
 document.addEventListener('DOMContentLoaded', function() {
+    // Synchroniser les collections Firebase → localStorage
+    syncAllCollectionsFromFirebase();
     console.log('🟢 admin.js chargé et DOMContentLoaded exécuté');
 
     // *** APPEL DE initLogin() pour activer le formulaire de connexion ***
@@ -2662,13 +2692,13 @@ function initBackup() {
 function initSecurity() {
     // Initialiser les données de sécurité si nécessaire
     if (!localStorage.getItem('securityLogs')) {
-        localStorage.setItem('securityLogs', JSON.stringify([]));
+        localSave('securityLogs', []);
     }
     if (!localStorage.getItem('employeeAccess')) {
-        localStorage.setItem('employeeAccess', JSON.stringify([]));
+        localSave('employeeAccess', []);
     }
     if (!localStorage.getItem('securitySettings')) {
-        localStorage.setItem('securitySettings', JSON.stringify({
+        localSave('securitySettings', {
             sessionTimeout: 30,
             autoLogout: true,
             maxAttempts: 5,
@@ -2679,7 +2709,7 @@ function initSecurity() {
             requireUppercase: true,
             requireNumber: true,
             requireSpecial: false
-        }));
+        });
     }
     
     // Charger les paramètres
@@ -2889,7 +2919,7 @@ function logSecurityEvent(type, description, user = 'Admin') {
     // Garder seulement les 500 derniers logs
     if (logs.length > 500) logs.pop();
     
-    localStorage.setItem('securityLogs', JSON.stringify(logs));
+    localSave('securityLogs', logs);
 }
 
 // Rendre le tableau de bord sécurité
@@ -3159,7 +3189,7 @@ function saveEmployeeAccess() {
         showNotification('Accès créé', `Compte créé pour ${empData.name}`, 'success');
     }
     
-    localStorage.setItem('employeeAccess', JSON.stringify(employees));
+    localSave('employeeAccess', employees);
     closeEmployeeAccessModal();
     renderEmployeeAccessList();
     renderSecurityDashboard();
@@ -3175,7 +3205,7 @@ window.deleteEmployeeAccess = function(index) {
     
     if (confirm(`Supprimer l'accès de ${emp.name} ?\n\nCette action est irréversible.`)) {
         employees.splice(index, 1);
-        localStorage.setItem('employeeAccess', JSON.stringify(employees));
+        localSave('employeeAccess', employees);
         logSecurityEvent('action', `Accès supprimé pour ${emp.name}`, 'Admin');
         showNotification('Accès supprimé', `Compte de ${emp.name} supprimé`, 'warning');
         renderEmployeeAccessList();
@@ -3191,7 +3221,7 @@ window.toggleEmployeeStatus = function(index) {
     emp.updatedAt = new Date().toISOString();
     
     employees[index] = emp;
-    localStorage.setItem('employeeAccess', JSON.stringify(employees));
+    localSave('employeeAccess', employees);
     
     const action = emp.status === 'actif' ? 'réactivé' : 'suspendu';
     logSecurityEvent('action', `Compte ${action} pour ${emp.name}`, 'Admin');
@@ -3229,7 +3259,7 @@ window.deselectAllModules = function() {
 // Effacer les logs
 window.clearSecurityLogs = function() {
     if (confirm('Effacer tout l\'historique de sécurité ?\n\nCette action est irréversible.')) {
-        localStorage.setItem('securityLogs', JSON.stringify([]));
+        localSave('securityLogs', []);
         logSecurityEvent('action', 'Historique de sécurité effacé', 'Admin');
         renderSecurityLogs();
         showNotification('Logs effacés', 'Historique de sécurité vidé', 'warning');
@@ -3296,7 +3326,7 @@ window.saveSecuritySettings = function() {
         requireSpecial: document.getElementById('sec-require-special')?.checked || false
     };
     
-    localStorage.setItem('securitySettings', JSON.stringify(settings));
+    localSave('securitySettings', settings);
     logSecurityEvent('action', 'Paramètres de sécurité modifiés', 'Admin');
     showNotification('Paramètres sauvegardés', 'Configuration de sécurité mise à jour', 'success');
 };
@@ -3416,7 +3446,7 @@ window.saveContactMessage = function(data) {
         date: new Date().toISOString(),
         read: false
     });
-    localStorage.setItem('messages', JSON.stringify(messages));
+    localSave('messages', messages);
     
     // Notification pour nouveau message
     showNotification('Nouveau message', `Message de ${data.name}`, 'info');
@@ -3485,7 +3515,7 @@ function initRdv() {
             showNotification('Nouveau RDV', `RDV créé avec ${rdv.client}`, 'success');
         }
         
-        localStorage.setItem('rdvs', JSON.stringify(rdvs));
+        localSave('rdvs', rdvs);
         form.reset();
         document.getElementById('rdv-edit-index').value = '';
         document.getElementById('rdv-date').value = new Date().toISOString().split('T')[0];
@@ -3680,7 +3710,7 @@ window.deleteRdv = function(index) {
         const rdvs = JSON.parse(localStorage.getItem('rdvs') || '[]');
         const rdv = rdvs[index];
         rdvs.splice(index, 1);
-        localStorage.setItem('rdvs', JSON.stringify(rdvs));
+        localSave('rdvs', rdvs);
         
         showNotification('RDV supprimé', `RDV avec ${rdv.client} supprimé`, 'warning');
         
@@ -5410,7 +5440,7 @@ function enregistrerFicheDePaie() {
     const fiches = JSON.parse(localStorage.getItem('fichesPaie') || '[]');
     fiche.id = Date.now().toString();
     fiches.unshift(fiche);
-    localStorage.setItem('fichesPaie', JSON.stringify(fiches));
+    localSave('fichesPaie', fiches);
     
     // 🔗 LIAISON FINANCES: Enregistrer le salaire net comme dépense
     if (fiche.net > 0) {
@@ -5523,7 +5553,7 @@ window.supprimerFichePaie = function(id) {
     
     let fiches = JSON.parse(localStorage.getItem('fichesPaie') || '[]');
     fiches = fiches.filter(f => f.id !== id);
-    localStorage.setItem('fichesPaie', JSON.stringify(fiches));
+    localSave('fichesPaie', fiches);
     
     renderFichesPaieHistorique();
     showNotification('Supprimée', 'Fiche de paie supprimée', 'info');
@@ -6633,7 +6663,7 @@ window.deleteFinTransaction = function(index) {
     if (confirm('Supprimer cette transaction ?')) {
         const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
         transactions.splice(index, 1);
-        localStorage.setItem('comptabilite', JSON.stringify(transactions));
+        localSave('comptabilite', transactions);
         refreshFinances();
         showNotification('Transaction supprimée', 'La transaction a été supprimée', 'warning');
     }
@@ -6876,7 +6906,7 @@ window.autoAddTransaction = function(options) {
 
         // Ajouter au début de la liste
         transactions.unshift(newTransaction);
-        localStorage.setItem('comptabilite', JSON.stringify(transactions));
+        localSave('comptabilite', transactions);
 
         // Log pour suivi
         console.log(`[AutoTransaction] ${type.toUpperCase()} ajoutée:`, {
@@ -6913,7 +6943,7 @@ window.autoRemoveTransaction = function(reference, sourceModule) {
         );
 
         if (transactions.length < initialLength) {
-            localStorage.setItem('comptabilite', JSON.stringify(transactions));
+            localSave('comptabilite', transactions);
             console.log('[AutoTransaction] Transaction supprimée:', reference);
             
             if (typeof refreshFinances === 'function') {
@@ -6968,7 +6998,7 @@ function initComptabilite() {
             showNotification('Transaction ajoutée', `${transaction.type === 'recette' ? 'Recette' : 'Dépense'} enregistrée`, 'success');
         }
         
-        localStorage.setItem('comptabilite', JSON.stringify(transactions));
+        localSave('comptabilite', transactions);
         form.reset();
         document.getElementById('compta-edit-index').value = '';
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
@@ -7093,7 +7123,7 @@ window.deleteCompta = function(index) {
     if (confirm('Supprimer cette transaction ?')) {
         const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
         transactions.splice(index, 1);
-        localStorage.setItem('comptabilite', JSON.stringify(transactions));
+        localSave('comptabilite', transactions);
         renderComptabilite();
         showNotification('Transaction supprimée', 'La transaction a été supprimée', 'warning');
     }
@@ -9977,7 +10007,7 @@ function initDocuments() {
             };
             
             documents.push(doc);
-            localStorage.setItem('documents', JSON.stringify(documents));
+            localSave('documents', documents);
             
             form.reset();
             renderDocuments();
@@ -10302,7 +10332,7 @@ window.deleteDocument = function(index) {
         const documents = JSON.parse(localStorage.getItem('documents') || '[]');
         const d = documents[index];
         documents.splice(index, 1);
-        localStorage.setItem('documents', JSON.stringify(documents));
+        localSave('documents', documents);
         renderDocuments();
         updateDocumentStats();
         showNotification('Document supprimé', `${d.nom} a été supprimé`, 'warning');
@@ -11441,7 +11471,7 @@ document.getElementById('transaction-form')?.addEventListener('submit', function
         showNotification(`${typeLabel} ajouté`, `${formatMontantDisplay(transaction.montantTTC)}`, 'success');
     }
     
-    localStorage.setItem('comptabilite', JSON.stringify(transactions));
+    localSave('comptabilite', transactions);
     closeTransactionModal();
     
     // Rafraîchir le module Finances unifié
@@ -14609,7 +14639,7 @@ window.saveAndGenerateDocument = function() {
     
     // Sauvegarder
     documents.push(newDoc);
-    localStorage.setItem('documents', JSON.stringify(documents));
+    localSave('documents', documents);
     
     // Fermer le modal
     closeDocCreationModal();
