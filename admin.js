@@ -532,7 +532,7 @@ function initCertificatTravail() {
         const dateEmbauche = data.date_debut || '';
         const dateFin = data.date_fin || '';
         return `
-<div style="max-width:720px;margin:40px auto;padding:40px;background:linear-gradient(135deg,#f8fafc 60%,#e0e7ff 100%);border-radius:32px;box-shadow:0 8px 32px rgba(30,58,138,0.13);border:2px solid #2563eb;font-family:'Inter',Arial,sans-serif;">
+<div style="width:100%;max-width:700px;margin:0 auto;padding:30px 20px;background:#fff;border:2px solid #2563eb;font-family:'Inter',Arial,sans-serif;box-sizing:border-box;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
         <div style="display:flex;flex-direction:column;align-items:center;">
             <img src="${logo}" alt="Logo KFS BTP" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
@@ -618,13 +618,19 @@ function initCertificatTravail() {
         // Téléchargement PDF automatique
         setTimeout(() => {
             if (window.html2pdf) {
+                var pdfEl = document.createElement('div');
+                pdfEl.style.width = '190mm';
+                pdfEl.style.boxSizing = 'border-box';
+                pdfEl.innerHTML = content;
+                document.body.appendChild(pdfEl);
                 html2pdf().set({
-                    margin: 10,
+                    margin: [10, 10, 10, 10],
                     filename: `Certificat_Travail_${data.nom_salarie ? data.nom_salarie.replace(/\s+/g,'_') : 'Employe'}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                }).from(content).save();
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                }).from(pdfEl).save().then(function() { document.body.removeChild(pdfEl); });
             } else {
                 alert('html2pdf.js non chargé');
             }
@@ -761,14 +767,17 @@ function initCertificatTravail() {
                     // Téléchargement PDF
                     if (window.html2pdf) {
                         var el = document.createElement('div');
+                        el.style.width = '190mm';
+                        el.style.boxSizing = 'border-box';
                         el.innerHTML = content;
                         document.body.appendChild(el);
                         html2pdf().set({
-                            margin: 10,
+                            margin: [10, 10, 10, 10],
                             filename: 'Certificat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\\s+/g, '_') : 'Employe') + '.pdf',
                             image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2 },
-                            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                         }).from(el).save().then(function() {
                             document.body.removeChild(el);
                         });
@@ -813,7 +822,7 @@ function initContratTravail() {
         var salaireNum = parseFloat(data.salaire_brut) || 0;
         var salaireFmt = salaireNum.toLocaleString('fr-FR');
 
-        return '<div style="max-width:780px;margin:0 auto;padding:48px 56px;font-family:Inter,Arial,sans-serif;font-size:14px;color:#1a1a2e;line-height:1.7;background:#fff;">' +
+        return '<div style="width:100%;max-width:700px;margin:0 auto;padding:20px 15px;font-family:Inter,Arial,sans-serif;font-size:13px;color:#1a1a2e;line-height:1.65;background:#fff;box-sizing:border-box;">' +
 
         // EN-TÊTE
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #1e3a8a;">' +
@@ -1141,10 +1150,12 @@ function initContratTravail() {
                     el.innerHTML = content;
                     document.body.appendChild(el);
 
+                    el.style.width = '190mm';
+                    el.style.boxSizing = 'border-box';
                     if (window.html2pdf) {
                         try {
                             await html2pdf().set({
-                                margin: [8, 8, 12, 8],
+                                margin: [10, 10, 12, 10],
                                 filename: filename,
                                 image: { type: 'jpeg', quality: 0.98 },
                                 html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -14599,7 +14610,7 @@ window.saveAndGenerateDocument = function() {
             <title>${newDoc.nom} - ${numero}</title>
             <style>
                 body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }
-                .document-container { background: white; max-width: 210mm; margin: 0 auto; padding: 20mm; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+                .document-container { background: white; width: 100%; max-width: 190mm; margin: 0 auto; padding: 15mm; box-shadow: 0 0 20px rgba(0,0,0,0.1); box-sizing: border-box; }
                 .no-print { margin-top: 20px; text-align: center; }
                 .no-print button { padding: 12px 30px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
                 .btn-print { background: #3b82f6; color: white; }
@@ -14624,10 +14635,12 @@ window.saveAndGenerateDocument = function() {
             document.getElementById('btn-download-attestation').onclick = function() {
                 if (window.html2pdf) {
                     html2pdf().set({
-                        margin: 10,
+                        margin: [10, 10, 10, 10],
                         filename: pdfFileName,
-                        html2canvas: { scale: 2 },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                     }).from(document.getElementById('attestation-pdf-content')).save();
                 } else {
                     alert('html2pdf.js non chargé');
@@ -14645,10 +14658,12 @@ window.saveAndGenerateDocument = function() {
             if (printWindow.html2pdf) {
                 var pdfFileName = (newDoc.nom ? newDoc.nom.replace(/\s+/g, '_') : 'attestation') + '.pdf';
                 printWindow.html2pdf().set({
-                    margin: 10,
+                    margin: [10, 10, 10, 10],
                     filename: pdfFileName,
-                    html2canvas: { scale: 2 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                 }).from(printWindow.document.getElementById('attestation-pdf-content')).save();
             }
         }, 1000);
@@ -14754,7 +14769,7 @@ function generateDocumentHTML(type, data, isPreview) {
     
     // Structure HTML complète du document professionnel
     let html = `
-<div class="document-professionnel" style="font-family: 'Times New Roman', serif; max-width: 210mm; margin: 0 auto; padding: 20mm; background: white; color: #333; line-height: 1.6;">
+<div class="document-professionnel" style="font-family: 'Times New Roman', serif; width: 100%; max-width: 190mm; margin: 0 auto; padding: 10mm; background: white; color: #333; line-height: 1.6; box-sizing: border-box;">
     
     <!-- EN-TÊTE -->
     <div style="border-bottom: 3px double #1e3a8a; padding-bottom: 20px; margin-bottom: 30px;">

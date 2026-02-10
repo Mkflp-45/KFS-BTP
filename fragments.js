@@ -60,20 +60,13 @@ function generateMainNav() {
     </div>
   </div>
   
-  <ul class="flex flex-col md:flex-row md:space-x-4 text-base font-semibold w-full md:w-auto justify-center md:justify-center items-center md:items-center" role="menubar">
-    <li role="none"><a href="index.html" role="menuitem" class="group relative px-2 py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Accueil</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
-    <li role="none"><a href="vente.html" role="menuitem" class="group relative px-2 py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Vente</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
-    <li role="none"><a href="gestion-locative.html" role="menuitem" class="group relative px-2 py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Location</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
-    <li role="none"><a href="renovation-interieur.html" role="menuitem" class="group relative px-2 py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Rénovation</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
-    <li role="none"><a href="contact.html" role="menuitem" class="group relative px-2 py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Contact</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
+  <ul class="flex flex-row flex-wrap gap-1 md:gap-0 md:space-x-4 text-xs md:text-base font-semibold w-full md:w-auto justify-center items-center" role="menubar">
+    <li role="none"><a href="index.html" role="menuitem" class="group relative px-2 py-1 md:py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Accueil</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
+    <li role="none"><a href="vente.html" role="menuitem" class="group relative px-2 py-1 md:py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Vente</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
+    <li role="none"><a href="gestion-locative.html" role="menuitem" class="group relative px-2 py-1 md:py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Location</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
+    <li role="none"><a href="renovation-interieur.html" role="menuitem" class="group relative px-2 py-1 md:py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Rénovation</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
+    <li role="none"><a href="contact.html" role="menuitem" class="group relative px-2 py-1 md:py-2 transition text-blue-900 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded"><span>Contact</span><span class="absolute left-0 -bottom-1 w-0 h-0.5 bg-gradient-to-r from-blue-700 to-yellow-400 group-hover:w-full transition-all duration-300"></span></a></li>
   </ul>
-  <div class="md:hidden flex items-center justify-center w-full md:w-auto mt-2 md:mt-0">
-    <button id="menu-toggle" class="text-blue-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded p-2" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobile-menu">
-      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-      </svg>
-    </button>
-  </div>
 </nav>
 `;
 }
@@ -82,24 +75,7 @@ function generateMainNav() {
 const mainNav = generateMainNav();
 
 
-const navLinks = `
-    <li><a href="index.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Accueil</a></li>
-    <!-- <li><a href="about.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">À Propos</a></li> -->
-    <li><a href="vente.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Vente & Achat</a></li>
-    <li><a href="gestion-locative.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Gestion Locative</a></li>
-    <li><a href="renovation-interieur.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Rénovation</a></li>
-    <li><a href="apporteur-affaire.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Apporteur d'Affaires</a></li>
-    <li><a href="contact.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Contact</a></li>
-    <li><a href="admin.html" class="px-3 py-2 rounded transition duration-200 hover:bg-yellow-400 hover:text-blue-900">Admin</a></li>
-`;
-
-const mobileNav = `
-<div id="mobile-menu" class="hidden md:hidden bg-blue-800 bg-opacity-95 px-4 py-2 border-t border-blue-300 shadow-lg">
-    <ul class="space-y-2">
-        ${navLinks.replaceAll('px-3 py-2', 'block px-3 py-2')}
-    </ul>
-</div>
-`;
+// navLinks et mobileNav supprimés (le hamburger donnait accès au panneau admin)
 
 // Générer le footer dynamiquement avec les paramètres
 function generateFooter() {
@@ -185,7 +161,7 @@ function injectFragments() {
     
     const header = document.querySelector('header');
     if (header) {
-        header.innerHTML = generateMainNav() + mobileNav;
+        header.innerHTML = generateMainNav();
     }
     const footerDiv = document.getElementById('main-footer');
     if (footerDiv) {
@@ -202,26 +178,7 @@ function injectFragments() {
         addWhatsAppButton(s.whatsapp);
     }
     
-    // Menu mobile toggle - DOIT être ici après l'injection du header
-    const menuBtn = document.getElementById('menu-toggle');
-    const mobileMenu = document.getElementById('mobile-menu');
-    if (menuBtn && mobileMenu) {
-        menuBtn.addEventListener('click', function() {
-            mobileMenu.classList.toggle('hidden');
-            const isExpanded = !mobileMenu.classList.contains('hidden');
-            menuBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-            menuBtn.setAttribute('aria-label', isExpanded ? 'Fermer le menu' : 'Ouvrir le menu');
-        });
-        
-        // Fermer le menu quand on clique sur un lien
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function() {
-                mobileMenu.classList.add('hidden');
-                menuBtn.setAttribute('aria-expanded', 'false');
-                menuBtn.setAttribute('aria-label', 'Ouvrir le menu');
-            });
-        });
-    }
+    // Menu hamburger supprimé - les liens sont directement visibles en flex-wrap
 }
 
 // Ajouter le bouton WhatsApp flottant
