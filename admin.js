@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // HELPER: Sauvegarde locale + sync Firebase automatique
 // =============================================================
 function localSave(key, data) {
@@ -542,6 +542,11 @@ window.deleteKFSModele = async function(index) {
 // ===================================================
 function initCertificatTravail() {
     function getCertifContent(data) {
+        // Utiliser le template PDF A4 dédié si disponible
+        if (window.KFS_PDF && window.KFS_PDF.templates.certificat) {
+            return window.KFS_PDF.render('certificat', data);
+        }
+        // Fallback : ancien template inline
         const logo = window.logoKFSBase64 || 'assets/logo-kfs-btp.jpeg';
         const drapeauSn = 'https://upload.wikimedia.org/wikipedia/commons/f/fd/Flag_of_Senegal.svg';
         const company = 'KFS BTP IMMO';
@@ -612,10 +617,14 @@ function initCertificatTravail() {
         btnApercu.onclick = function() {
             var data = Object.fromEntries(new FormData(document.getElementById('certif-travail-form')));
             var content = getCertifContent(data);
-            var previewWindow = window.open('', '_blank');
-            if (previewWindow) {
-                previewWindow.document.write('<!DOCTYPE html><html><head><title>Aperçu Certificat de travail</title></head><body>' + content + '</body></html>');
-                previewWindow.document.close();
+            if (window.KFS_PDF && window.KFS_PDF.previewHTML) {
+                window.KFS_PDF.previewHTML(content, 'Aperçu Certificat de travail');
+            } else {
+                var previewWindow = window.open('', '_blank');
+                if (previewWindow) {
+                    previewWindow.document.write('<!DOCTYPE html><html><head><title>Aperçu Certificat de travail</title></head><body>' + content + '</body></html>');
+                    previewWindow.document.close();
+                }
             }
         };
     }
@@ -651,9 +660,12 @@ function initCertificatTravail() {
         // Aperçu sécurisé
         const apercuDiv = document.getElementById('certif-travail-apercu');
         if (apercuDiv) apercuDiv.innerHTML = content;
-        // Téléchargement PDF automatique
-        setTimeout(() => {
-            if (window.html2pdf) {
+        // Téléchargement PDF via template A4 centralisé
+        var pdfFilename = 'Certificat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\s+/g, '_') : 'Employe') + '.pdf';
+        setTimeout(function() {
+            if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+                window.KFS_PDF.downloadHTML(content, pdfFilename);
+            } else if (window.html2pdf) {
                 var pdfEl = document.createElement('div');
                 pdfEl.style.width = '180mm';
                 pdfEl.style.maxWidth = '180mm';
@@ -662,11 +674,11 @@ function initCertificatTravail() {
                 document.body.appendChild(pdfEl);
                 html2pdf().set({
                     margin: [15, 15, 15, 15],
-                    filename: `Certificat_Travail_${data.nom_salarie ? data.nom_salarie.replace(/\s+/g,'_') : 'Employe'}.pdf`,
+                    filename: pdfFilename,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: ['.certif-block', '.contrat-block'] }
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break', after: '.page-break-after', avoid: ['.pdf-block', '.pdf-section', '.pdf-header', '.pdf-signatures', '.pdf-footer'] }
                 }).from(pdfEl).save().then(function() { document.body.removeChild(pdfEl); });
             } else {
                 alert('html2pdf.js non chargé');
@@ -801,8 +813,11 @@ function initCertificatTravail() {
                     e.preventDefault();
                     var data = Object.fromEntries(new FormData(this));
                     var content = getCertifContent(data);
-                    // Téléchargement PDF
-                    if (window.html2pdf) {
+                    var pdfFilename = 'Certificat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\s+/g, '_') : 'Employe') + '.pdf';
+                    // Téléchargement PDF via template centralisé
+                    if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+                        window.KFS_PDF.downloadHTML(content, pdfFilename);
+                    } else if (window.html2pdf) {
                         var el = document.createElement('div');
                         el.style.width = '180mm';
                         el.style.maxWidth = '180mm';
@@ -811,13 +826,14 @@ function initCertificatTravail() {
                         document.body.appendChild(el);
                         html2pdf().set({
                             margin: [15, 15, 15, 15],
-                            filename: 'Certificat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\\s+/g, '_') : 'Employe') + '.pdf',
+                            filename: pdfFilename,
                             image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
+                            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
                             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: ['.certif-block', '.contrat-block'] }
+                            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break', after: '.page-break-after', avoid: ['.pdf-block', '.pdf-section', '.pdf-header', '.pdf-signatures', '.pdf-footer'] }
                         }).from(el).save().then(function() {
                             document.body.removeChild(el);
+                        });
                         });
                     } else {
                         // Fallback : ouvrir dans une nouvelle fenêtre pour impression
@@ -842,6 +858,11 @@ function initCertificatTravail() {
 function initContratTravail() {
 
     function getContratContent(data) {
+        // Utiliser le template PDF A4 dédié si disponible
+        if (window.KFS_PDF && window.KFS_PDF.templates.contrat) {
+            return window.KFS_PDF.render('contrat', data);
+        }
+        // Fallback : ancien template inline
         var logo = window.logoKFSBase64 || 'assets/logo-kfs-btp.jpeg';
         var company = 'KFS BTP IMMO';
         var address = 'Villa 123 MC, Quartier Medinacoura, Tambacounda';
@@ -1184,36 +1205,36 @@ function initContratTravail() {
                     var content = getContratContent(data);
                     var filename = 'Contrat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\\s+/g, '_') : 'Employe') + '_' + new Date().toISOString().split('T')[0] + '.pdf';
 
-                    // Cr\u00e9er un div temporaire pour le rendu PDF
-                    var el = document.createElement('div');
-                    el.innerHTML = content;
-                    document.body.appendChild(el);
-
-                    el.style.width = '180mm';
-                    el.style.maxWidth = '180mm';
-                    el.style.boxSizing = 'border-box';
-                    if (window.html2pdf) {
+                    // Utiliser le syst\u00e8me de template centralis\u00e9
+                    if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+                        window.KFS_PDF.downloadHTML(content, filename);
+                    } else if (window.html2pdf) {
+                        var el = document.createElement('div');
+                        el.innerHTML = content;
+                        document.body.appendChild(el);
+                        el.style.width = '180mm';
+                        el.style.maxWidth = '180mm';
+                        el.style.boxSizing = 'border-box';
                         try {
                             await html2pdf().set({
                                 margin: [15, 15, 15, 15],
                                 filename: filename,
                                 image: { type: 'jpeg', quality: 0.98 },
-                                html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
+                                html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
                                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                                pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: ['.certif-block', '.contrat-block'] }
+                                pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break', after: '.page-break-after', avoid: ['.pdf-block', '.pdf-section', '.pdf-header', '.pdf-signatures', '.pdf-footer'] }
                             }).from(el).save();
                         } catch(err) {
                             console.error('Erreur PDF:', err);
                         }
+                        document.body.removeChild(el);
                     } else {
-                        // Fallback imprimer
                         var printWindow = window.open('', '_blank');
                         if (printWindow) {
                             printWindow.document.write('<!DOCTYPE html><html><head><title>Contrat de Travail</title></head><body>' + content + '<scr' + 'ipt>setTimeout(function(){window.print();},500);</scr' + 'ipt></body></html>');
                             printWindow.document.close();
                         }
                     }
-                    document.body.removeChild(el);
 
                     // Sauvegarder dans les documents
                     try {
@@ -14737,9 +14758,9 @@ window.saveAndGenerateDocument = function() {
                         margin: [15, 15, 15, 15],
                         filename: pdfFileName,
                         image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
+                        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.certif-block', '.contrat-block', '.attestation-block'] }
+                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.pdf-block', '.pdf-section', '.pdf-header', '.pdf-signatures', '.pdf-footer', '.attestation-block'] }
                     }).from(document.getElementById('attestation-pdf-content')).save();
                 } else {
                     alert('html2pdf.js non chargé');
@@ -14760,9 +14781,9 @@ window.saveAndGenerateDocument = function() {
                     margin: [15, 15, 15, 15],
                     filename: pdfFileName,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 794 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.certif-block', '.contrat-block', '.attestation-block'] }
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.pdf-block', '.pdf-section', '.pdf-header', '.pdf-signatures', '.pdf-footer', '.attestation-block'] }
                 }).from(printWindow.document.getElementById('attestation-pdf-content')).save();
             }
         }, 1000);

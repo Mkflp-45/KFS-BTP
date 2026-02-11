@@ -1,0 +1,612 @@
+/* ============================================================
+   PDF-TEMPLATE.CSS - Styles dédiés à la génération PDF (A4)
+   Ce fichier n'affecte PAS l'affichage du site.
+   Il est injecté uniquement dans les conteneurs de rendu PDF.
+   ============================================================ */
+
+/* ---- CONTENEUR PRINCIPAL A4 ---- */
+.pdf-page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 15mm;
+    margin: 0 auto;
+    background: #fff;
+    color: #1a1a2e;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* ---- GESTION DE LA PAGINATION ---- */
+
+/* Saut de page forcé */
+.page-break {
+    page-break-before: always;
+    break-before: always;
+}
+
+.page-break-after {
+    page-break-after: always;
+    break-after: always;
+}
+
+/* Anti-coupure sur les blocs */
+.pdf-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+/* ---- EN-TÊTE DU DOCUMENT ---- */
+.pdf-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    border-bottom: 3px solid #1e3a8a;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-header-logo {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    border: 3px solid #2563eb;
+    object-fit: cover;
+}
+
+.pdf-header-company {
+    margin-left: 12px;
+}
+
+.pdf-header-company h1 {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #1e3a8a;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.pdf-header-company .subtitle {
+    font-size: 9pt;
+    color: #64748b;
+    margin: 2px 0 0;
+    font-style: italic;
+}
+
+.pdf-header-company .info {
+    font-size: 8pt;
+    color: #555;
+    margin: 6px 0 0;
+    line-height: 1.5;
+}
+
+.pdf-header-ref {
+    text-align: right;
+}
+
+.pdf-header-ref .ref-badge {
+    background: #1e3a8a;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.pdf-header-ref .ref-badge .ref-label {
+    font-size: 8pt;
+    opacity: 0.85;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pdf-header-ref .ref-badge .ref-number {
+    font-size: 13pt;
+    font-weight: 700;
+    margin: 4px 0 0;
+}
+
+.pdf-header-ref .ref-date {
+    font-size: 9pt;
+    color: #666;
+    margin-top: 6px;
+}
+
+/* ---- TITRE DU DOCUMENT ---- */
+.pdf-title {
+    text-align: center;
+    margin: 28px 0 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 10px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-title h2 {
+    color: #1e3a8a;
+    font-size: 16pt;
+    font-weight: 800;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.pdf-title .subtitle {
+    color: #64748b;
+    font-size: 10pt;
+    margin: 6px 0 0;
+}
+
+/* ---- SECTIONS / ARTICLES ---- */
+.pdf-section {
+    margin: 20px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.pdf-section-title .num {
+    width: 28px;
+    height: 28px;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11pt;
+    flex-shrink: 0;
+}
+
+.pdf-section-title .label {
+    font-weight: 700;
+    color: #1e3a8a;
+    font-size: 12pt;
+    text-transform: uppercase;
+}
+
+.pdf-section p,
+.pdf-section li {
+    font-size: 11pt;
+    color: #334155;
+    text-align: justify;
+    margin: 6px 0;
+}
+
+.pdf-section ul {
+    padding-left: 18px;
+    margin: 8px 0;
+}
+
+/* ---- BLOC PARTIES CONTRACTANTES ---- */
+.pdf-parties {
+    display: flex;
+    gap: 20px;
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-partie {
+    flex: 1;
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 10pt;
+}
+
+.pdf-partie.employeur {
+    border-left: 4px solid #1e3a8a;
+}
+
+.pdf-partie.salarie {
+    border-left: 4px solid #10b981;
+}
+
+.pdf-partie h4 {
+    color: #1e3a8a;
+    font-size: 10pt;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    letter-spacing: 1px;
+}
+
+.pdf-partie.salarie h4 {
+    color: #10b981;
+}
+
+.pdf-partie p {
+    margin: 3px 0;
+    font-size: 10pt;
+    color: #475569;
+}
+
+.pdf-partie strong {
+    color: #1a1a2e;
+}
+
+/* ---- ZONE MONTANT / SALAIRE ---- */
+.pdf-montant-box {
+    background: #f0fdf4;
+    padding: 14px 18px;
+    border-radius: 10px;
+    border: 1px solid #bbf7d0;
+    margin: 12px 0;
+    break-inside: avoid;
+}
+
+.pdf-montant-box .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.pdf-montant-box .total {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #059669;
+}
+
+/* ---- TABLEAUX ---- */
+.pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 10pt;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-table thead th {
+    background: #1e3a8a;
+    color: #fff;
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 9pt;
+    font-weight: 600;
+}
+
+.pdf-table thead th:first-child {
+    text-align: left;
+    padding-left: 10px;
+}
+
+.pdf-table tbody td {
+    padding: 5px 6px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 9pt;
+    color: #1a1a2e;
+}
+
+.pdf-table tbody td:first-child {
+    padding-left: 10px;
+}
+
+.pdf-table tbody td.right {
+    text-align: right;
+}
+
+.pdf-table tbody td.center {
+    text-align: center;
+}
+
+.pdf-table tbody tr.section-header td {
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: 9.5pt;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.pdf-table tbody tr.total-row td {
+    background: #dbeafe;
+    font-weight: 700;
+    font-size: 10pt;
+    border-top: 2px solid #93c5fd;
+}
+
+.pdf-table tbody tr.net-row td {
+    background: #1e3a8a;
+    color: #fff;
+    font-weight: 700;
+    font-size: 11pt;
+    padding: 8px 6px;
+}
+
+/* ---- BLOC INFO / ENCADRÉ ---- */
+.pdf-info-box {
+    background: #f8fafc;
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 10pt;
+    break-inside: avoid;
+}
+
+.pdf-info-box.warning {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+}
+
+.pdf-info-box.success {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+}
+
+.pdf-info-box.primary {
+    background: #eff6ff;
+    border-left: 4px solid #2563eb;
+}
+
+/* ---- SIGNATURES ---- */
+.pdf-signatures {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid #e2e8f0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-signature-box {
+    flex: 1;
+    text-align: center;
+    padding: 18px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+}
+
+.pdf-signature-box .title {
+    font-weight: 700;
+    color: #1e3a8a;
+    font-size: 11pt;
+    margin-bottom: 6px;
+}
+
+.pdf-signature-box .name {
+    font-size: 10pt;
+    color: #64748b;
+}
+
+.pdf-signature-box .space {
+    height: 70px;
+}
+
+.pdf-signature-box .label {
+    font-size: 9pt;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 8px;
+}
+
+/* ---- DATE ET LIEU ---- */
+.pdf-date-lieu {
+    text-align: center;
+    margin: 24px 0 8px;
+    font-size: 11pt;
+    color: #475569;
+    break-inside: avoid;
+}
+
+/* ---- PIED DE PAGE ---- */
+.pdf-footer {
+    margin-top: 30px;
+    padding-top: 12px;
+    border-top: 3px solid #1e3a8a;
+    text-align: center;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-footer .slogan {
+    color: #facc15;
+    font-weight: 700;
+    font-size: 9pt;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.pdf-footer .contact {
+    color: #94a3b8;
+    font-size: 8pt;
+    margin-top: 4px;
+}
+
+/* ---- RÉCAP HORIZONTAL ---- */
+.pdf-recap {
+    display: flex;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+    font-size: 8pt;
+    break-inside: avoid;
+}
+
+.pdf-recap .cell {
+    flex: 1;
+    text-align: center;
+    padding: 6px 4px;
+    border-right: 1px solid #e2e8f0;
+}
+
+.pdf-recap .cell:last-child {
+    border-right: none;
+}
+
+.pdf-recap .cell .label {
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+}
+
+.pdf-recap .cell .value {
+    color: #475569;
+}
+
+/* ---- MENTIONS LÉGALES ---- */
+.pdf-mentions {
+    margin-top: 16px;
+    font-size: 8pt;
+    color: #94a3b8;
+    font-style: italic;
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* ---- PRÉAMBULE ---- */
+.pdf-preambule {
+    padding: 14px 16px;
+    background: #fffbeb;
+    border-radius: 8px;
+    border-left: 4px solid #f59e0b;
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pdf-preambule h3 {
+    color: #b45309;
+    font-size: 10pt;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+}
+
+.pdf-preambule p {
+    font-size: 10pt;
+    text-align: justify;
+    margin: 0;
+    color: #78350f;
+}
+
+/* ---- CLAUSE PARTICULIÈRE ---- */
+.pdf-clause-speciale {
+    margin: 12px 0;
+    padding: 12px 16px;
+    background: #fef3c7;
+    border-radius: 8px;
+    border-left: 3px solid #f59e0b;
+    break-inside: avoid;
+}
+
+.pdf-clause-speciale .label {
+    font-weight: 600;
+    color: #92400e;
+    font-size: 10pt;
+    margin-bottom: 4px;
+}
+
+.pdf-clause-speciale p {
+    color: #78350f;
+    font-size: 10pt;
+    margin: 0;
+}
+
+/* ---- CONVENU BANDEAU ---- */
+.pdf-convenu {
+    text-align: center;
+    margin: 20px 0;
+    padding: 12px;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pdf-convenu p {
+    font-weight: 700;
+    font-size: 12pt;
+    color: #1e3a8a;
+    margin: 0;
+    letter-spacing: 3px;
+}
+
+/* ---- PLACEHOLDER (variable dynamique) ---- */
+.pdf-var {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.pdf-var.error {
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9pt;
+}
+
+/* ---- BULLETIN DE PAIE SPÉCIFIQUE ---- */
+.pdf-bulletin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    break-inside: avoid;
+}
+
+.pdf-bulletin-bandeau {
+    background: #1e3a8a;
+    color: #fff;
+    padding: 8px 20px;
+    text-align: center;
+    border-radius: 6px;
+}
+
+.pdf-bulletin-bandeau h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.pdf-bulletin-employe {
+    background: #2563eb;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
+/* ---- IMPRESSION @media print (fallback navigateur) ---- */
+@media print {
+    .pdf-page {
+        width: 210mm;
+        min-height: 297mm;
+        padding: 15mm;
+        margin: 0;
+        box-shadow: none;
+    }
+
+    .pdf-block,
+    .pdf-section,
+    .pdf-header,
+    .pdf-title,
+    .pdf-parties,
+    .pdf-signatures,
+    .pdf-footer,
+    .pdf-table,
+    .pdf-info-box,
+    .pdf-preambule,
+    .pdf-montant-box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .page-break {
+        page-break-before: always;
+        break-before: always;
+    }
+}
