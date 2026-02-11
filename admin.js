@@ -1,4 +1,4 @@
-// =============================================================
+﻿// =============================================================
 // HELPER: Sauvegarde locale + sync Firebase automatique
 // =============================================================
 function localSave(key, data) {
@@ -562,8 +562,14 @@ function initCertificatTravail() {
         const dateEmbauche = data.date_debut || '';
         const dateFin = data.date_fin || '';
         return `
-<div style="width:100%;max-width:700px;margin:0 auto;padding:30px 20px;background:#fff;border:2px solid #2563eb;font-family:'Inter',Arial,sans-serif;box-sizing:border-box;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+<style>
+  .certif-block { break-inside: avoid; page-break-inside: avoid; }
+  @media print {
+    .certif-block { break-inside: avoid; page-break-inside: avoid; }
+  }
+</style>
+<div style="width:100%;max-width:180mm;margin:0 auto;padding:0;background:#fff;border:2px solid #2563eb;font-family:'Inter',Arial,sans-serif;box-sizing:border-box;">
+    <div class="certif-block" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
         <div style="display:flex;flex-direction:column;align-items:center;">
             <img src="${logo}" alt="Logo KFS BTP" style="width:80px;height:80px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 8px #2563eb33;">
             <div style="margin-top:8px;font-size:1.05rem;color:#facc15;font-weight:700;letter-spacing:1px;">Construire – Gérer – Valoriser</div>
@@ -573,7 +579,7 @@ function initCertificatTravail() {
             <div style="margin-top:8px;font-size:1rem;color:#1e3a8a;font-weight:600;">Un Peuple – Un But – Une Foi</div>
         </div>
     </div>
-    <div style="text-align:center;margin-bottom:24px;">
+    <div class="certif-block" style="text-align:center;margin-bottom:24px;">
         <span style="font-size:2.2rem;font-weight:800;color:#1e3a8a;text-transform:uppercase;letter-spacing:2px;">CERTIFICAT DE TRAVAIL</span>
         <hr style="border:none;border-top:3px solid #facc15;width:120px;margin:16px auto 0;">
     </div>
@@ -581,7 +587,7 @@ function initCertificatTravail() {
     <div style="color:#1e3a8a;font-size:1rem;text-align:center;">${address}</div>
     <div style="color:#1e3a8a;font-size:1rem;text-align:center;">NINEA: ${ninea} &nbsp; | &nbsp; RCCM: ${rccm}</div>
     <div style="color:#1e3a8a;font-size:1rem;text-align:center;">Tel: ${phone} &nbsp; | &nbsp; Email: ${email}</div>
-    <div style="margin:32px 0 0 0;padding:24px 32px;background:#fff;border-radius:16px;box-shadow:0 2px 8px #2563eb22;">
+    <div class="certif-block" style="margin:32px 0 0 0;padding:24px 32px;background:#fff;border-radius:16px;box-shadow:0 2px 8px #2563eb22;">
         <div style="font-size:1.1rem;color:#222;line-height:1.8;text-align:left;">
             <p>Je soussigné(e), <b style="color:#1e3a8a;">Le Directeur Général de ${company}</b>, entreprise spécialisée dans le secteur du Bâtiment, des Travaux Publics et de l'Immobilier, dont le siège social est situé à <b>${address}</b>, immatriculée au RCCM sous le numéro <b>${rccm}</b>, NINEA <b>${ninea}</b>, certifie que :</p>
             <p><b style="color:#2563eb;font-size:1.1rem;">${nom} ${prenom}</b> (<b style="color:#2563eb;">${data.nom_salarie}</b>), demeurant à <b style="color:#2563eb;">${data.adresse_salarie || ''}</b>, a travaillé dans notre société en qualité de <b style="color:#2563eb;">${data.poste}</b> du <b style="color:#1e3a8a;">${dateEmbauche}</b> au <b style="color:#1e3a8a;">${dateFin || 'à ce jour'}</b>.</p>
@@ -590,7 +596,7 @@ function initCertificatTravail() {
             <p>Numéro d’identification : <b style="color:#2563eb;">${data.num_identification || ''}</b></p>
         </div>
     </div>
-    <div style="margin-top:96px;text-align:right;font-size:1rem;color:#1e3a8a;">
+    <div class="certif-block" style="margin-top:96px;text-align:right;font-size:1rem;color:#1e3a8a;">
         <div>Fait à Tambacounda, le <b>${today}</b></div>
         <div style="margin-top:72px;font-size:1.15rem;color:#222;font-weight:600;">Signature et cachet de l’entreprise</div>
     </div>
@@ -649,17 +655,18 @@ function initCertificatTravail() {
         setTimeout(() => {
             if (window.html2pdf) {
                 var pdfEl = document.createElement('div');
-                pdfEl.style.width = '190mm';
+                pdfEl.style.width = '180mm';
+                pdfEl.style.maxWidth = '180mm';
                 pdfEl.style.boxSizing = 'border-box';
                 pdfEl.innerHTML = content;
                 document.body.appendChild(pdfEl);
                 html2pdf().set({
-                    margin: [10, 10, 10, 10],
+                    margin: [15, 15, 15, 15],
                     filename: `Certificat_Travail_${data.nom_salarie ? data.nom_salarie.replace(/\s+/g,'_') : 'Employe'}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: ['.certif-block', '.contrat-block'] }
                 }).from(pdfEl).save().then(function() { document.body.removeChild(pdfEl); });
             } else {
                 alert('html2pdf.js non chargé');
@@ -797,17 +804,18 @@ function initCertificatTravail() {
                     // Téléchargement PDF
                     if (window.html2pdf) {
                         var el = document.createElement('div');
-                        el.style.width = '190mm';
+                        el.style.width = '180mm';
+                        el.style.maxWidth = '180mm';
                         el.style.boxSizing = 'border-box';
                         el.innerHTML = content;
                         document.body.appendChild(el);
                         html2pdf().set({
-                            margin: [10, 10, 10, 10],
+                            margin: [15, 15, 15, 15],
                             filename: 'Certificat_Travail_' + (data.nom_salarie ? data.nom_salarie.replace(/\\s+/g, '_') : 'Employe') + '.pdf',
                             image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                            html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
                             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: ['.certif-block', '.contrat-block'] }
                         }).from(el).save().then(function() {
                             document.body.removeChild(el);
                         });
@@ -852,10 +860,11 @@ function initContratTravail() {
         var salaireNum = parseFloat(data.salaire_brut) || 0;
         var salaireFmt = salaireNum.toLocaleString('fr-FR');
 
-        return '<div style="width:100%;max-width:700px;margin:0 auto;padding:20px 15px;font-family:Inter,Arial,sans-serif;font-size:13px;color:#1a1a2e;line-height:1.65;background:#fff;box-sizing:border-box;">' +
+        return '<style>.contrat-block { break-inside: avoid; page-break-inside: avoid; } @media print { .contrat-block { break-inside: avoid; page-break-inside: avoid; } }</style>' +
+        '<div style="width:100%;max-width:180mm;margin:0 auto;padding:0;font-family:Inter,Arial,sans-serif;font-size:13px;color:#1a1a2e;line-height:1.65;background:#fff;box-sizing:border-box;">' +
 
         // EN-TÊTE
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #1e3a8a;">' +
+        '<div class="contrat-block" style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:3px solid #1e3a8a;">' +
             '<div style="display:flex;align-items:center;gap:16px;">' +
                 '<img src="' + logo + '" alt="Logo KFS BTP" style="width:72px;height:72px;border-radius:50%;border:3px solid #2563eb;box-shadow:0 2px 12px rgba(37,99,235,0.2);">' +
                 '<div>' +
@@ -879,7 +888,7 @@ function initContratTravail() {
         '</div>' +
 
         // PARTIES
-        '<div style="background:#f8fafc;border-radius:16px;padding:24px 28px;margin-bottom:28px;border-left:4px solid #facc15;">' +
+        '<div class="contrat-block" style="background:#f8fafc;border-radius:16px;padding:24px 28px;margin-bottom:28px;border-left:4px solid #facc15;">' +
             '<div style="font-weight:700;color:#1e3a8a;font-size:15px;margin-bottom:12px;">ENTRE LES PARTIES</div>' +
             '<div style="display:flex;gap:40px;flex-wrap:wrap;">' +
                 '<div style="flex:1;min-width:250px;">' +
@@ -901,7 +910,7 @@ function initContratTravail() {
         '</div>' +
 
         // ARTICLES
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">1</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">OBJET DU CONTRAT</div>' +
@@ -909,7 +918,7 @@ function initContratTravail() {
             '<p style="margin-left:44px;color:#334155;">' + company + ' engage <b>' + (data.nom_salarie || '') + '</b> en qualit\u00e9 de <b>' + (data.poste || '') + '</b> dans le cadre d\u2019un contrat \u00e0 dur\u00e9e <b>' + (typeContrat === 'CDI' ? 'ind\u00e9termin\u00e9e (CDI)' : 'd\u00e9termin\u00e9e (CDD)' + (dureeContrat ? ' de ' + dureeContrat : '')) + '</b>, conform\u00e9ment au Code du travail s\u00e9n\u00e9galais (Loi n\u00b0 97-17 du 1er d\u00e9cembre 1997).</p>' +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">2</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">PRISE D\u2019EFFET ET DUR\u00c9E</div>' +
@@ -918,7 +927,7 @@ function initContratTravail() {
             (periodeEssai ? '<p style="margin-left:44px;color:#334155;">Une p\u00e9riode d\u2019essai de <b>' + periodeEssai + '</b> est convenue. Durant cette p\u00e9riode, chacune des parties peut mettre fin au contrat sans pr\u00e9avis ni indemnit\u00e9.</p>' : '') +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">3</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">LIEU DE TRAVAIL ET HORAIRES</div>' +
@@ -926,7 +935,7 @@ function initContratTravail() {
             '<p style="margin-left:44px;color:#334155;">Le salari\u00e9 exercera ses fonctions \u00e0 <b>' + lieuTravail + '</b>. Les horaires de travail sont: <b>' + horaires + '</b>, soit 40 heures hebdomadaires, conform\u00e9ment \u00e0 la r\u00e9glementation en vigueur.</p>' +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">4</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">R\u00c9MUN\u00c9RATION</div>' +
@@ -941,7 +950,7 @@ function initContratTravail() {
             '<p style="margin-left:44px;color:#334155;margin-top:8px;">Le salaire est payable mensuellement, au plus tard le 5 du mois suivant, par virement bancaire ou tout autre moyen convenu.</p>' +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">5</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">OBLIGATIONS DU SALARI\u00c9</div>' +
@@ -957,7 +966,7 @@ function initContratTravail() {
             '</div>' +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">6</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">CONG\u00c9S ET ABSENCES</div>' +
@@ -965,7 +974,7 @@ function initContratTravail() {
             '<p style="margin-left:44px;color:#334155;">Le salari\u00e9 b\u00e9n\u00e9ficie de <b>24 jours ouvrables</b> de cong\u00e9s pay\u00e9s par an, conform\u00e9ment aux dispositions du Code du travail s\u00e9n\u00e9galais.</p>' +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">7</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">RUPTURE DU CONTRAT</div>' +
@@ -973,7 +982,7 @@ function initContratTravail() {
             '<p style="margin-left:44px;color:#334155;">' + (typeContrat === 'CDI' ? 'Chacune des parties peut mettre fin au pr\u00e9sent contrat en respectant un pr\u00e9avis de <b>un (1) mois</b>, conform\u00e9ment aux articles L.48 \u00e0 L.54 du Code du travail.' : 'Le pr\u00e9sent CDD prendra fin \u00e0 son terme sans formalit\u00e9 particuli\u00e8re. Toute rupture anticip\u00e9e devra respecter les dispositions de l\u2019article L.47 du Code du travail.') + '</p>' +
         '</div>' +
 
-        '<div style="margin-bottom:20px;">' +
+        '<div class="contrat-block" style="margin-bottom:20px;">' +
             '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">' +
                 '<div style="width:32px;height:32px;background:#2563eb;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">8</div>' +
                 '<div style="font-weight:700;color:#1e3a8a;font-size:15px;">DISPOSITIONS G\u00c9N\u00c9RALES</div>' +
@@ -983,7 +992,7 @@ function initContratTravail() {
         '</div>' +
 
         // SIGNATURES
-        '<div style="margin-top:56px;padding-top:24px;border-top:2px solid #e2e8f0;">' +
+        '<div class="contrat-block" style="margin-top:56px;padding-top:24px;border-top:2px solid #e2e8f0;">' +
             '<p style="text-align:center;color:#475569;margin-bottom:32px;">Fait \u00e0 <b>Tambacounda</b>, le <b>' + today + '</b>, en deux exemplaires originaux.</p>' +
             '<div style="display:flex;justify-content:space-between;gap:40px;">' +
                 '<div style="flex:1;text-align:center;padding:24px;border:2px dashed #cbd5e1;border-radius:12px;">' +
@@ -1180,17 +1189,18 @@ function initContratTravail() {
                     el.innerHTML = content;
                     document.body.appendChild(el);
 
-                    el.style.width = '190mm';
+                    el.style.width = '180mm';
+                    el.style.maxWidth = '180mm';
                     el.style.boxSizing = 'border-box';
                     if (window.html2pdf) {
                         try {
                             await html2pdf().set({
-                                margin: [10, 10, 12, 10],
+                                margin: [15, 15, 15, 15],
                                 filename: filename,
                                 image: { type: 'jpeg', quality: 0.98 },
-                                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                                html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
                                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                                pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: ['.certif-block', '.contrat-block'] }
                             }).from(el).save();
                         } catch(err) {
                             console.error('Erreur PDF:', err);
@@ -5140,6 +5150,16 @@ function genererFicheDePaiePDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
+        // Marges et dimensions A4
+        const marginLeft = 15;
+        const marginRight = 15;
+        const marginTop = 15;
+        const marginBottom = 15;
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const contentWidth = pageWidth - marginLeft - marginRight; // 180mm
+        const maxY = pageHeight - marginBottom; // 282mm
+        
         const moisFormate = new Date(fiche.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
         const dateEmission = new Date().toLocaleDateString('fr-FR');
         
@@ -5156,45 +5176,45 @@ function genererFicheDePaiePDF() {
         // Utiliser le logo préchargé
         let logoBase64 = logoKFSBase64;
         
-        let y = 8;
+        let y = marginTop;
         
         // ========== EN-TÊTE ==========
         // Logo à gauche
         if (logoBase64) {
             try {
-                doc.addImage(logoBase64, 'JPEG', 10, y, 25, 25);
+                doc.addImage(logoBase64, 'JPEG', marginLeft, y, 25, 25);
             } catch (e) {
                 console.error('Erreur logo PDF:', e);
                 doc.setFillColor(...bleuFonce);
-                doc.circle(22, y + 12, 10, 'F');
+                doc.circle(marginLeft + 12, y + 12, 10, 'F');
                 doc.setTextColor(...blanc);
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'bold');
-                doc.text('KFS', 22, y + 14, { align: 'center' });
+                doc.text('KFS', marginLeft + 12, y + 14, { align: 'center' });
             }
         } else {
             doc.setFillColor(...bleuFonce);
-            doc.circle(22, y + 12, 10, 'F');
+            doc.circle(marginLeft + 12, y + 12, 10, 'F');
             doc.setTextColor(...blanc);
             doc.setFontSize(8);
             doc.setFont('helvetica', 'bold');
-            doc.text('KFS', 22, y + 14, { align: 'center' });
+            doc.text('KFS', marginLeft + 12, y + 14, { align: 'center' });
         }
         
         // Infos entreprise sous le logo
         doc.setTextColor(...noir);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
-        doc.text('NINEA: ' + (fiche.nineaEntreprise || 'N/D'), 10, y + 30);
-        doc.text('RCCM: ' + (fiche.rccmEntreprise || 'N/D'), 10, y + 34);
+        doc.text('NINEA: ' + (fiche.nineaEntreprise || 'N/D'), marginLeft, y + 30);
+        doc.text('RCCM: ' + (fiche.rccmEntreprise || 'N/D'), marginLeft, y + 34);
         
         // BULLETIN DE SALAIRE (bandeau bleu KFS à droite)
         doc.setFillColor(...bleuFonce);
-        doc.rect(100, y, 100, 14, 'F');
+        doc.rect(100, y, pageWidth - marginRight - 100, 14, 'F');
         doc.setTextColor(...blanc);
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('BULLETIN DE SALAIRE', 150, y + 9, { align: 'center' });
+        doc.text('BULLETIN DE SALAIRE', (100 + pageWidth - marginRight) / 2, y + 9, { align: 'center' });
         
         // Période sous le bandeau
         doc.setTextColor(...noir);
@@ -5205,7 +5225,7 @@ function genererFicheDePaiePDF() {
         // Zone employé (bandeau bleu KFS)
         y += 38;
         doc.setFillColor(...bleuMoyen);
-        doc.rect(100, y, 100, 12, 'F');
+        doc.rect(100, y, pageWidth - marginRight - 100, 12, 'F');
         doc.setTextColor(...blanc);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
@@ -5218,46 +5238,67 @@ function genererFicheDePaiePDF() {
         doc.setTextColor(...noir);
         doc.setFontSize(7);
         const infoY = y - 2;
-        doc.text('Matricule: ' + fiche.matricule, 10, infoY);
-        doc.text('N IPRES: ' + (fiche.numSecuSociale || 'N/D'), 10, infoY + 4);
-        doc.text('Emploi: ' + (fiche.poste || 'N/D'), 10, infoY + 8);
-        doc.text('Statut: ' + (fiche.isCadre ? 'Cadre' : 'Non-cadre'), 10, infoY + 12);
-        doc.text('Cat./Ech.: ' + fiche.categorie + '-' + fiche.echelon, 50, infoY);
-        doc.text('Entree: ' + (fiche.dateEmbauche || 'N/D'), 50, infoY + 4);
-        doc.text('Convention: ' + fiche.convention, 50, infoY + 8);
+        doc.text('Matricule: ' + fiche.matricule, marginLeft, infoY);
+        doc.text('N IPRES: ' + (fiche.numSecuSociale || 'N/D'), marginLeft, infoY + 4);
+        doc.text('Emploi: ' + (fiche.poste || 'N/D'), marginLeft, infoY + 8);
+        doc.text('Statut: ' + (fiche.isCadre ? 'Cadre' : 'Non-cadre'), marginLeft, infoY + 12);
+        doc.text('Cat./Ech.: ' + fiche.categorie + '-' + fiche.echelon, marginLeft + 40, infoY);
+        doc.text('Entree: ' + (fiche.dateEmbauche || 'N/D'), marginLeft + 40, infoY + 4);
+        doc.text('Convention: ' + fiche.convention, marginLeft + 40, infoY + 8);
         
         // ========== TABLEAU PRINCIPAL ==========
         y += 18;
         
-        // En-têtes du tableau - colonnes mieux espacées et alignées
-        const colWidths = [55, 28, 22, 28, 28, 29];
-        const colX = [10, 65, 93, 115, 143, 171];
-        const tableWidth = 190;
+        // En-têtes du tableau - colonnes adaptées aux marges 15mm
+        const colWidths = [50, 26, 21, 26, 26, 31];
+        const colX = [marginLeft, marginLeft + 50, marginLeft + 76, marginLeft + 97, marginLeft + 123, marginLeft + 149];
+        const tableWidth = contentWidth; // 180mm
+        const rightEdge = marginLeft + tableWidth; // 195mm
         
-        doc.setFillColor(...bleuFonce);
-        doc.rect(10, y, tableWidth, 8, 'F');
-        doc.setTextColor(...blanc);
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Elements de paie', colX[0] + 3, y + 5);
-        doc.text('Base', colX[1] + colWidths[1]/2, y + 5, { align: 'center' });
-        doc.text('Taux', colX[2] + colWidths[2]/2, y + 5, { align: 'center' });
-        doc.text('Retenues', colX[3] + colWidths[3]/2, y + 5, { align: 'center' });
-        doc.text('Gains', colX[4] + colWidths[4]/2, y + 5, { align: 'center' });
-        doc.text('Ch. Patron.', colX[5] + colWidths[5]/2, y + 5, { align: 'center' });
+        // Fonction pour dessiner l'en-tête du tableau (réutilisée après saut de page)
+        function drawTableHeader() {
+            doc.setFillColor(...bleuFonce);
+            doc.rect(marginLeft, y, tableWidth, 8, 'F');
+            doc.setTextColor(...blanc);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Elements de paie', colX[0] + 3, y + 5);
+            doc.text('Base', colX[1] + colWidths[1]/2, y + 5, { align: 'center' });
+            doc.text('Taux', colX[2] + colWidths[2]/2, y + 5, { align: 'center' });
+            doc.text('Retenues', colX[3] + colWidths[3]/2, y + 5, { align: 'center' });
+            doc.text('Gains', colX[4] + colWidths[4]/2, y + 5, { align: 'center' });
+            doc.text('Ch. Patron.', colX[5] + colWidths[5]/2, y + 5, { align: 'center' });
+            y += 8;
+        }
         
-        y += 8;
+        drawTableHeader();
+        const tableStartY = y;
         let rowY = y;
         const rowHeight = 6;
         
-        // Fonction pour dessiner une ligne du tableau avec meilleur alignement
+        // Fonction pour dessiner une ligne du tableau avec gestion de pagination
         function drawRow(label, base, taux, deduire, payer, patronal, isBold, bgColor) {
+            // Vérifier si on dépasse la zone imprimable (laisser place au footer)
+            if (rowY + rowHeight > maxY - 20) {
+                // Dessiner les bordures du tableau sur la page courante
+                doc.setDrawColor(...grisMoyen);
+                doc.rect(marginLeft, tableStartY, tableWidth, rowY - tableStartY, 'S');
+                for (let ci = 1; ci < colX.length; ci++) {
+                    doc.line(colX[ci], tableStartY, colX[ci], rowY);
+                }
+                // Nouvelle page
+                doc.addPage();
+                y = marginTop;
+                drawTableHeader();
+                rowY = y;
+            }
+            
             if (bgColor) {
                 doc.setFillColor(...bgColor);
-                doc.rect(10, rowY, tableWidth, rowHeight, 'F');
+                doc.rect(marginLeft, rowY, tableWidth, rowHeight, 'F');
             }
             doc.setDrawColor(...grisMoyen);
-            doc.line(10, rowY + rowHeight, 200, rowY + rowHeight);
+            doc.line(marginLeft, rowY + rowHeight, rightEdge, rowY + rowHeight);
             
             doc.setTextColor(...noir);
             doc.setFontSize(6.5);
@@ -5341,11 +5382,11 @@ function genererFicheDePaiePDF() {
         // ===== NET A PAYER =====
         rowY += 2;
         doc.setFillColor(...bleuFonce);
-        doc.rect(10, rowY, tableWidth, 8, 'F');
+        doc.rect(marginLeft, rowY, tableWidth, 8, 'F');
         doc.setTextColor(...blanc);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('NET A PAYER', 15, rowY + 5.5);
+        doc.text('NET A PAYER', marginLeft + 5, rowY + 5.5);
         doc.setFontSize(9);
         doc.text(formatMontant(fiche.net) + ' FCFA', colX[5] + colWidths[5] - 3, rowY + 5.5, { align: 'right' });
         
@@ -5353,24 +5394,33 @@ function genererFicheDePaiePDF() {
         
         // Cadre latéral des bordures du tableau
         doc.setDrawColor(...grisMoyen);
-        doc.rect(10, y, tableWidth, rowY - y - 4, 'S');
+        doc.rect(marginLeft, tableStartY, tableWidth, rowY - tableStartY - 4, 'S');
         
         // Lignes verticales alignées avec les colonnes
-        doc.line(colX[1], y, colX[1], rowY - 4);
-        doc.line(colX[2], y, colX[2], rowY - 4);
-        doc.line(colX[3], y, colX[3], rowY - 4);
-        doc.line(colX[4], y, colX[4], rowY - 4);
-        doc.line(colX[5], y, colX[5], rowY - 4);
+        doc.line(colX[1], tableStartY, colX[1], rowY - 4);
+        doc.line(colX[2], tableStartY, colX[2], rowY - 4);
+        doc.line(colX[3], tableStartY, colX[3], rowY - 4);
+        doc.line(colX[4], tableStartY, colX[4], rowY - 4);
+        doc.line(colX[5], tableStartY, colX[5], rowY - 4);
         
         // ========== TABLEAU RECAPITULATIF ==========
         y = rowY + 4;
-        const recapWidth = 27;
-        const recapCols = [10, 37, 64, 91, 118, 145, 172];
+        
+        // Vérifier si le tableau récap + footer tiennent sur la page
+        if (y + 16 + 30 > maxY) {
+            doc.addPage();
+            y = marginTop;
+        }
+        
+        const recapWidth = Math.floor(contentWidth / 7); // ~25mm
+        const recapCols = [];
+        for (let i = 0; i < 7; i++) recapCols.push(marginLeft + i * recapWidth);
+        const recapTotalWidth = recapWidth * 7;
         
         doc.setFillColor(...grisClair);
-        doc.rect(10, y, 190, 16, 'F');
+        doc.rect(marginLeft, y, recapTotalWidth, 16, 'F');
         doc.setDrawColor(...grisMoyen);
-        doc.rect(10, y, 190, 16, 'S');
+        doc.rect(marginLeft, y, recapTotalWidth, 16, 'S');
         
         // Lignes verticales du récapitulatif
         for (let i = 1; i < recapCols.length; i++) {
@@ -5388,10 +5438,10 @@ function genererFicheDePaiePDF() {
         doc.text('Net imposable', recapCols[3] + recapWidth/2, y + 5, { align: 'center' });
         doc.text('Ch. patron.', recapCols[4] + recapWidth/2, y + 5, { align: 'center' });
         doc.text('Cout Global', recapCols[5] + recapWidth/2, y + 5, { align: 'center' });
-        doc.text('Paiement', recapCols[6] + 19, y + 5, { align: 'center' });
+        doc.text('Paiement', recapCols[6] + recapWidth/2, y + 5, { align: 'center' });
         
         // Ligne horizontale séparatrice
-        doc.line(10, y + 8, 200, y + 8);
+        doc.line(marginLeft, y + 8, marginLeft + recapTotalWidth, y + 8);
         
         // Ligne 2 - Valeurs centrées
         doc.setFont('helvetica', 'normal');
@@ -5401,24 +5451,24 @@ function genererFicheDePaiePDF() {
         doc.text(formatEntier(fiche.salaireBrut - fiche.totalCotisationsSalariales), recapCols[3] + recapWidth/2, y + 13, { align: 'center' });
         doc.text(formatEntier(fiche.totalCotisationsPatronales), recapCols[4] + recapWidth/2, y + 13, { align: 'center' });
         doc.text(formatEntier(fiche.salaireBrut + fiche.totalCotisationsPatronales), recapCols[5] + recapWidth/2, y + 13, { align: 'center' });
-        doc.text(fiche.modePaiement || 'Virement', recapCols[6] + 19, y + 13, { align: 'center' });
+        doc.text(fiche.modePaiement || 'Virement', recapCols[6] + recapWidth/2, y + 13, { align: 'center' });
         
         // ========== MENTIONS LÉGALES ==========
         y += 22;
         doc.setTextColor(...gris);
         doc.setFontSize(6);
         doc.setFont('helvetica', 'italic');
-        doc.text('Dans votre interet et pour faire valoir vos droits, conservez ce bulletin de paie sans limitation de duree.', 105, y, { align: 'center' });
-        doc.text('Paiement effectue le ' + dateEmission + ' - Mode de paiement: ' + (fiche.modePaiement || 'Virement'), 105, y + 4, { align: 'center' });
+        doc.text('Dans votre interet et pour faire valoir vos droits, conservez ce bulletin de paie sans limitation de duree.', pageWidth / 2, y, { align: 'center' });
+        doc.text('Paiement effectue le ' + dateEmission + ' - Mode de paiement: ' + (fiche.modePaiement || 'Virement'), pageWidth / 2, y + 4, { align: 'center' });
         
         // ========== PIED DE PAGE ==========
         doc.setFillColor(...bleuFonce);
-        doc.rect(0, 282, 210, 15, 'F');
+        doc.rect(0, pageHeight - marginBottom, pageWidth, marginBottom, 'F');
         
         doc.setTextColor(...blanc);
         doc.setFontSize(6);
-        doc.text('Bulletin de paie conforme au Code du Travail Senegalais - Cotisations: IPRES (retraite) - CSS (prestations familiales, AT) - IPM (maladie) - TRIMF', 105, 287, { align: 'center' });
-        doc.text('KFS BTP IMMO - NINEA: ' + fiche.nineaEntreprise + ' - RCCM: ' + fiche.rccmEntreprise + ' - Dakar, Senegal', 105, 292, { align: 'center' });
+        doc.text('Bulletin de paie conforme au Code du Travail Senegalais - Cotisations: IPRES (retraite) - CSS (prestations familiales, AT) - IPM (maladie) - TRIMF', pageWidth / 2, pageHeight - marginBottom + 5, { align: 'center' });
+        doc.text('KFS BTP IMMO - NINEA: ' + fiche.nineaEntreprise + ' - RCCM: ' + fiche.rccmEntreprise + ' - Dakar, Senegal', pageWidth / 2, pageHeight - marginBottom + 10, { align: 'center' });
         
         // Sauvegarder le PDF
         const filename = 'Bulletin_Paie_' + fiche.prenom + '_' + fiche.nom + '_' + fiche.mois.replace('-', '_') + '.pdf';
@@ -14658,7 +14708,8 @@ window.saveAndGenerateDocument = function() {
             <title>${newDoc.nom} - ${numero}</title>
             <style>
                 body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }
-                .document-container { background: white; width: 100%; max-width: 190mm; margin: 0 auto; padding: 15mm; box-shadow: 0 0 20px rgba(0,0,0,0.1); box-sizing: border-box; }
+                .document-container { background: white; width: 100%; max-width: 180mm; margin: 0 auto; padding: 15mm; box-shadow: 0 0 20px rgba(0,0,0,0.1); box-sizing: border-box; }
+                .attestation-block { break-inside: avoid; page-break-inside: avoid; }
                 .no-print { margin-top: 20px; text-align: center; }
                 .no-print button { padding: 12px 30px; margin: 5px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
                 .btn-print { background: #3b82f6; color: white; }
@@ -14683,12 +14734,12 @@ window.saveAndGenerateDocument = function() {
             document.getElementById('btn-download-attestation').onclick = function() {
                 if (window.html2pdf) {
                     html2pdf().set({
-                        margin: [10, 10, 10, 10],
+                        margin: [15, 15, 15, 15],
                         filename: pdfFileName,
                         image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                        html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
                         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                        pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.certif-block', '.contrat-block', '.attestation-block'] }
                     }).from(document.getElementById('attestation-pdf-content')).save();
                 } else {
                     alert('html2pdf.js non chargé');
@@ -14706,12 +14757,12 @@ window.saveAndGenerateDocument = function() {
             if (printWindow.html2pdf) {
                 var pdfFileName = (newDoc.nom ? newDoc.nom.replace(/\s+/g, '_') : 'attestation') + '.pdf';
                 printWindow.html2pdf().set({
-                    margin: [10, 10, 10, 10],
+                    margin: [15, 15, 15, 15],
                     filename: pdfFileName,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0, windowWidth: 680 },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['.certif-block', '.contrat-block', '.attestation-block'] }
                 }).from(printWindow.document.getElementById('attestation-pdf-content')).save();
             }
         }, 1000);
@@ -14817,7 +14868,7 @@ function generateDocumentHTML(type, data, isPreview) {
     
     // Structure HTML complète du document professionnel
     let html = `
-<div class="document-professionnel" style="font-family: 'Times New Roman', serif; width: 100%; max-width: 190mm; margin: 0 auto; padding: 10mm; background: white; color: #333; line-height: 1.6; box-sizing: border-box;">
+<div class="document-professionnel" style="font-family: 'Times New Roman', serif; width: 100%; max-width: 180mm; margin: 0 auto; padding: 0; background: white; color: #333; line-height: 1.6; box-sizing: border-box;">
     
     <!-- EN-TÊTE -->
     <div style="border-bottom: 3px double #1e3a8a; padding-bottom: 20px; margin-bottom: 30px;">
