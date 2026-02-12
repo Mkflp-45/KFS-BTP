@@ -1,4 +1,4 @@
-// =============================================================
+﻿// =============================================================
 // HELPER: Sauvegarde locale + sync Firebase automatique
 // =============================================================
 function localSave(key, data) {
@@ -833,7 +833,6 @@ function initCertificatTravail() {
                             pagebreak: { mode: ['avoid-all', 'css', 'legacy'], before: '.page-break', after: '.page-break-after', avoid: ['.pdf-block', '.pdf-section', '.pdf-header', '.pdf-signatures', '.pdf-footer'] }
                         }).from(el).save().then(function() {
                             document.body.removeChild(el);
-                        });
                         });
                     } else {
                         // Fallback : ouvrir dans une nouvelle fenêtre pour impression
@@ -6742,6 +6741,28 @@ window.deleteFinTransaction = function(index) {
 
 // Export PDF
 window.exportFinancesPDF = function() {
+    // Si KFS_PDF disponible, utiliser le template HTML (meilleur rendu)
+    if (window.KFS_PDF && window.KFS_PDF.templates['rapport-financier']) {
+        var transactions = getFilteredTransactions();
+        var recettes = transactions.filter(function(t) { return t.type === 'recette'; });
+        var depenses = transactions.filter(function(t) { return t.type === 'depense'; });
+        var totalR = recettes.reduce(function(s,t) { return s + (t.montant||0); }, 0);
+        var totalD = depenses.reduce(function(s,t) { return s + (t.montant||0); }, 0);
+        var annee = document.getElementById('finance-annee') ? document.getElementById('finance-annee').value : new Date().getFullYear();
+        var sorted = transactions.slice().sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
+        var html = window.KFS_PDF.render('rapport-financier', {
+            annee: annee,
+            totalRecettes: totalR,
+            totalDepenses: totalD,
+            resultat: totalR - totalD,
+            transactions: sorted
+        });
+        window.KFS_PDF.downloadHTML(html, 'rapport-financier-' + annee + '.pdf', function() {
+            showNotification('PDF exporté', 'Le rapport financier a été téléchargé', 'success');
+        });
+        return;
+    }
+
     if (typeof jspdf === 'undefined' && typeof window.jspdf === 'undefined') {
         showNotification('Erreur', 'Bibliothèque PDF non chargée', 'error');
         return;
@@ -7495,6 +7516,13 @@ window.printFacture = function(index) {
     const f = factures[index];
     const settings = JSON.parse(localStorage.getItem('siteSettings') || '{}');
     
+    // Générer aussi le PDF via KFS_PDF depuis la page parente
+    if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+        var factureBody = buildFactureHTML(f, settings);
+        var pdfName = (f.type === 'facture' ? 'Facture' : 'Devis') + '_' + f.numero + '.pdf';
+        window.KFS_PDF.downloadHTML(factureBody, pdfName);
+    }
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <!DOCTYPE html>
@@ -10356,30 +10384,24 @@ window.downloadDocument = function(index) {
     
     // Si c'est un document HTML généré
     if (d.contenuHTML) {
-        // Créer un fichier HTML à télécharger
-        const blob = new Blob([`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>${d.nom}</title>
-            </head>
-            <body>
-                ${d.contenuHTML}
-            </body>
-            </html>
-        `], { type: 'text/html' });
-        
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        // Générer un PDF via KFS_PDF
+        if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+            var pdfName = (d.numero || d.nom || 'document').replace(/\s+/g, '_') + '.pdf';
+            window.KFS_PDF.downloadHTML(d.contenuHTML, pdfName);
+            showNotification('Téléchargement', d.nom + ' (PDF)', 'success');
+            return;
+        }
+        // Fallback: télécharger en HTML
+        var blob = new Blob(['<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + (d.nom || 'Document') + '</title></head><body>' + d.contenuHTML + '</body></html>'], { type: 'text/html' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
         a.href = url;
-        a.download = `${d.numero || d.nom}.html`;
+        a.download = (d.numero || d.nom) + '.html';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        
-        showNotification('Téléchargement', `${d.nom} téléchargé`, 'success');
+        showNotification('Téléchargement', d.nom + ' téléchargé', 'success');
         return;
     }
     
@@ -11656,8 +11678,70 @@ window.closeFacturePreview = function() {
     if (modal) modal.classList.add('hidden');
 };
 
-window.downloadFacturePDF = function() {
-    showNotification('Téléchargement', 'Fonctionnalité PDF disponible avec bibliothèque externe', 'info');
+// Générer le HTML d'une facture/devis pour PDF
+function buildFactureHTML(f, settings) {
+    var company = (window.KFS_PDF && window.KFS_PDF.COMPANY) || { nom: 'KFS BTP IMMO', adresse: 'Tambacounda', phone: '+221 78 584 28 71', email: 'kfsbtpproimmo@gmail.com', ninea: '009468499', rccm: 'SN TBC 2025 M 1361' };
+    var dateDoc = f.date ? new Date(f.date).toLocaleDateString('fr-FR') : '';
+    var isFacture = f.type === 'facture';
+    var lignesHTML = (f.lignes || []).map(function(l) {
+        return '<tr><td style="padding:10px;border:1px solid #e2e8f0;">' + (l.description || '') + '</td>' +
+            '<td style="padding:10px;border:1px solid #e2e8f0;text-align:center;">' + (l.quantite || 0) + '</td>' +
+            '<td style="padding:10px;border:1px solid #e2e8f0;text-align:right;">' + (l.prixUnit || 0).toLocaleString('fr-FR') + ' FCFA</td>' +
+            '<td style="padding:10px;border:1px solid #e2e8f0;text-align:right;font-weight:bold;">' + ((l.quantite || 0) * (l.prixUnit || 0)).toLocaleString('fr-FR') + ' FCFA</td></tr>';
+    }).join('');
+
+    return '<div class="pdf-page" style="font-family:Arial,sans-serif;">' +
+        '<div class="pdf-header" style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px double #1e3a8a;padding-bottom:20px;margin-bottom:30px;">' +
+            '<div><h1 style="color:#1e3a8a;font-size:24px;margin:0;">' + company.nom + '</h1>' +
+            '<p style="color:#666;font-style:italic;margin:5px 0;">B\u00e2timent - Travaux Publics - Immobilier</p>' +
+            '<p style="font-size:12px;color:#555;">' + company.adresse + '<br>Tél: ' + company.phone + '<br>Email: ' + company.email + '<br><strong>NINEA:</strong> ' + company.ninea + ' | <strong>RCCM:</strong> ' + company.rccm + '</p></div>' +
+            '<div style="text-align:right;"><div style="background:#1e3a8a;color:white;padding:15px 25px;border-radius:8px;"><p style="margin:0;font-size:12px;opacity:0.9;">' + (isFacture ? 'FACTURE' : 'DEVIS') + '</p><p style="margin:5px 0 0;font-size:18px;font-weight:bold;">' + (f.numero || '') + '</p></div><p style="margin-top:10px;font-size:12px;color:#666;">Date : ' + dateDoc + '</p></div>' +
+        '</div>' +
+        '<div class="pdf-block" style="background:#f8fafc;padding:20px;border-radius:8px;border-left:4px solid #10b981;margin-bottom:25px;">' +
+            '<h4 style="color:#10b981;margin:0 0 10px;">Client</h4>' +
+            '<p style="font-weight:bold;margin:5px 0;">' + (f.client || '') + '</p>' +
+            (f.clientAdresse ? '<p style="font-size:13px;margin:3px 0;">' + f.clientAdresse + '</p>' : '') +
+            (f.clientTel ? '<p style="font-size:13px;margin:3px 0;">Tél: ' + f.clientTel + '</p>' : '') +
+            (f.clientEmail ? '<p style="font-size:13px;margin:3px 0;">Email: ' + f.clientEmail + '</p>' : '') +
+        '</div>' +
+        '<div class="pdf-block"><table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' +
+            '<thead><tr style="background:#1e3a8a;color:white;"><th style="padding:12px;text-align:left;">Description</th><th style="padding:12px;text-align:center;width:60px;">Qté</th><th style="padding:12px;text-align:right;width:100px;">Prix Unit.</th><th style="padding:12px;text-align:right;width:120px;">Total</th></tr></thead>' +
+            '<tbody>' + lignesHTML + '</tbody></table></div>' +
+        '<div class="pdf-block" style="text-align:right;margin:20px 0;">' +
+            '<p>Total HT: <strong>' + (f.totalHT || 0).toLocaleString('fr-FR') + ' FCFA</strong></p>' +
+            '<p>TVA (18%): <strong>' + (f.tva || 0).toLocaleString('fr-FR') + ' FCFA</strong></p>' +
+            '<p style="font-size:20px;font-weight:bold;color:#1e3a8a;">Total TTC: ' + (f.totalTTC || 0).toLocaleString('fr-FR') + ' FCFA</p>' +
+        '</div>' +
+        (f.notes ? '<div class="pdf-block" style="padding:15px;background:#fef3c7;border-radius:8px;"><p><strong>Notes:</strong> ' + f.notes + '</p></div>' : '') +
+        '<div class="pdf-footer" style="margin-top:50px;padding-top:20px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#999;">' +
+            '<p>' + company.nom + ' | ' + company.adresse + ' | Tél: ' + company.phone + ' | ' + company.email + '</p>' +
+            '<p>NINEA: ' + company.ninea + ' | RCCM: ' + company.rccm + '</p>' +
+        '</div></div>';
+}
+
+window.downloadFacturePDF = function(index) {
+    // Si index fourni, utiliser les données stockées
+    if (typeof index === 'number') {
+        var factures = JSON.parse(localStorage.getItem('factures') || '[]');
+        var f = factures[index];
+        if (!f) { showNotification('Erreur', 'Facture introuvable', 'error'); return; }
+        var settings = JSON.parse(localStorage.getItem('siteSettings') || '{}');
+        var factureBody = buildFactureHTML(f, settings);
+        var filename = (f.type === 'facture' ? 'Facture' : 'Devis') + '_' + f.numero + '.pdf';
+        if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+            window.KFS_PDF.downloadHTML(factureBody, filename);
+        } else {
+            showNotification('Erreur', 'Système PDF non chargé', 'error');
+        }
+        return;
+    }
+    // Fallback: utiliser le contenu du modal d'aperçu
+    var previewEl = document.getElementById('facture-preview-content');
+    if (previewEl && window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+        window.KFS_PDF.downloadHTML(previewEl.innerHTML, 'facture.pdf');
+    } else {
+        showNotification('Info', 'Utilisez le bouton Imprimer pour générer un PDF', 'info');
+    }
 };
 
 // ===================================================
@@ -13881,6 +13965,12 @@ window.generateFromTemplate = function(index) {
         content = content.replace(regex, value);
     });
     
+    // Télécharger en PDF via KFS_PDF
+    if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+        var pdfFilename = (template.nom || 'document').replace(/\s+/g, '_') + '.pdf';
+        window.KFS_PDF.downloadHTML(content, pdfFilename);
+    }
+
     // Ouvrir le document généré
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -14645,6 +14735,12 @@ window.previewDocument = function() {
     
     const content = generateDocumentHTML(type, data, true);
     
+    // Aperçu via KFS_PDF
+    if (window.KFS_PDF && window.KFS_PDF.previewHTML) {
+        window.KFS_PDF.previewHTML(content, 'Aperçu - ' + type.toUpperCase());
+        return;
+    }
+
     const previewWindow = window.open('', '_blank', 'width=900,height=700');
     previewWindow.document.write(`
         <!DOCTYPE html>
@@ -14718,6 +14814,12 @@ window.saveAndGenerateDocument = function() {
     if (typeof renderDocuments === 'function') renderDocuments();
     if (typeof updateDocumentStats === 'function') updateDocumentStats();
     
+    // Télécharger le PDF via KFS_PDF depuis la page parente
+    if (window.KFS_PDF && window.KFS_PDF.downloadHTML) {
+        var pdfFn = (newDoc.nom ? newDoc.nom.replace(/\s+/g, '_') : 'document') + '.pdf';
+        window.KFS_PDF.downloadHTML(contenuHTML, pdfFn);
+    }
+
     // Afficher le document généré avec options Aperçu, Imprimer et Télécharger
     const printWindow = window.open('', '_blank', 'width=900,height=700');
 

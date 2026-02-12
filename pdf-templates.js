@@ -329,6 +329,100 @@
         '</div>';
     }
 
+    // ---- TEMPLATE : Facture / Devis ----
+    function templateFacture(data) {
+        var isFacture = (data.type === 'facture');
+        var dateDoc = dateFR(data.date);
+        var lignesHTML = (data.lignes || []).map(function(l) {
+            var total = (parseFloat(l.quantite) || 0) * (parseFloat(l.prixUnit) || 0);
+            return '<tr>' +
+                '<td style="padding:10px;border:1px solid #e2e8f0;">' + esc(l.description) + '</td>' +
+                '<td style="padding:10px;border:1px solid #e2e8f0;text-align:center;">' + (l.quantite || 0) + '</td>' +
+                '<td style="padding:10px;border:1px solid #e2e8f0;text-align:right;">' + montantFR(l.prixUnit) + ' FCFA</td>' +
+                '<td style="padding:10px;border:1px solid #e2e8f0;text-align:right;font-weight:bold;">' + montantFR(total) + ' FCFA</td>' +
+            '</tr>';
+        }).join('');
+
+        return '<div class="pdf-page">' +
+            headerHTML(isFacture ? 'FACTURE' : 'DEVIS', data.numero || '') +
+            titleHTML(isFacture ? 'FACTURE' : 'DEVIS', data.numero ? 'N\u00b0 ' + data.numero : '') +
+
+            '<div class="pdf-block" style="background:#f8fafc;padding:20px;border-radius:8px;border-left:4px solid #10b981;margin-bottom:25px;">' +
+                '<h4 style="color:#10b981;margin:0 0 10px;">Client</h4>' +
+                '<p style="font-weight:bold;margin:5px 0;">' + v(data.client || data.clientNom, 'Nom du client') + '</p>' +
+                (data.clientAdresse ? '<p style="font-size:13px;margin:3px 0;">' + data.clientAdresse + '</p>' : '') +
+                (data.clientTel ? '<p style="font-size:13px;margin:3px 0;">T\u00e9l: ' + data.clientTel + '</p>' : '') +
+                (data.clientEmail ? '<p style="font-size:13px;margin:3px 0;">Email: ' + data.clientEmail + '</p>' : '') +
+            '</div>' +
+
+            (data.echeance ? '<p class="pdf-block" style="font-size:13px;"><strong>\u00c9ch\u00e9ance :</strong> ' + dateFR(data.echeance) + '</p>' : '') +
+
+            '<div class="pdf-block"><table class="pdf-table" style="width:100%;border-collapse:collapse;">' +
+                '<thead><tr style="background:#1e3a8a;color:white;">' +
+                    '<th style="padding:12px;text-align:left;">Description</th>' +
+                    '<th style="padding:12px;text-align:center;width:60px;">Qt\u00e9</th>' +
+                    '<th style="padding:12px;text-align:right;width:100px;">Prix Unit.</th>' +
+                    '<th style="padding:12px;text-align:right;width:120px;">Total</th>' +
+                '</tr></thead>' +
+                '<tbody>' + (lignesHTML || '<tr><td colspan="4" style="padding:20px;text-align:center;color:#999;border:1px solid #e2e8f0;">Aucune ligne</td></tr>') + '</tbody>' +
+            '</table></div>' +
+
+            '<div class="pdf-block" style="text-align:right;margin:20px 0;">' +
+                '<p>Total HT : <strong>' + montantFR(data.totalHT) + ' FCFA</strong></p>' +
+                '<p>TVA (18%) : <strong>' + montantFR(data.tva) + ' FCFA</strong></p>' +
+                '<p style="font-size:20px;font-weight:bold;color:#1e3a8a;">Total TTC : ' + montantFR(data.totalTTC) + ' FCFA</p>' +
+            '</div>' +
+
+            (data.notes ? '<div class="pdf-block" style="padding:15px;background:#fef3c7;border-radius:8px;"><p><strong>Notes :</strong> ' + data.notes + '</p></div>' : '') +
+
+            signaturesHTML('LE PRESTATAIRE', COMPANY.nom, 'LE CLIENT', data.client || data.clientNom || '') +
+            footerHTML() +
+        '</div>';
+    }
+
+    // ---- TEMPLATE : Rapport financier ----
+    function templateRapportFinancier(data) {
+        var annee = data.annee || new Date().getFullYear();
+        var transHTML = (data.transactions || []).slice(0, 25).map(function(t) {
+            var isR = t.type === 'recette';
+            var dateStr = t.date ? dateFR(t.date) : 'N/A';
+            return '<tr>' +
+                '<td style="padding:8px;border-bottom:1px solid #eee;">' + dateStr + '</td>' +
+                '<td style="padding:8px;border-bottom:1px solid #eee;">' + esc(t.description || t.categorie || '') + '</td>' +
+                '<td style="padding:8px;border-bottom:1px solid #eee;text-align:right;color:' + (isR ? '#22c55e' : '#ef4444') + ';font-weight:bold;">' + (isR ? '+' : '-') + montantFR(t.montant) + ' FCFA</td>' +
+            '</tr>';
+        }).join('');
+
+        var marge = (data.totalRecettes > 0) ? ((data.resultat / data.totalRecettes) * 100).toFixed(1) : '0';
+
+        return '<div class="pdf-page">' +
+            headerHTML('RAPPORT FINANCIER', annee.toString()) +
+            titleHTML('RAPPORT FINANCIER', 'Ann\u00e9e ' + annee) +
+
+            sectionHTML(1, 'R\u00c9SUM\u00c9 FINANCIER',
+                '<div class="pdf-montant-box">' +
+                    '<div class="row"><span>Total Recettes</span><span style="color:#22c55e;font-weight:bold;">' + montantFR(data.totalRecettes) + ' FCFA</span></div>' +
+                    '<div class="row"><span>Total D\u00e9penses</span><span style="color:#ef4444;font-weight:bold;">' + montantFR(data.totalDepenses) + ' FCFA</span></div>' +
+                    '<div class="row total"><span>R\u00e9sultat Net</span><span style="color:' + (data.resultat >= 0 ? '#22c55e' : '#ef4444') + ';font-weight:bold;">' + montantFR(data.resultat) + ' FCFA</span></div>' +
+                    '<div class="row"><span>Marge</span><span>' + marge + '%</span></div>' +
+                '</div>'
+            ) +
+
+            sectionHTML(2, 'DERNI\u00c8RES TRANSACTIONS',
+                '<table class="pdf-table" style="width:100%;border-collapse:collapse;">' +
+                    '<thead><tr style="background:#1e3a8a;color:white;">' +
+                        '<th style="padding:10px;text-align:left;">Date</th>' +
+                        '<th style="padding:10px;text-align:left;">Description</th>' +
+                        '<th style="padding:10px;text-align:right;">Montant</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + (transHTML || '<tr><td colspan="3" style="padding:15px;text-align:center;color:#999;">Aucune transaction</td></tr>') + '</tbody>' +
+                '</table>'
+            ) +
+
+            footerHTML() +
+        '</div>';
+    }
+
     // ---- API PUBLIQUE ----
 
     /**
@@ -424,7 +518,10 @@
         templates: {
             certificat: templateCertificat,
             contrat: templateContrat,
-            attestation: templateAttestation
+            attestation: templateAttestation,
+            facture: templateFacture,
+            devis: templateFacture,
+            'rapport-financier': templateRapportFinancier
         },
 
         // Fragments
