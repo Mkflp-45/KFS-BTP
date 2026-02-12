@@ -792,20 +792,49 @@ var FormEngine = {
     /** V\u00e9rifier les champs requis */
     validate: function(typeKey) {
         var config = DOCUMENT_TYPES[typeKey];
-        if (!config) return false;
+        if (!config) {
+            console.error('[DocEngine] Type inconnu:', typeKey);
+            DocUtils.toast('Type de document inconnu', 'error');
+            return false;
+        }
         var valid = true;
+        var missing = [];
+        var firstInvalid = null;
+        var container = document.getElementById('doc-form-container');
+
         for (var i = 0; i < config.fields.length; i++) {
             var f = config.fields[i];
-            if (!f.required || f.section) continue;
-            var el = document.getElementById('doc-' + f.id);
-            if (!el || !el.value.trim()) {
-                el && (el.style.borderColor = '#ef4444');
+            if (f.section || !f.required) continue;
+
+            // Chercher dans le conteneur du formulaire
+            var el = container ? container.querySelector('#doc-' + f.id) : document.getElementById('doc-' + f.id);
+            var val = el ? (el.value || '').trim() : '';
+
+            if (!el || !val) {
+                if (el) {
+                    el.style.borderColor = '#ef4444';
+                    el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
+                }
+                missing.push(f.label);
+                if (!firstInvalid && el) firstInvalid = el;
                 valid = false;
             } else {
                 el.style.borderColor = '';
+                el.style.boxShadow = '';
             }
         }
-        if (!valid) DocUtils.toast('Veuillez remplir tous les champs obligatoires', 'error');
+
+        if (!valid) {
+            var msg = missing.length <= 3
+                ? 'Champs manquants : ' + missing.join(', ')
+                : missing.length + ' champs obligatoires manquants';
+            DocUtils.toast(msg, 'error');
+            console.warn('[DocEngine] Validation:', typeKey, '- Manquants:', missing);
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                try { firstInvalid.focus(); } catch(e) {}
+            }
+        }
         return valid;
     }
 };
@@ -1321,15 +1350,24 @@ var DocExport = {
 
 var DocEngine = {
     currentType: null,
+    _initialized: false,
 
     /** Initialisation */
     init: function() {
+        if (DocEngine._initialized) {
+            console.log('[DocEngine] Déjà initialisé, skip');
+            return;
+        }
         var selector = document.getElementById('doc-type-select');
-        if (!selector) return;
+        if (!selector) {
+            console.warn('[DocEngine] #doc-type-select introuvable');
+            return;
+        }
 
         selector.addEventListener('change', function() {
             DocEngine.selectType(this.value);
         });
+        DocEngine._initialized = true;
 
         // Initialiser le rendu
         DocHistory.renderStats();
@@ -1379,37 +1417,57 @@ var DocEngine = {
 
     /** Aper\u00e7u */
     preview: function() {
-        if (!DocEngine.currentType) return;
-        if (!FormEngine.validate(DocEngine.currentType)) return;
+        if (!DocEngine.currentType) {
+            DocUtils.toast('Veuillez s\u00e9lectionner un type de document', 'error');
+            return;
+        }
+        try {
+            if (!FormEngine.validate(DocEngine.currentType)) return;
 
-        var data = FormEngine.collectData();
-        var html = DocRenderer.render(DocEngine.currentType, data);
+            var data = FormEngine.collectData();
+            var html = DocRenderer.render(DocEngine.currentType, data);
 
-        var previewPanel = document.getElementById('doc-preview-panel');
-        var previewContainer = document.getElementById('doc-preview-render');
-        if (previewPanel && previewContainer) {
-            previewContainer.innerHTML = html;
-            previewPanel.style.display = 'block';
-            previewPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            var previewPanel = document.getElementById('doc-preview-panel');
+            var previewContainer = document.getElementById('doc-preview-render');
+            if (previewPanel && previewContainer) {
+                previewContainer.innerHTML = html;
+                previewPanel.style.display = 'block';
+                previewPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } catch(e) {
+            console.error('[DocEngine] Erreur aper\u00e7u:', e);
+            DocUtils.toast('Erreur : ' + e.message, 'error');
         }
     },
 
     /** T\u00e9l\u00e9charger en PDF */
     downloadPDF: function() {
-        if (!DocEngine.currentType) return;
-        if (!FormEngine.validate(DocEngine.currentType)) return;
+        if (!DocEngine.currentType) {
+            DocUtils.toast('Veuillez s\u00e9lectionner un type de document', 'error');
+            return;
+        }
+        try {
+            if (!FormEngine.validate(DocEngine.currentType)) return;
 
-        var data = FormEngine.collectData();
-        var config = DOCUMENT_TYPES[DocEngine.currentType];
-        var html = DocRenderer.render(DocEngine.currentType, data);
-        var filename = (config.label || 'document').replace(/\s+/g, '_') + '_' + (data.numero || DocUtils.uid()) + '.pdf';
-        
-        DocExport.downloadPDF(html, filename);
+            var data = FormEngine.collectData();
+            var config = DOCUMENT_TYPES[DocEngine.currentType];
+            var html = DocRenderer.render(DocEngine.currentType, data);
+            var filename = (config.label || 'document').replace(/\s+/g, '_') + '_' + (data.numero || DocUtils.uid()) + '.pdf';
+            
+            DocExport.downloadPDF(html, filename);
+        } catch(e) {
+            console.error('[DocEngine] Erreur PDF:', e);
+            DocUtils.toast('Erreur : ' + e.message, 'error');
+        }
     },
 
     /** Enregistrer et imprimer */
     saveAndPrint: function() {
-        if (!DocEngine.currentType) return;
+        if (!DocEngine.currentType) {
+            DocUtils.toast('Veuillez sélectionner un type de document', 'error');
+            return;
+        }
+        try {
         if (!FormEngine.validate(DocEngine.currentType)) return;
 
         var data = FormEngine.collectData();
@@ -1433,6 +1491,10 @@ var DocEngine = {
 
         // Lancer l'impression
         DocExport.print(html);
+        } catch(e) {
+            console.error('[DocEngine] Erreur enregistrement:', e);
+            DocUtils.toast('Erreur : ' + e.message, 'error');
+        }
     },
 
     /** R\u00e9initialiser le formulaire */
