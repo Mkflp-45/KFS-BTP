@@ -110,44 +110,51 @@ function generateFooter() {
     
     return `
 <footer class="mt-16 rounded-t-3xl shadow-2xl border-t border-blue-200 animate__animated animate__fadeInUp" role="contentinfo" aria-label="Pied de page" style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 60%, #0ea5e9 100%);">
-  <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row md:justify-between md:items-start text-white gap-8">
-    <div class="flex-1 flex flex-col items-center md:items-start mb-8 md:mb-0">
-      <div class="flex items-center space-x-3 mb-3">
-        <img src="${s.logo || 'assets/logo-kfs-btp.jpeg'}" alt="Logo ${s.company}" class="h-14 w-14 rounded-full shadow-lg border-2 border-white bg-white object-cover">
-        <span class="font-extrabold text-2xl tracking-widest" style="font-family: 'Montserrat', Arial, sans-serif; letter-spacing: 0.1em;">${s.company}</span>
+  <div class="container mx-auto px-5 py-10 md:py-12 text-white">
+    <!-- Logo + Slogan + R\u00e9seaux -->
+    <div class="flex flex-col items-center text-center mb-8 md:mb-0 md:flex-row md:items-start md:text-left md:justify-between md:gap-8">
+      <div class="flex flex-col items-center md:items-start md:flex-1 mb-6 md:mb-0">
+        <div class="flex items-center space-x-3 mb-3">
+          <img src="${s.logo || 'assets/logo-kfs-btp.jpeg'}" alt="Logo ${s.company}" class="h-14 w-14 rounded-full shadow-lg border-2 border-white bg-white object-cover">
+          <span class="font-extrabold text-xl sm:text-2xl tracking-widest" style="font-family: 'Montserrat', Arial, sans-serif; letter-spacing: 0.1em;">${s.company}</span>
+        </div>
+        <span class="text-sm opacity-80 mb-3 max-w-xs">${s.slogan}</span>
+        <div class="flex space-x-4 mt-1" role="group" aria-label="R\u00e9seaux sociaux">
+          ${socialIcons}
+        </div>
       </div>
-      <span class="text-sm opacity-80 mb-2">${s.slogan}</span>
-      <div class="flex space-x-3 mt-2" role="group" aria-label="Réseaux sociaux">
-        ${socialIcons}
-      </div>
+
+      <!-- Navigation en grille 2 colonnes sur mobile -->
+      <nav class="md:flex-1 mb-6 md:mb-0 w-full md:w-auto" aria-label="Liens du pied de page">
+        <span class="font-semibold text-lg block text-center md:text-left mb-3" id="footer-nav-title">Navigation</span>
+        <ul class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:text-base md:grid-cols-1 md:space-y-2 md:gap-0 max-w-sm mx-auto md:max-w-none md:mx-0" aria-labelledby="footer-nav-title">
+          <li><a href="index.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Accueil</a></li>
+          <li><a href="about.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">\u00c0 Propos</a></li>
+          <li><a href="vente.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Vente & Achat</a></li>
+          <li><a href="gestion-locative.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Gestion Locative</a></li>
+          <li><a href="renovation-interieur.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">R\u00e9novation</a></li>
+          <li><a href="apporteur-affaire.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Apporteur d'Affaires</a></li>
+          <li><a href="contact.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Contact</a></li>
+          <li><a href="mentions-legales.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Mentions l\u00e9gales</a></li>
+          <li class="col-span-2 md:col-span-1"><a href="politique-confidentialite.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Politique de confidentialit\u00e9</a></li>
+        </ul>
+      </nav>
+
+      <!-- Contact -->
+      <address class="md:flex-1 flex flex-col items-center md:items-end not-italic space-y-1">
+        <span class="font-semibold text-lg mb-2">Contact</span>
+        <span class="text-sm text-center md:text-right"><span class="sr-only">Adresse :</span>${s.address}</span>
+        <span class="text-sm"><span class="sr-only">Email :</span><a href="mailto:${s.email}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">${s.email}</a></span>
+        <span class="text-sm"><span class="sr-only">T\u00e9l\u00e9phone :</span><a href="tel:${s.phone.replace(/\s/g, '')}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">${s.phone}</a></span>
+        ${s.phoneFrance ? `<span class="text-sm"><span class="sr-only">T\u00e9l\u00e9phone France :</span><a href="tel:${s.phoneFrance.replace(/\s/g, '')}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">${s.phoneFrance}</a></span>` : ''}
+        <span class="text-sm"><span class="sr-only">WhatsApp :</span><a href="https://wa.me/${s.whatsapp}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">WhatsApp</a></span>
+        ${s.ninea ? `<span class="text-sm opacity-80">NINEA : ${s.ninea}</span>` : ''}
+        ${s.rccm ? `<span class="text-sm opacity-80">RCCM : ${s.rccm}</span>` : ''}
+      </address>
     </div>
-    <nav class="flex-1 flex flex-col items-center mb-8 md:mb-0" aria-label="Liens du pied de page">
-      <span class="font-semibold mb-2 text-lg" id="footer-nav-title">Navigation</span>
-      <ul class="space-y-2 text-base" aria-labelledby="footer-nav-title">
-        <li><a href="index.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Accueil</a></li>
-        <li><a href="about.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">À Propos</a></li>
-        <li><a href="vente.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Vente & Achat</a></li>
-        <li><a href="gestion-locative.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Gestion Locative</a></li>
-        <li><a href="renovation-interieur.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Rénovation</a></li>
-        <li><a href="apporteur-affaire.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Apporteur d'Affaires</a></li>
-        <li><a href="contact.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Contact</a></li>
-        <li><a href="mentions-legales.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Mentions légales</a></li>
-        <li><a href="politique-confidentialite.html" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">Politique de confidentialité</a></li>
-      </ul>
-    </nav>
-    <address class="flex-1 flex flex-col items-center md:items-end not-italic">
-      <span class="font-semibold mb-2 text-lg">Contact</span>
-      <span class="text-sm"><span class="sr-only">Adresse :</span>${s.address}</span>
-      <span class="text-sm"><span class="sr-only">Email :</span><a href="mailto:${s.email}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">${s.email}</a></span>
-      <span class="text-sm"><span class="sr-only">Téléphone :</span><a href="tel:${s.phone.replace(/\s/g, '')}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">${s.phone}</a></span>
-      ${s.phoneFrance ? `<span class="text-sm"><span class="sr-only">Téléphone France :</span><a href="tel:${s.phoneFrance.replace(/\s/g, '')}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">${s.phoneFrance}</a></span>` : ''}
-      <span class="text-sm"><span class="sr-only">WhatsApp :</span><a href="https://wa.me/${s.whatsapp}" class="hover:text-yellow-400 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded">WhatsApp</a></span>
-      ${s.ninea ? `<span class="text-sm">NINEA : ${s.ninea}</span>` : ''}
-      ${s.rccm ? `<span class="text-sm">RCCM : ${s.rccm}</span>` : ''}
-    </address>
   </div>
-  <div class="border-t border-blue-300 mt-8 pt-4 text-center text-sm text-white/80">
-    &copy; <span id="year"></span> ${s.company}. Tous droits réservés.
+  <div class="border-t border-blue-300/50 py-4 text-center text-sm text-white/70">
+    &copy; <span id="year"></span> ${s.company}. Tous droits r\u00e9serv\u00e9s.
   </div>
 </footer>
 `;

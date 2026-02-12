@@ -919,7 +919,11 @@ var DocRenderer = {
         // Colonne droite
         html += '<div class="kfs-header-right">';
         html += '<div class="kfs-flag-container">';
-        html += '<div class="kfs-flag"><div class="kfs-flag-green"></div><div class="kfs-flag-yellow"><span class="kfs-flag-star">\u2605</span></div><div class="kfs-flag-red"></div></div>';
+        html += '<div class="kfs-flag" style="width:60px;height:40px;display:flex;border-radius:4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.15)">';
+        html += '<div class="kfs-flag-green" style="flex:1;background:#00853F;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>';
+        html += '<div class="kfs-flag-yellow" style="flex:1;background:#FDEF42;display:flex;align-items:center;justify-content:center;-webkit-print-color-adjust:exact;print-color-adjust:exact"><span class="kfs-flag-star" style="color:#00853F;font-size:14px;line-height:1">\u2605</span></div>';
+        html += '<div class="kfs-flag-red" style="flex:1;background:#E31B23;-webkit-print-color-adjust:exact;print-color-adjust:exact"></div>';
+        html += '</div>';
         html += '<div class="kfs-devise">Un Peuple \u2013 Un But \u2013 Une Foi</div>';
         html += '</div>';
         if (data.numero) {
@@ -1262,52 +1266,93 @@ var DocHistory = {
 
 var DocExport = {
 
-    /** G\u00e9n\u00e8re un PDF depuis le HTML A4 via html2pdf.js */
+    /** Génère un PDF depuis le HTML A4 via html2pdf.js */
     downloadPDF: function(htmlContent, filename) {
         if (typeof html2pdf === 'undefined') {
             DocUtils.toast('html2pdf.js non charg\u00e9', 'error');
             return;
         }
 
+        // Construire un conteneur avec les styles intégrés
         var container = document.createElement('div');
-        container.innerHTML = htmlContent;
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
+        container.style.position = 'fixed';
+        container.style.left = '0';
         container.style.top = '0';
+        container.style.width = '794px';
+        container.style.zIndex = '-9999';
+        container.style.opacity = '0';
+        container.style.pointerEvents = 'none';
+        container.style.background = '#fff';
+
+        // Charger le CSS du document dans le conteneur
+        var docCSS = document.querySelector('link[href*="documents.css"]');
+        if (docCSS) {
+            var styleLink = document.createElement('link');
+            styleLink.rel = 'stylesheet';
+            styleLink.href = docCSS.href;
+            container.appendChild(styleLink);
+        }
+
+        // Ajouter le contenu HTML
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = htmlContent;
+        container.appendChild(wrapper);
         document.body.appendChild(container);
 
-        var opt = {
-            margin: [0, 0, 0, 0],
-            filename: filename || 'document.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-                scale: 2,
-                useCORS: true,
-                letterRendering: true,
-                width: 794, // 210mm \u00e0 96dpi
-                windowWidth: 794
-            },
-            jsPDF: {
-                unit: 'mm',
-                format: 'a4',
-                orientation: 'portrait'
-            },
-            pagebreak: {
-                mode: ['avoid-all', 'css', 'legacy'],
-                before: '.page-break-before',
-                after: '.page-break-after',
-                avoid: '.kfs-article, .kfs-table-wrapper, .kfs-mentions, .kfs-signature-block, .kfs-net-box, .kfs-payslip-section'
-            }
-        };
+        // Attendre que les styles et images soient chargés
+        setTimeout(function() {
+            var opt = {
+                margin: [0, 0, 0, 0],
+                filename: filename || 'document.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    letterRendering: true,
+                    width: 794,
+                    windowWidth: 794,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    onclone: function(clonedDoc) {
+                        // S'assurer que les couleurs de fond sont rendues
+                        var all = clonedDoc.querySelectorAll('*');
+                        for (var i = 0; i < all.length; i++) {
+                            all[i].style.webkitPrintColorAdjust = 'exact';
+                            all[i].style.printColorAdjust = 'exact';
+                            all[i].style.colorAdjust = 'exact';
+                        }
+                        // Forcer visibilité
+                        var kfsDoc = clonedDoc.querySelector('.kfs-doc');
+                        if (kfsDoc) {
+                            kfsDoc.style.visibility = 'visible';
+                            kfsDoc.style.opacity = '1';
+                            kfsDoc.style.background = '#ffffff';
+                        }
+                    }
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: {
+                    mode: ['avoid-all', 'css', 'legacy'],
+                    before: '.page-break-before',
+                    after: '.page-break-after',
+                    avoid: '.kfs-article, .kfs-table-wrapper, .kfs-mentions, .kfs-signature-block, .kfs-net-box, .kfs-payslip-section'
+                }
+            };
 
-        html2pdf().set(opt).from(container).save().then(function() {
-            document.body.removeChild(container);
-            DocUtils.toast('PDF t\u00e9l\u00e9charg\u00e9 avec succ\u00e8s', 'success');
-        }).catch(function(err) {
-            document.body.removeChild(container);
-            console.error('Erreur PDF:', err);
-            DocUtils.toast('Erreur lors de la g\u00e9n\u00e9ration du PDF', 'error');
-        });
+            html2pdf().set(opt).from(wrapper).save().then(function() {
+                document.body.removeChild(container);
+                DocUtils.toast('PDF t\u00e9l\u00e9charg\u00e9 avec succ\u00e8s', 'success');
+            }).catch(function(err) {
+                if (container.parentNode) document.body.removeChild(container);
+                console.error('Erreur PDF:', err);
+                DocUtils.toast('Erreur lors de la g\u00e9n\u00e9ration du PDF', 'error');
+            });
+        }, 500);
     },
 
     /** Ouvre une fen\u00eatre pour impression */
