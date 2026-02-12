@@ -1,0 +1,1168 @@
+/* ============================================================
+   KFS BTP IMMO — Moteur Documentaire Professionnel
+   documents.css — Styles pour interface admin + rendu A4
+   ============================================================ */
+
+/* ─── Variables ─── */
+:root {
+    --doc-primary: #1e3a8a;
+    --doc-primary-light: #2563eb;
+    --doc-accent: #d4a017;
+    --doc-accent-light: #f59e0b;
+    --doc-dark: #0f172a;
+    --doc-gray: #64748b;
+    --doc-gray-light: #f1f5f9;
+    --doc-border: #e2e8f0;
+    --doc-success: #059669;
+    --doc-radius: 12px;
+    --doc-shadow: 0 4px 24px rgba(0,0,0,.08);
+    --doc-shadow-lg: 0 8px 40px rgba(0,0,0,.12);
+}
+
+/* ─── Interface Admin : Sélecteur de document ─── */
+.doc-engine-wrapper {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.doc-type-selector {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 2px solid var(--doc-border);
+    border-radius: var(--doc-radius);
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--doc-shadow);
+}
+
+.doc-type-selector label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--doc-primary);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.doc-type-selector select {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid var(--doc-border);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--doc-dark);
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .25s, box-shadow .25s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%231e3a8a'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+}
+
+.doc-type-selector select:focus {
+    outline: none;
+    border-color: var(--doc-primary-light);
+    box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+}
+
+/* ─── Formulaire dynamique ─── */
+.doc-form-container {
+    background: #fff;
+    border: 2px solid var(--doc-border);
+    border-radius: var(--doc-radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--doc-shadow);
+    transition: opacity .3s ease;
+}
+
+.doc-form-container.hidden {
+    display: none;
+}
+
+.doc-form-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--doc-primary);
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--doc-accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.doc-form-title .material-icons {
+    font-size: 1.5rem;
+    color: var(--doc-accent);
+}
+
+/* Grille de champs */
+.doc-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.doc-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.doc-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.doc-field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--doc-gray);
+    margin-bottom: 6px;
+}
+
+.doc-field label .required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.doc-field input,
+.doc-field select,
+.doc-field textarea {
+    padding: 12px 14px;
+    border: 2px solid var(--doc-border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--doc-dark);
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.doc-field input:focus,
+.doc-field select:focus,
+.doc-field textarea:focus {
+    outline: none;
+    border-color: var(--doc-primary-light);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+}
+
+.doc-field textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Section séparateur dans le formulaire */
+.doc-form-section {
+    grid-column: 1 / -1;
+    margin: 8px 0;
+    padding: 10px 0 6px;
+    border-bottom: 2px solid var(--doc-gray-light);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--doc-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-form-section .material-icons {
+    font-size: 1.1rem;
+    color: var(--doc-accent);
+}
+
+/* Lignes dynamiques (devis, fiche paie) */
+.doc-line-items {
+    grid-column: 1 / -1;
+    border: 2px solid var(--doc-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.doc-line-items-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 40px;
+    gap: 0;
+    background: var(--doc-primary);
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+}
+
+.doc-line-items-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 40px;
+    gap: 0;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--doc-border);
+    align-items: center;
+    transition: background .15s;
+}
+
+.doc-line-items-row:hover {
+    background: var(--doc-gray-light);
+}
+
+.doc-line-items-row input {
+    padding: 8px 10px;
+    border: 1px solid var(--doc-border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.doc-line-items-row input:focus {
+    outline: none;
+    border-color: var(--doc-primary-light);
+}
+
+.doc-line-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #ef4444;
+    font-size: 1.2rem;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background .15s;
+}
+
+.doc-line-remove:hover {
+    background: #fef2f2;
+}
+
+.doc-add-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--doc-gray-light);
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--doc-primary);
+    width: 100%;
+    transition: background .15s;
+}
+
+.doc-add-line:hover {
+    background: #e2e8f0;
+}
+
+/* Boutons d'action */
+.doc-actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 2px solid var(--doc-gray-light);
+}
+
+.doc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .2s, background .2s;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.doc-btn:active {
+    transform: scale(0.97);
+}
+
+.doc-btn-primary {
+    background: linear-gradient(135deg, var(--doc-primary) 0%, var(--doc-primary-light) 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(30,58,138,.3);
+}
+
+.doc-btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(30,58,138,.4);
+}
+
+.doc-btn-accent {
+    background: linear-gradient(135deg, var(--doc-accent) 0%, var(--doc-accent-light) 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(212,160,23,.3);
+}
+
+.doc-btn-accent:hover {
+    box-shadow: 0 6px 20px rgba(212,160,23,.4);
+}
+
+.doc-btn-outline {
+    background: #fff;
+    color: var(--doc-primary);
+    border: 2px solid var(--doc-primary);
+}
+
+.doc-btn-outline:hover {
+    background: var(--doc-gray-light);
+}
+
+.doc-btn-success {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(5,150,105,.3);
+}
+
+.doc-btn-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    color: #fff;
+}
+
+/* ─── Preview Panel ─── */
+.doc-preview-panel {
+    background: #e2e8f0;
+    border-radius: var(--doc-radius);
+    padding: 24px;
+    box-shadow: var(--doc-shadow-lg);
+    margin-bottom: 24px;
+    position: relative;
+}
+
+.doc-preview-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.doc-preview-container {
+    background: #fff;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    box-shadow: 0 2px 20px rgba(0,0,0,.15);
+    overflow: hidden;
+}
+
+/* ─── Historique des documents ─── */
+.doc-history-panel {
+    background: #fff;
+    border: 2px solid var(--doc-border);
+    border-radius: var(--doc-radius);
+    padding: 24px;
+    box-shadow: var(--doc-shadow);
+}
+
+.doc-history-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--doc-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-history-list {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.doc-history-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    transition: background .15s;
+    border-bottom: 1px solid var(--doc-gray-light);
+}
+
+.doc-history-item:hover {
+    background: var(--doc-gray-light);
+}
+
+.doc-history-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.3rem;
+    color: #fff;
+}
+
+.doc-history-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.doc-history-info h4 {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--doc-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doc-history-info p {
+    font-size: 0.8rem;
+    color: var(--doc-gray);
+    margin-top: 2px;
+}
+
+.doc-history-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.doc-history-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    color: var(--doc-gray);
+    transition: background .15s, color .15s;
+}
+
+.doc-history-actions button:hover {
+    background: var(--doc-gray-light);
+    color: var(--doc-primary);
+}
+
+.doc-history-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--doc-gray);
+}
+
+.doc-history-empty .material-icons {
+    font-size: 3rem;
+    opacity: .3;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* ─── Stats ─── */
+.doc-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.doc-stat-card {
+    background: #fff;
+    border: 2px solid var(--doc-border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    transition: transform .2s, box-shadow .2s;
+}
+
+.doc-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--doc-shadow);
+}
+
+.doc-stat-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--doc-primary);
+}
+
+.doc-stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--doc-gray);
+    margin-top: 4px;
+}
+
+/* ─── Toast notification ─── */
+.doc-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--doc-primary);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 8px 30px rgba(0,0,0,.2);
+    z-index: 10000;
+    animation: docToastIn .35s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.doc-toast.success { background: var(--doc-success); }
+.doc-toast.error { background: #dc2626; }
+
+@keyframes docToastIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDU A4 — Template du document
+   ═══════════════════════════════════════════════════ */
+
+.kfs-doc {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 20mm 22mm;
+    color: #1a1a1a;
+    line-height: 1.65;
+    font-size: 11pt;
+    background: #fff;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Filigrane */
+.kfs-doc::before {
+    content: attr(data-watermark);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    font-size: 72pt;
+    font-weight: 800;
+    color: rgba(30,58,138,0.035);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 0.08em;
+}
+
+/* Filigrane confidentiel */
+.kfs-doc[data-watermark="CONFIDENTIEL"]::before {
+    color: rgba(220,38,38,0.04);
+}
+
+/* ─── Header 2 colonnes ─── */
+.kfs-doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-header-left {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.kfs-header-logo {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: contain;
+    border: 2px solid var(--doc-primary);
+}
+
+.kfs-header-company {
+    display: flex;
+    flex-direction: column;
+}
+
+.kfs-header-company h1 {
+    font-size: 16pt;
+    font-weight: 800;
+    color: var(--doc-primary);
+    margin: 0;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-header-company .kfs-slogan {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--doc-accent);
+    margin-top: 2px;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.02em;
+}
+
+.kfs-header-contact {
+    margin-top: 6px;
+    font-size: 7.5pt;
+    color: #555;
+    line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-header-contact span {
+    display: block;
+}
+
+.kfs-header-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.kfs-flag-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.kfs-flag {
+    width: 60px;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    display: flex;
+}
+
+.kfs-flag-green { background: #00853F; flex: 1; }
+.kfs-flag-yellow { background: #FDEF42; flex: 1; display: flex; align-items: center; justify-content: center; }
+.kfs-flag-red { background: #E31B23; flex: 1; }
+
+.kfs-flag-star {
+    color: #00853F;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.kfs-devise {
+    font-size: 7pt;
+    color: #555;
+    font-style: italic;
+    text-align: center;
+    margin-top: 2px;
+}
+
+.kfs-doc-ref {
+    margin-top: 8px;
+    background: var(--doc-primary);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.03em;
+}
+
+/* ─── Séparateur header ─── */
+.kfs-header-separator {
+    height: 4px;
+    background: linear-gradient(90deg, var(--doc-primary) 0%, var(--doc-accent) 50%, var(--doc-primary) 100%);
+    margin: 16px 0 20px;
+    border-radius: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ─── Titre du document ─── */
+.kfs-doc-title {
+    text-align: center;
+    margin: 24px 0;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-doc-title h2 {
+    font-size: 18pt;
+    font-weight: 800;
+    color: var(--doc-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 6px;
+    line-height: 1.3;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-doc-title .kfs-title-line {
+    width: 80px;
+    height: 3px;
+    background: var(--doc-accent);
+    margin: 8px auto 0;
+    border-radius: 2px;
+}
+
+.kfs-doc-title .kfs-doc-subtitle {
+    font-size: 9pt;
+    color: #666;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* ─── Bloc "Entre les parties" ─── */
+.kfs-parties {
+    margin: 20px 0;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-party {
+    background: #f8fafc;
+    border-left: 4px solid var(--doc-primary);
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    border-radius: 0 8px 8px 0;
+}
+
+.kfs-party.employer {
+    border-left-color: var(--doc-primary);
+}
+
+.kfs-party.employee,
+.kfs-party.client {
+    border-left-color: var(--doc-accent);
+}
+
+.kfs-party-label {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--doc-gray);
+    margin-bottom: 6px;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-party-name {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--doc-dark);
+}
+
+.kfs-party-details {
+    font-size: 9pt;
+    color: #555;
+    margin-top: 4px;
+    line-height: 1.7;
+}
+
+/* ─── Articles / Sections ─── */
+.kfs-articles {
+    margin: 24px 0;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-article {
+    margin-bottom: 18px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-article-header {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e2e8f0;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-article-content {
+    text-align: justify;
+    font-size: 10pt;
+    color: #333;
+    line-height: 1.75;
+    padding-left: 4px;
+}
+
+.kfs-article-content p {
+    margin-bottom: 8px;
+}
+
+/* ─── Tableau (devis, facture) ─── */
+.kfs-table-wrapper {
+    margin: 20px 0;
+    position: relative;
+    z-index: 1;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+}
+
+.kfs-table thead th {
+    background: var(--doc-primary);
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-table thead th:first-child {
+    border-radius: 6px 0 0 0;
+}
+
+.kfs-table thead th:last-child {
+    border-radius: 0 6px 0 0;
+    text-align: right;
+}
+
+.kfs-table tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e8ecf1;
+    color: #333;
+}
+
+.kfs-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.kfs-table tbody td:last-child {
+    text-align: right;
+    font-weight: 600;
+}
+
+.kfs-table tfoot td {
+    padding: 10px 12px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-table-total {
+    background: var(--doc-primary);
+    color: #fff;
+    font-size: 10pt;
+    border-radius: 0 0 6px 6px;
+}
+
+/* ─── Totaux résumé ─── */
+.kfs-totals {
+    margin: 16px 0 24px;
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-totals-box {
+    width: 260px;
+    border: 2px solid var(--doc-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.kfs-totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 14px;
+    font-size: 9pt;
+    border-bottom: 1px solid var(--doc-border);
+}
+
+.kfs-totals-row:last-child {
+    border-bottom: none;
+}
+
+.kfs-totals-row.total {
+    background: var(--doc-primary);
+    color: #fff;
+    font-weight: 800;
+    font-size: 10pt;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ─── Mentions & conditions ─── */
+.kfs-mentions {
+    margin: 24px 0 16px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid var(--doc-border);
+    position: relative;
+    z-index: 1;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-mentions-title {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--doc-primary);
+    margin-bottom: 6px;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-mentions p,
+.kfs-mentions li {
+    font-size: 8pt;
+    color: #666;
+    line-height: 1.6;
+}
+
+.kfs-mentions ul {
+    padding-left: 16px;
+    margin: 4px 0;
+}
+
+/* ─── Fiche de paie : sections spécifiques ─── */
+.kfs-payslip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin: 16px 0;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-payslip-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-payslip-section-title {
+    font-size: 9pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--doc-primary);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--doc-accent);
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-payslip-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 9pt;
+    color: #333;
+    border-bottom: 1px dotted #e2e8f0;
+}
+
+.kfs-payslip-row .label { color: #555; }
+.kfs-payslip-row .value { font-weight: 600; }
+
+.kfs-net-box {
+    background: linear-gradient(135deg, var(--doc-primary) 0%, var(--doc-primary-light) 100%);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 18px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-net-box .label {
+    font-size: 9pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: .85;
+}
+
+.kfs-net-box .amount {
+    font-size: 20pt;
+    font-weight: 800;
+    margin-top: 4px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ─── Footer / Signatures ─── */
+.kfs-doc-footer {
+    margin-top: 40px;
+    position: relative;
+    z-index: 1;
+}
+
+.kfs-fait-a {
+    text-align: right;
+    font-size: 10pt;
+    margin-bottom: 30px;
+    color: #333;
+    font-style: italic;
+}
+
+.kfs-signatures {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    margin-top: 10px;
+}
+
+.kfs-signature-block {
+    flex: 1;
+    text-align: center;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-signature-label {
+    font-size: 9pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--doc-primary);
+    margin-bottom: 8px;
+    font-family: 'Inter', sans-serif;
+}
+
+.kfs-signature-line {
+    border-bottom: 2px solid #ccc;
+    height: 60px;
+    margin-bottom: 8px;
+}
+
+.kfs-signature-name {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #333;
+}
+
+.kfs-signature-function {
+    font-size: 8pt;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* ─── QR Code placeholder ─── */
+.kfs-qr-zone {
+    position: absolute;
+    bottom: 22mm;
+    right: 20mm;
+    width: 60px;
+    height: 60px;
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7pt;
+    color: #ccc;
+    z-index: 1;
+}
+
+/* ─── Infos bancaires ─── */
+.kfs-bank-info {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid var(--doc-border);
+    border-radius: 6px;
+    font-size: 8pt;
+    color: #555;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.kfs-bank-info strong {
+    color: var(--doc-primary);
+}
+
+/* ═══════════════════════════════════════════════════
+   IMPRESSION A4
+   ═══════════════════════════════════════════════════ */
+
+@media print {
+    body * { visibility: hidden !important; }
+    
+    .kfs-doc,
+    .kfs-doc * {
+        visibility: visible !important;
+    }
+    
+    .kfs-doc {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 210mm;
+        margin: 0;
+        padding: 18mm 20mm 22mm;
+        box-shadow: none;
+        background: #fff;
+    }
+
+    .doc-preview-toolbar,
+    .doc-actions,
+    .doc-form-container,
+    .doc-type-selector,
+    .doc-stats-grid,
+    .doc-history-panel {
+        display: none !important;
+    }
+}
+
+@page {
+    size: A4 portrait;
+    margin: 0;
+}
+
+/* ─── Responsive admin (pas le document A4) ─── */
+@media (max-width: 768px) {
+    .doc-fields-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .doc-actions {
+        flex-direction: column;
+    }
+    
+    .doc-actions .doc-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .doc-preview-container {
+        width: 100%;
+        min-height: auto;
+        transform-origin: top left;
+        transform: scale(0.5);
+    }
+    
+    .doc-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .doc-line-items-header,
+    .doc-line-items-row {
+        grid-template-columns: 2fr 1fr 1fr 40px;
+    }
+
+    .doc-line-items-header span:nth-child(4),
+    .doc-line-items-row > *:nth-child(4) {
+        display: none;
+    }
+}

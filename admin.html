@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="admin/documents/documents.css">
     <link rel="stylesheet" href="style.css">
     <!-- jsPDF pour génération PDF fiche de paie -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2407,101 +2408,72 @@
                     </div>
                 </section>
 
-                <!-- MODULE: Documents -->
+                <!-- MODULE: Documents  Moteur Documentaire KFS -->
                 <section id="module-documents" class="module-section">
-                    <div class="glass-card rounded-2xl p-6 shadow-xl">
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center">
-                                <span class="material-icons text-3xl text-gray-600 mr-3">folder_open</span>
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800">Gestion des Documents</h3>
-                                    <span class="text-gray-500" id="documents-count">0 documents</span>
-                                </div>
-                            </div>
-                            <button onclick="openDocumentModal()" class="flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-white rounded-xl font-bold hover:from-gray-700 hover:to-gray-900 transition shadow-lg">
-                                <span class="material-icons mr-2">upload_file</span>
-                                Nouveau document
-                            </button>
-                        </div>
-                        
-                        <!-- Filtres -->
-                        <div class="flex flex-wrap gap-3 mb-6">
-                            <input type="text" id="doc-search" placeholder="Rechercher un document..." class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800 flex-1 min-w-48">
-                            <select id="doc-categorie-filter" class="px-4 py-2 bg-white border-2 border-gray-200 rounded-xl text-gray-800">
-                                <option value="all">Toutes catégories</option>
-                                <option value="contrat">Contrats</option>
-                                <option value="bail">Baux</option>
-                                <option value="facture">Factures</option>
-                                <option value="devis">Devis</option>
-                                <option value="legal">Documents légaux</option>
-                                <option value="autre">Autres</option>
+                    <div class="doc-engine-wrapper">
+
+                        <!-- Stats rapides -->
+                        <div id="doc-stats-grid" class="doc-stats-grid"></div>
+
+                        <!-- S\u00e9lecteur de type -->
+                        <div class="doc-type-selector">
+                            <label for="doc-type-select">
+                                <span class="material-icons" style="font-size:1rem;vertical-align:middle;margin-right:4px">description</span>
+                                Type de document
+                            </label>
+                            <select id="doc-type-select">
+                                <option value="">-- S\u00e9lectionner un type de document --</option>
+                                <optgroup label="Commercial">
+                                    <option value="devis">Devis</option>
+                                    <option value="contrat_prestation">Contrat de prestation de service</option>
+                                </optgroup>
+                                <optgroup label="Immobilier">
+                                    <option value="location_courte">Location courte dur\u00e9e</option>
+                                    <option value="location_longue">Location longue dur\u00e9e</option>
+                                    <option value="contrat_bail">Contrat de bail</option>
+                                </optgroup>
+                                <optgroup label="Ressources humaines">
+                                    <option value="contrat_travail">Contrat de travail</option>
+                                    <option value="certificat_travail">Certificat de travail</option>
+                                    <option value="fiche_paie">Fiche de paie</option>
+                                </optgroup>
                             </select>
                         </div>
-                        
-                        <div id="documents-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <p class="text-gray-400 col-span-full text-center py-12">Aucun document enregistré</p>
-                        </div>
-                    </div>
 
-                    <!-- Modèles de documents -->
-                    <div class="glass-card rounded-2xl p-6 shadow-xl mt-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold text-gray-800 flex items-center">
-                                <span class="material-icons mr-2 text-blue-600">auto_awesome</span>Modèles de Documents
-                            </h3>
-                            <button onclick="openTemplateEditor()" class="flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-900 transition shadow-lg text-sm">
-                                <span class="material-icons mr-1 text-sm">add</span>Créer un modèle
-                            </button>
-                        </div>
-                        
-                        <!-- Modèles par défaut -->
-                        <div class="mb-6">
-                            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Modèles par défaut</h4>
-                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <button onclick="generateDocTemplate('contrat')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">description</span>
-                                    <span class="text-white text-sm font-bold">Contrat</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                        <!-- Formulaire dynamique -->
+                        <div id="doc-form-container" class="doc-form-container hidden"></div>
+
+                        <!-- Aper\u00e7u du document A4 -->
+                        <div id="doc-preview-panel" class="doc-preview-panel" style="display:none">
+                            <div class="doc-preview-toolbar">
+                                <button class="doc-btn doc-btn-primary" onclick="DocEngine.downloadPDF()">
+                                    <span class="material-icons">picture_as_pdf</span>T\u00e9l\u00e9charger PDF
                                 </button>
-                                <button onclick="generateDocTemplate('bail')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">home</span>
-                                    <span class="text-white text-sm font-bold">Bail</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                                <button class="doc-btn doc-btn-accent" onclick="DocEngine.saveAndPrint()">
+                                    <span class="material-icons">print</span>Imprimer
                                 </button>
-                                <button onclick="generateDocTemplate('location-courte')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">hotel</span>
-                                    <span class="text-white text-sm font-bold">Location Courte Durée</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
-                                </button>
-                                <button onclick="generateDocTemplate('devis')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">request_quote</span>
-                                    <span class="text-white text-sm font-bold">Devis</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
-                                </button>
-                                <button onclick="generateDocTemplate('attestation')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">verified</span>
-                                    <span class="text-white text-sm font-bold">Attestation</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
-                                </button>
-                                <button onclick="generateDocTemplate('certificatTravail')" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">badge</span>
-                                    <span class="text-white text-sm font-bold">Certificat de travail</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
-                                </button>
-                                <script>document.querySelector('button[onclick*="certificatTravail"]').onclick = function(){window.openCertificatTravailForm();};</script>
-                                <button id="btn-contrat-travail" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">description</span>
-                                    <span class="text-white text-sm font-bold">Contrat de travail</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">CDD / CDI</span>
-                                </button>
-                                <script>document.getElementById('btn-contrat-travail').onclick = function(){if(window.openContratTravailForm) window.openContratTravailForm(); else alert('Module en cours de chargement...');};</script>
-                                <button onclick="gotoFichePaieModule()" class="flex flex-col items-center p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition group shadow-lg">
-                                    <span class="material-icons text-white text-2xl mb-2">payments</span>
-                                    <span class="text-white text-sm font-bold">Fiche de paie</span>
-                                    <span class="text-xs text-blue-100 mt-1 opacity-0 group-hover:opacity-100 transition">Utiliser</span>
+                                <button class="doc-btn doc-btn-outline" onclick="document.getElementById('doc-preview-panel').style.display='none'">
+                                    <span class="material-icons">close</span>Fermer
                                 </button>
                             </div>
+                            <div class="doc-preview-container">
+                                <div id="doc-preview-render"></div>
+                            </div>
                         </div>
+
+                        <!-- Historique -->
+                        <div class="doc-history-panel">
+                            <div class="doc-history-title">
+                                <span class="material-icons">history</span> Historique des documents
+                            </div>
+                            <div id="doc-history-list" class="doc-history-list">
+                                <div class="doc-history-empty">
+                                    <span class="material-icons">folder_open</span>
+                                    Aucun document g\u00e9n\u00e9r\u00e9
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </section>
 
@@ -4555,10 +4527,11 @@
 
     <!-- Logo KFS en Base64 pour les PDFs -->
     <script src="logo-base64.js"></script>
-    <!-- Templates et styles PDF A4 (non affichés sur le site) -->
-    <script src="pdf-templates.js"></script>
+    
+    <!-- pdf-templates.js remplacé par admin/documents/documents.js -->
     <!-- Firebase Realtime Database -->
     <script src="firebase-config.js"></script>
+    <script src="admin/documents/documents.js"></script>
     <script src="admin.js"></script>
 
 <script>
