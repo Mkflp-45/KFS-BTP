@@ -124,16 +124,16 @@ function generateFooter() {
       </div>
     </div>
 
-    <!-- Séparateur mobile -->
-    <div class="border-t border-white/20 mb-8 md:hidden"></div>
+    <!-- Séparateur -->
+    <div class="border-t border-white/20 my-6"></div>
 
-    <!-- === SECTION 2 : Navigation + Contact côte à côte === -->
-    <div class="grid grid-cols-2 gap-6 md:grid-cols-3 md:gap-8">
+    <!-- === SECTION 2 : Navigation + Contact === -->
+    <div class="flex flex-col md:flex-row md:justify-between md:gap-12">
 
       <!-- Navigation -->
-      <nav class="col-span-2 md:col-span-2" aria-label="Liens du pied de page">
-        <span class="font-semibold text-base mb-3 block text-center md:text-left" id="footer-nav-title">Navigation</span>
-        <ul class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm" aria-labelledby="footer-nav-title">
+      <nav class="mb-6 md:mb-0" aria-label="Liens du pied de page">
+        <span class="font-semibold text-base mb-4 block text-center md:text-left" id="footer-nav-title">Navigation</span>
+        <ul class="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm max-w-xs mx-auto md:mx-0" aria-labelledby="footer-nav-title">
           <li><a href="index.html" class="hover:text-yellow-400 transition">Accueil</a></li>
           <li><a href="about.html" class="hover:text-yellow-400 transition">À Propos</a></li>
           <li><a href="vente.html" class="hover:text-yellow-400 transition">Vente & Achat</a></li>
@@ -142,12 +142,17 @@ function generateFooter() {
           <li><a href="apporteur-affaire.html" class="hover:text-yellow-400 transition">Apporteur d'Affaires</a></li>
           <li><a href="contact.html" class="hover:text-yellow-400 transition">Contact</a></li>
           <li><a href="mentions-legales.html" class="hover:text-yellow-400 transition">Mentions légales</a></li>
-          <li class="col-span-2"><a href="politique-confidentialite.html" class="hover:text-yellow-400 transition">Politique de confidentialité</a></li>
         </ul>
+        <div class="text-sm mt-1.5 text-center md:text-left max-w-xs mx-auto md:mx-0">
+          <a href="politique-confidentialite.html" class="hover:text-yellow-400 transition">Politique de confidentialité</a>
+        </div>
       </nav>
 
+      <!-- Séparateur mobile entre nav et contact -->
+      <div class="border-t border-white/20 mb-6 md:hidden"></div>
+
       <!-- Contact -->
-      <address class="col-span-2 md:col-span-1 flex flex-col items-center md:items-end not-italic text-center md:text-right mt-2 md:mt-0">
+      <address class="flex flex-col items-center md:items-end not-italic text-center md:text-right">
         <span class="font-semibold text-base mb-3 block">Contact</span>
         <span class="text-sm mb-1">${s.address}</span>
         <a href="mailto:${s.email}" class="text-sm hover:text-yellow-400 transition mb-1">${s.email}</a>
