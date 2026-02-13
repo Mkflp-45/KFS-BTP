@@ -7,9 +7,7 @@ body {
     display: flex;
     flex-direction: column;
 }
-#main-footer {
-    margin-top: auto;
-}
+/* Le footer est stylé directement via fragments.js */
 
 .hero {
     background-size: cover;

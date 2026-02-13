@@ -109,7 +109,7 @@ function generateFooter() {
     }
     
     return `
-<footer class="mt-16 rounded-t-3xl shadow-2xl border-t border-blue-200 animate__animated animate__fadeInUp" role="contentinfo" aria-label="Pied de page" style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 60%, #0ea5e9 100%);">
+<div class="rounded-t-3xl shadow-2xl border-t border-blue-200 animate__animated animate__fadeInUp" style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 60%, #0ea5e9 100%);">
   <div class="container mx-auto px-5 py-10 md:py-12 text-white">
 
     <!-- === SECTION 1 : Logo + Slogan + Réseaux === -->
@@ -168,7 +168,7 @@ function generateFooter() {
   <div class="border-t border-blue-300/50 py-4 text-center text-sm text-white/70">
     &copy; <span id="year"></span> ${s.company}. Tous droits réservés.
   </div>
-</footer>
+</div>
 `;
 }
 
@@ -185,6 +185,10 @@ function injectFragments() {
     const footerDiv = document.getElementById('main-footer');
     if (footerDiv) {
         footerDiv.innerHTML = generateFooter();
+        // Appliquer les styles directement sur le footer principal pour éviter le chevauchement
+        footerDiv.className = 'mt-auto';
+        footerDiv.setAttribute('role', 'contentinfo');
+        footerDiv.setAttribute('aria-label', 'Pied de page');
     }
     // Mise à jour de l'année
     const yearSpan = document.getElementById('year');
