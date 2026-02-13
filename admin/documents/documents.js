@@ -1429,27 +1429,133 @@ var DocHistory = {
 
 var DocExport = {
 
-    /** Récupère le CSS A4 depuis la feuille de style documents.css déjà chargée */
-    getDocCSS: function() {
-        // Chercher la feuille de style documents.css chargée dans la page
-        var sheets = document.styleSheets;
-        var css = '';
-        for (var s = 0; s < sheets.length; s++) {
-            try {
-                var href = sheets[s].href || '';
-                if (href.indexOf('documents.css') === -1) continue;
-                var rules = sheets[s].cssRules || sheets[s].rules;
-                if (!rules) continue;
-                for (var r = 0; r < rules.length; r++) {
-                    css += rules[r].cssText + '\n';
-                }
-            } catch(e) {
-                // CORS - fallback: on ne peut pas lire les règles cross-origin
-                console.warn('[DocExport] Impossible de lire', sheets[s].href, e);
+    /** Cache du CSS documents.css (chargé une fois) */
+    _cssCache: null,
+
+    /** Charge le CSS depuis le fichier documents.css en texte brut via fetch */
+    loadCSS: function(callback) {
+        // Si déjà en cache, retourner directement
+        if (DocExport._cssCache !== null) {
+            callback(DocExport._cssCache);
+            return;
+        }
+
+        // Trouver l'URL du CSS
+        var cssUrl = '';
+        var links = document.querySelectorAll('link[rel="stylesheet"]');
+        for (var i = 0; i < links.length; i++) {
+            if ((links[i].href || '').indexOf('documents.css') !== -1) {
+                cssUrl = links[i].href;
+                break;
             }
         }
-        return css;
+
+        if (!cssUrl) {
+            // Essayer chemin relatif
+            cssUrl = 'admin/documents/documents.css';
+        }
+
+        fetch(cssUrl).then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        }).then(function(cssText) {
+            DocExport._cssCache = cssText;
+            callback(cssText);
+        }).catch(function(err) {
+            console.warn('[DocExport] Fetch CSS échoué:', err);
+            // Fallback : lire depuis styleSheets
+            var css = '';
+            try {
+                var sheets = document.styleSheets;
+                for (var s = 0; s < sheets.length; s++) {
+                    if ((sheets[s].href || '').indexOf('documents.css') === -1) continue;
+                    var rules = sheets[s].cssRules || sheets[s].rules;
+                    if (!rules) continue;
+                    for (var r = 0; r < rules.length; r++) {
+                        css += rules[r].cssText + '\n';
+                    }
+                }
+            } catch(e) { /* CORS */ }
+            DocExport._cssCache = css;
+            callback(css);
+        });
     },
+
+    /** CSS de renforcement — toutes les couleurs en valeurs fixes, pas de var() */
+    BOOST_CSS: [
+        '*, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }',
+        '.kfs-doc { font-family: Georgia, "Times New Roman", serif; width: 794px; min-height: 1123px; padding: 68px 76px 83px; color: #1a1a1a; line-height: 1.65; font-size: 11pt; background: #fff !important; box-sizing: border-box; position: relative; }',
+        '.kfs-doc::before { content: attr(data-watermark); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 72pt; font-weight: 800; color: rgba(30,58,138,0.035); white-space: nowrap; pointer-events: none; z-index: 0; }',
+        '.kfs-doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0; position: relative; z-index: 1; }',
+        '.kfs-header-left { display: flex; gap: 14px; align-items: flex-start; }',
+        '.kfs-header-logo { width: 70px; height: 70px; border-radius: 8px; object-fit: contain; border: 2px solid #1e3a8a; }',
+        '.kfs-header-company { display: flex; flex-direction: column; }',
+        '.kfs-header-company h1 { font-size: 16pt; font-weight: 800; color: #1e3a8a; margin: 0; letter-spacing: 0.04em; line-height: 1.2; font-family: Inter, sans-serif; }',
+        '.kfs-header-company .kfs-slogan { font-size: 8.5pt; font-weight: 600; color: #d4a017; margin-top: 2px; font-family: Inter, sans-serif; }',
+        '.kfs-header-contact { margin-top: 6px; font-size: 7.5pt; color: #555; line-height: 1.6; font-family: Inter, sans-serif; }',
+        '.kfs-header-contact span { display: block; }',
+        '.kfs-header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }',
+        '.kfs-flag-container { display: flex; flex-direction: column; align-items: center; gap: 4px; }',
+        '.kfs-flag { width: 60px; height: 40px; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.15); display: flex; }',
+        '.kfs-flag-green { background: #00853F !important; flex: 1; }',
+        '.kfs-flag-yellow { background: #FDEF42 !important; flex: 1; display: flex; align-items: center; justify-content: center; }',
+        '.kfs-flag-red { background: #E31B23 !important; flex: 1; }',
+        '.kfs-flag-star { color: #00853F; font-size: 14px; line-height: 1; }',
+        '.kfs-devise { font-size: 7pt; color: #555; font-style: italic; text-align: center; margin-top: 2px; }',
+        '.kfs-doc-ref { margin-top: 8px; background: #1e3a8a !important; color: #fff !important; padding: 4px 12px; border-radius: 4px; font-size: 7.5pt; font-weight: 700; font-family: Inter, sans-serif; }',
+        '.kfs-header-separator { height: 4px; background: linear-gradient(90deg, #1e3a8a 0%, #d4a017 50%, #1e3a8a 100%) !important; margin: 16px 0 20px; border-radius: 2px; }',
+        '.kfs-doc-title { text-align: center; margin: 24px 0; position: relative; z-index: 1; }',
+        '.kfs-doc-title h2 { font-size: 18pt; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 6px; line-height: 1.3; font-family: Inter, sans-serif; }',
+        '.kfs-doc-title .kfs-title-line { width: 80px; height: 3px; background: #d4a017 !important; margin: 8px auto 0; border-radius: 2px; }',
+        '.kfs-doc-title .kfs-doc-subtitle { font-size: 9pt; color: #666; margin-top: 6px; font-style: italic; }',
+        '.kfs-parties { margin: 20px 0; position: relative; z-index: 1; }',
+        '.kfs-party { background: #f8fafc !important; border-left: 4px solid #1e3a8a; padding: 14px 18px; margin-bottom: 14px; border-radius: 0 8px 8px 0; }',
+        '.kfs-party.employee, .kfs-party.client { border-left-color: #d4a017; }',
+        '.kfs-party-label { font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 6px; font-family: Inter, sans-serif; }',
+        '.kfs-party-name { font-size: 11pt; font-weight: 700; color: #0f172a; }',
+        '.kfs-party-details { font-size: 9pt; color: #555; margin-top: 4px; line-height: 1.7; }',
+        '.kfs-articles { margin: 24px 0; position: relative; z-index: 1; }',
+        '.kfs-article { margin-bottom: 18px; break-inside: avoid; }',
+        '.kfs-article-header { font-size: 11pt; font-weight: 700; color: #1e3a8a; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; font-family: Inter, sans-serif; }',
+        '.kfs-article-content { text-align: justify; font-size: 10pt; color: #333; line-height: 1.75; padding-left: 4px; }',
+        '.kfs-article-content p { margin-bottom: 8px; }',
+        '.kfs-table-wrapper { margin: 20px 0; position: relative; z-index: 1; break-inside: avoid; }',
+        '.kfs-table { width: 100%; border-collapse: collapse; font-size: 9pt; }',
+        '.kfs-table thead th { background: #1e3a8a !important; color: #fff !important; padding: 10px 12px; text-align: left; font-weight: 700; font-size: 8pt; text-transform: uppercase; font-family: Inter, sans-serif; }',
+        '.kfs-table thead th:first-child { border-radius: 6px 0 0 0; }',
+        '.kfs-table thead th:last-child { border-radius: 0 6px 0 0; text-align: right; }',
+        '.kfs-table tbody td { padding: 10px 12px; border-bottom: 1px solid #e8ecf1; color: #333; }',
+        '.kfs-table tbody tr:nth-child(even) { background: #f8fafc !important; }',
+        '.kfs-table tbody td:last-child { text-align: right; font-weight: 600; }',
+        '.kfs-table tfoot td { padding: 10px 12px; font-weight: 700; font-family: Inter, sans-serif; }',
+        '.kfs-table-total { background: #1e3a8a !important; color: #fff !important; font-size: 10pt; border-radius: 0 0 6px 6px; }',
+        '.kfs-totals { margin: 16px 0 24px; display: flex; justify-content: flex-end; position: relative; z-index: 1; }',
+        '.kfs-totals-box { width: 260px; border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; }',
+        '.kfs-totals-row { display: flex; justify-content: space-between; padding: 8px 14px; font-size: 9pt; border-bottom: 1px solid #e2e8f0; }',
+        '.kfs-totals-row:last-child { border-bottom: none; }',
+        '.kfs-totals-row.total { background: #1e3a8a !important; color: #fff !important; font-weight: 800; font-size: 10pt; font-family: Inter, sans-serif; }',
+        '.kfs-mentions { margin: 24px 0 16px; padding: 14px 18px; background: #f8fafc !important; border-radius: 8px; border: 1px solid #e2e8f0; position: relative; z-index: 1; break-inside: avoid; }',
+        '.kfs-mentions-title { font-size: 8pt; font-weight: 700; text-transform: uppercase; color: #1e3a8a; margin-bottom: 6px; font-family: Inter, sans-serif; }',
+        '.kfs-mentions p, .kfs-mentions li { font-size: 8pt; color: #666; line-height: 1.6; }',
+        '.kfs-mentions ul { padding-left: 16px; margin: 4px 0; }',
+        '.kfs-payslip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; position: relative; z-index: 1; }',
+        '.kfs-payslip-section { break-inside: avoid; }',
+        '.kfs-payslip-section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #1e3a8a; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #d4a017; font-family: Inter, sans-serif; }',
+        '.kfs-payslip-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 9pt; color: #333; border-bottom: 1px dotted #e2e8f0; }',
+        '.kfs-payslip-row .label { color: #555; }',
+        '.kfs-payslip-row .value { font-weight: 600; }',
+        '.kfs-net-box { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%) !important; color: #fff !important; padding: 16px 20px; border-radius: 8px; text-align: center; margin: 18px 0; break-inside: avoid; }',
+        '.kfs-net-box .label { font-size: 9pt; font-weight: 600; text-transform: uppercase; opacity: .85; }',
+        '.kfs-net-box .amount { font-size: 20pt; font-weight: 800; margin-top: 4px; font-family: Inter, sans-serif; }',
+        '.kfs-doc-footer { margin-top: 40px; position: relative; z-index: 1; }',
+        '.kfs-fait-a { text-align: right; font-size: 10pt; margin-bottom: 30px; color: #333; font-style: italic; }',
+        '.kfs-signatures { display: flex; justify-content: space-between; gap: 40px; margin-top: 10px; }',
+        '.kfs-signature-block { flex: 1; text-align: center; break-inside: avoid; }',
+        '.kfs-signature-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #1e3a8a; margin-bottom: 8px; font-family: Inter, sans-serif; }',
+        '.kfs-signature-line { border-bottom: 2px solid #ccc; height: 60px; margin-bottom: 8px; }',
+        '.kfs-signature-name { font-size: 9pt; font-weight: 600; color: #0f172a; }',
+        '.kfs-signature-fonction { font-size: 8pt; color: #64748b; font-style: italic; }'
+    ].join('\n'),
 
     /** Génère un PDF depuis le HTML A4 via html2pdf.js */
     downloadPDF: function(htmlContent, filename) {
@@ -1458,79 +1564,91 @@ var DocExport = {
             return;
         }
 
-        // Récupérer le CSS inline depuis la feuille déjà chargée
-        var inlineCSS = DocExport.getDocCSS();
+        DocUtils.toast('Génération du PDF...', 'info');
 
-        // Variables CSS nécessaires (au cas où :root ne serait pas capturé)
-        var varsCSS = ':root{--doc-primary:#1e3a8a;--doc-primary-light:#2563eb;--doc-accent:#d4a017;--doc-accent-light:#f59e0b;--doc-dark:#0f172a;--doc-gray:#64748b;--doc-gray-light:#f1f5f9;--doc-border:#e2e8f0;--doc-success:#059669;--doc-radius:12px;}';
+        // Charger le CSS puis générer
+        DocExport.loadCSS(function(cssText) {
 
-        // CSS de renforcement pour le PDF
-        var pdfCSS = '* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }' +
-            '.kfs-doc { background: #fff !important; width: 210mm; min-height: 297mm; position: relative; box-sizing: border-box; }' +
-            '.kfs-flag-green { background: #00853F !important; }' +
-            '.kfs-flag-yellow { background: #FDEF42 !important; }' +
-            '.kfs-flag-red { background: #E31B23 !important; }' +
-            '.kfs-net-box { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%) !important; color: #fff !important; }' +
-            '.kfs-table thead th { background: #1e3a8a !important; color: #fff !important; }' +
-            '.kfs-table-total { background: #1e3a8a !important; color: #fff !important; }' +
-            '.kfs-totals-row.total { background: #1e3a8a !important; color: #fff !important; }' +
-            '.kfs-doc-ref { background: #1e3a8a !important; color: #fff !important; }' +
-            '.kfs-party { background: #f8fafc !important; }' +
-            '.kfs-mentions { background: #f8fafc !important; }';
+            // Construire un HTML autoportant avec TOUT le CSS intégré
+            var container = document.createElement('div');
+            container.id = 'pdf-offscreen-container';
+            container.style.cssText = 'position:fixed;left:0;top:0;width:794px;z-index:99999;background:#fff;';
 
-        // Construire le HTML complet autoportant
-        var fullHTML = '<div id="pdf-render-root" style="width:794px;background:#fff;font-family:Georgia,Times New Roman,serif">' +
-            '<style>' + varsCSS + '\n' + inlineCSS + '\n' + pdfCSS + '</style>' +
-            htmlContent +
-            '</div>';
+            // Injecter le style complet : CSS du fichier + renforcement hardcodé
+            var styleEl = document.createElement('style');
+            styleEl.textContent = (cssText || '') + '\n' + DocExport.BOOST_CSS;
+            container.appendChild(styleEl);
 
-        // Créer le conteneur dans le DOM (visible mais hors écran)
-        var container = document.createElement('div');
-        container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;overflow:visible;background:#fff;z-index:-1;';
-        container.innerHTML = fullHTML;
-        document.body.appendChild(container);
+            // Injecter le contenu HTML
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = htmlContent;
+            container.appendChild(wrapper);
 
-        var renderRoot = container.querySelector('#pdf-render-root');
+            document.body.appendChild(container);
 
-        // Délai pour assurer le layout
-        setTimeout(function() {
-            var opt = {
-                margin: [0, 0, 0, 0],
-                filename: filename || 'document.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true,
-                    letterRendering: true,
-                    width: 794,
-                    height: renderRoot.scrollHeight || 1123,
-                    windowWidth: 794,
-                    backgroundColor: '#ffffff',
-                    logging: false
-                },
-                jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'portrait'
-                },
-                pagebreak: {
-                    mode: ['avoid-all', 'css', 'legacy'],
-                    before: '.page-break-before',
-                    after: '.page-break-after',
-                    avoid: '.kfs-article, .kfs-table-wrapper, .kfs-mentions, .kfs-signature-block, .kfs-net-box, .kfs-payslip-section'
-                }
-            };
+            // Cibler le .kfs-doc ou le wrapper entier
+            var target = container.querySelector('.kfs-doc') || wrapper;
 
-            html2pdf().set(opt).from(renderRoot).save().then(function() {
-                if (container.parentNode) document.body.removeChild(container);
-                DocUtils.toast('PDF téléchargé avec succès', 'success');
-            }).catch(function(err) {
-                if (container.parentNode) document.body.removeChild(container);
-                console.error('Erreur PDF:', err);
-                DocUtils.toast('Erreur lors de la génération du PDF', 'error');
-            });
-        }, 300);
+            // Attendre le rendu complet (layout + images)
+            setTimeout(function() {
+
+                var opt = {
+                    margin: [0, 0, 0, 0],
+                    filename: filename || 'document.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        letterRendering: true,
+                        width: 794,
+                        windowWidth: 794,
+                        scrollX: 0,
+                        scrollY: 0,
+                        x: 0,
+                        y: 0,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        onclone: function(clonedDoc) {
+                            // Rendre le clone entièrement visible
+                            var root = clonedDoc.getElementById('pdf-offscreen-container');
+                            if (root) {
+                                root.style.position = 'static';
+                                root.style.zIndex = 'auto';
+                                root.style.opacity = '1';
+                            }
+                            var doc = clonedDoc.querySelector('.kfs-doc');
+                            if (doc) {
+                                doc.style.background = '#fff';
+                                doc.style.width = '794px';
+                                doc.style.visibility = 'visible';
+                                doc.style.opacity = '1';
+                            }
+                        }
+                    },
+                    jsPDF: {
+                        unit: 'mm',
+                        format: 'a4',
+                        orientation: 'portrait'
+                    },
+                    pagebreak: {
+                        mode: ['avoid-all', 'css', 'legacy'],
+                        before: '.page-break-before',
+                        after: '.page-break-after',
+                        avoid: '.kfs-article, .kfs-table-wrapper, .kfs-mentions, .kfs-signature-block, .kfs-net-box, .kfs-payslip-section'
+                    }
+                };
+
+                html2pdf().set(opt).from(target).save().then(function() {
+                    if (container.parentNode) document.body.removeChild(container);
+                    DocUtils.toast('PDF téléchargé avec succès', 'success');
+                }).catch(function(err) {
+                    if (container.parentNode) document.body.removeChild(container);
+                    console.error('[DocExport] Erreur PDF:', err);
+                    DocUtils.toast('Erreur lors de la génération du PDF', 'error');
+                });
+            }, 600);
+        });
     },
 
     /** Ouvre une fen\u00eatre pour impression */
