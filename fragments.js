@@ -109,63 +109,62 @@ function generateFooter() {
     }
     
     return `
-<div class="rounded-t-3xl shadow-2xl border-t border-blue-200 animate__animated animate__fadeInUp" style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 60%, #0ea5e9 100%);">
-  <div class="container mx-auto px-5 py-10 md:py-12 text-white">
+<div style="background: linear-gradient(120deg, #1e3a8a 0%, #2563eb 60%, #0ea5e9 100%); border-radius: 1.5rem 1.5rem 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,0.15);">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 40px 20px 24px; color: #fff;">
 
-    <!-- === SECTION 1 : Logo + Slogan + Réseaux === -->
-    <div class="flex flex-col items-center text-center mb-8 md:flex-row md:items-center md:text-left md:mb-10">
-      <div class="flex items-center space-x-3 mb-2 md:mb-0">
-        <img src="${s.logo || 'assets/logo-kfs-btp.jpeg'}" alt="Logo ${s.company}" class="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg border-2 border-white bg-white object-cover">
-        <span class="font-extrabold text-xl sm:text-2xl tracking-widest" style="font-family: 'Montserrat', Arial, sans-serif; letter-spacing: 0.1em;">${s.company}</span>
+    <!-- SECTION 1 : Logo + Slogan + Réseaux -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="${s.logo || 'assets/logo-kfs-btp.jpeg'}" alt="Logo ${s.company}" style="height: 48px; width: 48px; border-radius: 50%; border: 2px solid #fff; background: #fff; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <span style="font-family: 'Montserrat', Arial, sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: 0.1em;">${s.company}</span>
       </div>
-      <span class="text-sm opacity-80 mb-3 md:mb-0 md:ml-4">${s.slogan}</span>
-      <div class="flex space-x-4 md:ml-auto" role="group" aria-label="Réseaux sociaux">
+      <span style="font-size: 0.875rem; opacity: 0.8;">${s.slogan}</span>
+      <div style="display: flex; gap: 16px; margin-left: auto;" role="group" aria-label="Réseaux sociaux">
         ${socialIcons}
       </div>
     </div>
 
     <!-- Séparateur -->
-    <div class="border-t border-white/20 my-6"></div>
+    <div style="border-top: 1px solid rgba(255,255,255,0.2); margin: 20px 0;"></div>
 
-    <!-- === SECTION 2 : Navigation + Contact === -->
-    <div class="flex flex-col md:flex-row md:justify-between md:gap-12">
+    <!-- SECTION 2 : Navigation + Contact en 2 colonnes -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 32px;" class="footer-grid-2col">
 
       <!-- Navigation -->
-      <nav class="mb-6 md:mb-0" aria-label="Liens du pied de page">
-        <span class="font-semibold text-base mb-4 block text-center md:text-left" id="footer-nav-title">Navigation</span>
-        <ul class="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm max-w-xs mx-auto md:mx-0" aria-labelledby="footer-nav-title">
-          <li><a href="index.html" class="hover:text-yellow-400 transition">Accueil</a></li>
-          <li><a href="about.html" class="hover:text-yellow-400 transition">À Propos</a></li>
-          <li><a href="vente.html" class="hover:text-yellow-400 transition">Vente & Achat</a></li>
-          <li><a href="gestion-locative.html" class="hover:text-yellow-400 transition">Gestion Locative</a></li>
-          <li><a href="renovation-interieur.html" class="hover:text-yellow-400 transition">Rénovation</a></li>
-          <li><a href="apporteur-affaire.html" class="hover:text-yellow-400 transition">Apporteur d'Affaires</a></li>
-          <li><a href="contact.html" class="hover:text-yellow-400 transition">Contact</a></li>
-          <li><a href="mentions-legales.html" class="hover:text-yellow-400 transition">Mentions légales</a></li>
+      <nav aria-label="Liens du pied de page">
+        <span style="font-weight: 600; font-size: 1rem; display: block; margin-bottom: 12px;">Navigation</span>
+        <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; list-style: none; padding: 0; margin: 0; font-size: 0.875rem;">
+          <li><a href="index.html" style="color: #fff; text-decoration: none;">Accueil</a></li>
+          <li><a href="about.html" style="color: #fff; text-decoration: none;">À Propos</a></li>
+          <li><a href="vente.html" style="color: #fff; text-decoration: none;">Vente & Achat</a></li>
+          <li><a href="gestion-locative.html" style="color: #fff; text-decoration: none;">Gestion Locative</a></li>
+          <li><a href="renovation-interieur.html" style="color: #fff; text-decoration: none;">Rénovation</a></li>
+          <li><a href="apporteur-affaire.html" style="color: #fff; text-decoration: none;">Apporteur d'Affaires</a></li>
+          <li><a href="contact.html" style="color: #fff; text-decoration: none;">Contact</a></li>
+          <li><a href="mentions-legales.html" style="color: #fff; text-decoration: none;">Mentions légales</a></li>
         </ul>
-        <div class="text-sm mt-1.5 text-center md:text-left max-w-xs mx-auto md:mx-0">
-          <a href="politique-confidentialite.html" class="hover:text-yellow-400 transition">Politique de confidentialité</a>
+        <div style="font-size: 0.875rem; margin-top: 6px;">
+          <a href="politique-confidentialite.html" style="color: #fff; text-decoration: none;">Politique de confidentialité</a>
         </div>
       </nav>
 
-      <!-- Séparateur mobile entre nav et contact -->
-      <div class="border-t border-white/20 mb-6 md:hidden"></div>
-
       <!-- Contact -->
-      <address class="flex flex-col items-center md:items-end not-italic text-center md:text-right">
-        <span class="font-semibold text-base mb-3 block">Contact</span>
-        <span class="text-sm mb-1">${s.address}</span>
-        <a href="mailto:${s.email}" class="text-sm hover:text-yellow-400 transition mb-1">${s.email}</a>
-        <a href="tel:${s.phone.replace(/\s/g, '')}" class="text-sm hover:text-yellow-400 transition mb-1">${s.phone}</a>
-        ${s.phoneFrance ? `<a href="tel:${s.phoneFrance.replace(/\s/g, '')}" class="text-sm hover:text-yellow-400 transition mb-1">${s.phoneFrance}</a>` : ''}
-        <a href="https://wa.me/${s.whatsapp}" class="text-sm hover:text-yellow-400 transition mb-1">WhatsApp</a>
-        ${s.ninea ? `<span class="text-sm opacity-80">NINEA : ${s.ninea}</span>` : ''}
-        ${s.rccm ? `<span class="text-sm opacity-80">RCCM : ${s.rccm}</span>` : ''}
-      </address>
+      <div>
+        <span style="font-weight: 600; font-size: 1rem; display: block; margin-bottom: 12px;">Contact</span>
+        <div style="font-size: 0.875rem; font-style: normal; line-height: 1.8;">
+          <span style="display: block;">${s.address}</span>
+          <a href="mailto:${s.email}" style="color: #fff; text-decoration: none; display: block;">${s.email}</a>
+          <a href="tel:${s.phone.replace(/\s/g, '')}" style="color: #fff; text-decoration: none; display: block;">${s.phone}</a>
+          ${s.phoneFrance ? `<a href="tel:${s.phoneFrance.replace(/\s/g, '')}" style="color: #fff; text-decoration: none; display: block;">${s.phoneFrance}</a>` : ''}
+          <a href="https://wa.me/${s.whatsapp}" style="color: #fff; text-decoration: none; display: block;">WhatsApp</a>
+          ${s.ninea ? `<span style="display: block; opacity: 0.8;">NINEA : ${s.ninea}</span>` : ''}
+          ${s.rccm ? `<span style="display: block; opacity: 0.8;">RCCM : ${s.rccm}</span>` : ''}
+        </div>
+      </div>
 
     </div>
   </div>
-  <div class="border-t border-blue-300/50 py-4 text-center text-sm text-white/70">
+  <div style="border-top: 1px solid rgba(147,197,253,0.3); padding: 16px; text-align: center; font-size: 0.875rem; color: rgba(255,255,255,0.7);">
     &copy; <span id="year"></span> ${s.company}. Tous droits réservés.
   </div>
 </div>
@@ -185,10 +184,27 @@ function injectFragments() {
     const footerDiv = document.getElementById('main-footer');
     if (footerDiv) {
         footerDiv.innerHTML = generateFooter();
-        // Appliquer les styles directement sur le footer principal pour éviter le chevauchement
-        footerDiv.className = 'mt-auto';
+        // Appliquer les styles directement sur le footer principal
+        footerDiv.className = '';
+        footerDiv.style.marginTop = 'auto';
         footerDiv.setAttribute('role', 'contentinfo');
         footerDiv.setAttribute('aria-label', 'Pied de page');
+        
+        // Injecter le CSS responsive pour le footer (2 colonnes sur desktop)
+        if (!document.getElementById('footer-responsive-css')) {
+            const style = document.createElement('style');
+            style.id = 'footer-responsive-css';
+            style.textContent = `
+                @media (min-width: 768px) {
+                    .footer-grid-2col { grid-template-columns: 1fr 1fr !important; }
+                    .footer-grid-2col nav { text-align: left; }
+                    .footer-grid-2col > div:last-child { text-align: right; }
+                    .footer-grid-2col > div:last-child div { align-items: flex-end; }
+                }
+                #main-footer a:hover { color: #facc15 !important; }
+            `;
+            document.head.appendChild(style);
+        }
     }
     // Mise à jour de l'année
     const yearSpan = document.getElementById('year');
