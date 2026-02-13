@@ -1429,40 +1429,70 @@ var DocHistory = {
 
 var DocExport = {
 
+    /** Récupère le CSS A4 depuis la feuille de style documents.css déjà chargée */
+    getDocCSS: function() {
+        // Chercher la feuille de style documents.css chargée dans la page
+        var sheets = document.styleSheets;
+        var css = '';
+        for (var s = 0; s < sheets.length; s++) {
+            try {
+                var href = sheets[s].href || '';
+                if (href.indexOf('documents.css') === -1) continue;
+                var rules = sheets[s].cssRules || sheets[s].rules;
+                if (!rules) continue;
+                for (var r = 0; r < rules.length; r++) {
+                    css += rules[r].cssText + '\n';
+                }
+            } catch(e) {
+                // CORS - fallback: on ne peut pas lire les règles cross-origin
+                console.warn('[DocExport] Impossible de lire', sheets[s].href, e);
+            }
+        }
+        return css;
+    },
+
     /** Génère un PDF depuis le HTML A4 via html2pdf.js */
     downloadPDF: function(htmlContent, filename) {
         if (typeof html2pdf === 'undefined') {
-            DocUtils.toast('html2pdf.js non charg\u00e9', 'error');
+            DocUtils.toast('html2pdf.js non chargé', 'error');
             return;
         }
 
-        // Construire un conteneur avec les styles intégrés
+        // Récupérer le CSS inline depuis la feuille déjà chargée
+        var inlineCSS = DocExport.getDocCSS();
+
+        // Variables CSS nécessaires (au cas où :root ne serait pas capturé)
+        var varsCSS = ':root{--doc-primary:#1e3a8a;--doc-primary-light:#2563eb;--doc-accent:#d4a017;--doc-accent-light:#f59e0b;--doc-dark:#0f172a;--doc-gray:#64748b;--doc-gray-light:#f1f5f9;--doc-border:#e2e8f0;--doc-success:#059669;--doc-radius:12px;}';
+
+        // CSS de renforcement pour le PDF
+        var pdfCSS = '* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }' +
+            '.kfs-doc { background: #fff !important; width: 210mm; min-height: 297mm; position: relative; box-sizing: border-box; }' +
+            '.kfs-flag-green { background: #00853F !important; }' +
+            '.kfs-flag-yellow { background: #FDEF42 !important; }' +
+            '.kfs-flag-red { background: #E31B23 !important; }' +
+            '.kfs-net-box { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%) !important; color: #fff !important; }' +
+            '.kfs-table thead th { background: #1e3a8a !important; color: #fff !important; }' +
+            '.kfs-table-total { background: #1e3a8a !important; color: #fff !important; }' +
+            '.kfs-totals-row.total { background: #1e3a8a !important; color: #fff !important; }' +
+            '.kfs-doc-ref { background: #1e3a8a !important; color: #fff !important; }' +
+            '.kfs-party { background: #f8fafc !important; }' +
+            '.kfs-mentions { background: #f8fafc !important; }';
+
+        // Construire le HTML complet autoportant
+        var fullHTML = '<div id="pdf-render-root" style="width:794px;background:#fff;font-family:Georgia,Times New Roman,serif">' +
+            '<style>' + varsCSS + '\n' + inlineCSS + '\n' + pdfCSS + '</style>' +
+            htmlContent +
+            '</div>';
+
+        // Créer le conteneur dans le DOM (visible mais hors écran)
         var container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.left = '0';
-        container.style.top = '0';
-        container.style.width = '794px';
-        container.style.zIndex = '-9999';
-        container.style.opacity = '0';
-        container.style.pointerEvents = 'none';
-        container.style.background = '#fff';
-
-        // Charger le CSS du document dans le conteneur
-        var docCSS = document.querySelector('link[href*="documents.css"]');
-        if (docCSS) {
-            var styleLink = document.createElement('link');
-            styleLink.rel = 'stylesheet';
-            styleLink.href = docCSS.href;
-            container.appendChild(styleLink);
-        }
-
-        // Ajouter le contenu HTML
-        var wrapper = document.createElement('div');
-        wrapper.innerHTML = htmlContent;
-        container.appendChild(wrapper);
+        container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;overflow:visible;background:#fff;z-index:-1;';
+        container.innerHTML = fullHTML;
         document.body.appendChild(container);
 
-        // Attendre que les styles et images soient chargés
+        var renderRoot = container.querySelector('#pdf-render-root');
+
+        // Délai pour assurer le layout
         setTimeout(function() {
             var opt = {
                 margin: [0, 0, 0, 0],
@@ -1474,25 +1504,10 @@ var DocExport = {
                     allowTaint: true,
                     letterRendering: true,
                     width: 794,
+                    height: renderRoot.scrollHeight || 1123,
                     windowWidth: 794,
                     backgroundColor: '#ffffff',
-                    logging: false,
-                    onclone: function(clonedDoc) {
-                        // S'assurer que les couleurs de fond sont rendues
-                        var all = clonedDoc.querySelectorAll('*');
-                        for (var i = 0; i < all.length; i++) {
-                            all[i].style.webkitPrintColorAdjust = 'exact';
-                            all[i].style.printColorAdjust = 'exact';
-                            all[i].style.colorAdjust = 'exact';
-                        }
-                        // Forcer visibilité
-                        var kfsDoc = clonedDoc.querySelector('.kfs-doc');
-                        if (kfsDoc) {
-                            kfsDoc.style.visibility = 'visible';
-                            kfsDoc.style.opacity = '1';
-                            kfsDoc.style.background = '#ffffff';
-                        }
-                    }
+                    logging: false
                 },
                 jsPDF: {
                     unit: 'mm',
@@ -1507,15 +1522,15 @@ var DocExport = {
                 }
             };
 
-            html2pdf().set(opt).from(wrapper).save().then(function() {
-                document.body.removeChild(container);
-                DocUtils.toast('PDF t\u00e9l\u00e9charg\u00e9 avec succ\u00e8s', 'success');
+            html2pdf().set(opt).from(renderRoot).save().then(function() {
+                if (container.parentNode) document.body.removeChild(container);
+                DocUtils.toast('PDF téléchargé avec succès', 'success');
             }).catch(function(err) {
                 if (container.parentNode) document.body.removeChild(container);
                 console.error('Erreur PDF:', err);
-                DocUtils.toast('Erreur lors de la g\u00e9n\u00e9ration du PDF', 'error');
+                DocUtils.toast('Erreur lors de la génération du PDF', 'error');
             });
-        }, 500);
+        }, 300);
     },
 
     /** Ouvre une fen\u00eatre pour impression */
