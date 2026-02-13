@@ -568,20 +568,183 @@ var DocUtils = {
 // 4. MOTEUR DE FORMULAIRE
 // ═══════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════
+// 3b. AUTO-REMPLISSAGE (Employés / Clients)
+// ═══════════════════════════════════════════════════
+
+var AutoFill = {
+
+    /** Mapping type de document → source de données */
+    SOURCE_MAP: {
+        // Documents RH → employés
+        contrat_travail:    { source: 'employes', label: 'un employé', icon: 'person' },
+        certificat_travail: { source: 'employes', label: 'un employé', icon: 'person' },
+        fiche_paie:         { source: 'employes', label: 'un employé', icon: 'person' },
+        // Documents commerciaux / immobilier → clients
+        devis:              { source: 'clients', label: 'un client', icon: 'groups' },
+        contrat_prestation: { source: 'clients', label: 'un client', icon: 'groups' },
+        location_courte:    { source: 'clients', label: 'un client / locataire', icon: 'groups' },
+        location_longue:    { source: 'clients', label: 'un client / locataire', icon: 'groups' },
+        contrat_bail:       { source: 'clients', label: 'un client / locataire', icon: 'groups' }
+    },
+
+    /** Mapping champ document ← champ employé */
+    EMPLOYEE_MAP: {
+        employe_nom:            function(e) { return ((e.civilite || '') + ' ' + (e.prenom || '') + ' ' + (e.nom || '')).trim(); },
+        employe_date_naissance: function(e) { return e.dateNaissance || ''; },
+        employe_lieu_naissance: function(e) { return e.lieuNaissance || ''; },
+        employe_nationalite:    function(e) { return e.nationalite || 'Sénégalaise'; },
+        employe_cni:            function(e) { return e.cni || ''; },
+        employe_adresse:        function(e) { return e.adresse || ''; },
+        employe_telephone:      function(e) { return e.telephone || ''; },
+        employe_matricule:      function(e) { return e.matricule || ''; },
+        employe_poste:          function(e) { return e.poste || ''; },
+        employe_categorie:      function(e) { return e.departement || ''; },
+        employe_date_embauche:  function(e) { return e.dateEmbauche || ''; },
+        poste:                  function(e) { return e.poste || ''; },
+        categorie:              function(e) { return e.departement || ''; },
+        salaire_base:           function(e) { return e.salaire ? String(e.salaire) : ''; },
+        date_entree:            function(e) { return e.dateEmbauche || ''; },
+        lieu_travail:           function(e) { return COMPANY.ville || ''; }
+    },
+
+    /** Mapping champ document ← champ client */
+    CLIENT_MAP: {
+        client_nom:         function(c) {
+            if (c.type === 'entreprise') return c.raisonSociale || c.nom || '';
+            return ((c.civilite || '') + ' ' + (c.prenom || '') + ' ' + (c.nom || '')).trim();
+        },
+        client_adresse:     function(c) { return (c.adresse || '') + (c.ville ? ', ' + c.ville : ''); },
+        client_telephone:   function(c) { return c.telephone || ''; },
+        client_email:       function(c) { return c.email || ''; },
+        client_representant: function(c) {
+            if (c.type === 'entreprise') return c.contactPrincipal || '';
+            return ((c.prenom || '') + ' ' + (c.nom || '')).trim();
+        },
+        // Pour locataires (location / bail)
+        locataire_nom:      function(c) {
+            return ((c.civilite || '') + ' ' + (c.prenom || '') + ' ' + (c.nom || '')).trim();
+        },
+        locataire_cni:      function(c) { return c.cni || ''; },
+        locataire_telephone: function(c) { return c.telephone || ''; },
+        locataire_adresse:  function(c) { return (c.adresse || '') + (c.ville ? ', ' + c.ville : ''); },
+        locataire_profession: function(c) { return c.profession || ''; }
+    },
+
+    /** Charger les données depuis localStorage */
+    loadData: function(source) {
+        try {
+            return JSON.parse(localStorage.getItem(source) || '[]');
+        } catch(e) { return []; }
+    },
+
+    /** Générer le HTML du sélecteur */
+    renderSelector: function(typeKey) {
+        var mapping = AutoFill.SOURCE_MAP[typeKey];
+        if (!mapping) return '';
+
+        var items = AutoFill.loadData(mapping.source);
+        if (items.length === 0) return '';
+
+        var html = '<div class="doc-autofill-bar" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px dashed #38bdf8;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+        html += '<span class="material-icons" style="color:#0284c7;font-size:1.5rem">' + mapping.icon + '</span>';
+        html += '<label style="font-weight:600;color:#0369a1;white-space:nowrap">Sélectionner ' + mapping.label + ' :</label>';
+        html += '<select id="doc-autofill-select" style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #7dd3fc;border-radius:8px;font-size:0.95rem;background:white;cursor:pointer">';
+        html += '<option value="">-- Remplissage manuel --</option>';
+
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            var displayName = '';
+            if (mapping.source === 'employes') {
+                displayName = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
+                if (item.matricule) displayName += ' (' + item.matricule + ')';
+                if (item.poste) displayName += ' — ' + item.poste;
+            } else {
+                if (item.type === 'entreprise') {
+                    displayName = item.raisonSociale || item.nom || '';
+                    if (item.contactPrincipal) displayName += ' (c/o ' + item.contactPrincipal + ')';
+                } else {
+                    displayName = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
+                }
+                if (item.telephone) displayName += ' — ' + item.telephone;
+            }
+            html += '<option value="' + i + '">' + DocUtils.esc(displayName) + '</option>';
+        }
+
+        html += '</select>';
+        html += '</div>';
+        return html;
+    },
+
+    /** Appliquer les données sélectionnées */
+    apply: function(typeKey) {
+        var select = document.getElementById('doc-autofill-select');
+        if (!select || select.value === '') return;
+
+        var mapping = AutoFill.SOURCE_MAP[typeKey];
+        if (!mapping) return;
+
+        var items = AutoFill.loadData(mapping.source);
+        var idx = parseInt(select.value, 10);
+        if (isNaN(idx) || !items[idx]) return;
+
+        var item = items[idx];
+        var fieldMap = mapping.source === 'employes' ? AutoFill.EMPLOYEE_MAP : AutoFill.CLIENT_MAP;
+
+        var filled = 0;
+        for (var fieldId in fieldMap) {
+            var el = document.getElementById('doc-' + fieldId);
+            if (el) {
+                var val = fieldMap[fieldId](item);
+                if (val) {
+                    el.value = val;
+                    // Animation visuelle
+                    el.style.transition = 'background 0.3s';
+                    el.style.background = '#f0fdf4';
+                    setTimeout((function(element) {
+                        return function() { element.style.background = ''; };
+                    })(el), 1500);
+                    filled++;
+                }
+            }
+        }
+
+        if (filled > 0) {
+            DocUtils.toast(filled + ' champ(s) rempli(s) automatiquement', 'success');
+        }
+    },
+
+    /** Lier l'événement change du sélecteur */
+    bind: function(typeKey) {
+        var select = document.getElementById('doc-autofill-select');
+        if (select) {
+            select.addEventListener('change', function() {
+                AutoFill.apply(typeKey);
+            });
+        }
+    }
+};
+
+window.AutoFill = AutoFill;
+
 var FormEngine = {
 
-    /** G\u00e9n\u00e8re le HTML complet du formulaire pour un type donn\u00e9 */
+    /** Génère le HTML complet du formulaire pour un type donné */
     render: function(typeKey) {
         var config = DOCUMENT_TYPES[typeKey];
         if (!config) return '';
 
         var html = '<div class="doc-form-title"><span class="material-icons">' + config.icon + '</span>' + DocUtils.esc(config.label) + '</div>';
+
+        // Barre d'auto-remplissage (employé ou client)
+        html += AutoFill.renderSelector(typeKey);
+
         html += '<div class="doc-fields-grid">';
 
         for (var i = 0; i < config.fields.length; i++) {
             var f = config.fields[i];
 
-            // S\u00e9parateur de section
+            // Séparateur de section
             if (f.section) {
                 html += '<div class="doc-form-section"><span class="material-icons">' + (f.icon || 'label') + '</span>' + DocUtils.esc(f.section) + '</div>';
                 continue;
@@ -1442,13 +1605,15 @@ var DocEngine = {
 
         DocEngine.currentType = typeKey;
 
-        // G\u00e9n\u00e9rer le formulaire
+        // Générer le formulaire
         if (formContainer) {
             formContainer.classList.remove('hidden');
             formContainer.innerHTML = FormEngine.render(typeKey);
-            // Pr\u00e9-remplir la date du jour
+            // Pré-remplir la date du jour
             var dateField = document.getElementById('doc-date');
             if (dateField && !dateField.value) dateField.value = DocUtils.today();
+            // Activer l'auto-remplissage
+            AutoFill.bind(typeKey);
         }
 
         // Lier les calculs des lignes
@@ -1528,11 +1693,14 @@ var DocEngine = {
             data: data,
             html: html
         };
-        DocHistory.save(doc);
+        var savedDoc = DocHistory.save(doc);
         DocHistory.renderStats();
         DocHistory.renderList();
 
-        DocUtils.toast('Document enregistr\u00e9', 'success');
+        // ══ SYNC FINANCES / BILAN ══
+        DocEngine.syncToFinances(DocEngine.currentType, data, savedDoc);
+
+        DocUtils.toast('Document enregistré & synchronisé', 'success');
 
         // Lancer l'impression
         DocExport.print(html);
@@ -1542,7 +1710,169 @@ var DocEngine = {
         }
     },
 
-    /** R\u00e9initialiser le formulaire */
+    /** Synchroniser un document enregistré avec le module Finances */
+    syncToFinances: function(typeKey, data, savedDoc) {
+        // Vérifier que autoAddTransaction existe (admin.js chargé)
+        if (typeof window.autoAddTransaction !== 'function') {
+            console.log('[DocEngine] autoAddTransaction non disponible, sync ignorée');
+            return;
+        }
+
+        var config = DOCUMENT_TYPES[typeKey];
+        if (!config) return;
+
+        var ref = savedDoc.numero || savedDoc.id;
+        var dateDoc = data.date || DocUtils.today();
+
+        try {
+            switch(typeKey) {
+
+                // ── DEVIS → Recette potentielle (montant TTC) ──
+                case 'devis':
+                    if (data._totalTTC && data._totalTTC > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: data._totalTTC,
+                            categorie: 'vente',
+                            description: 'Devis ' + ref + ' — ' + (data.objet || 'Prestation') + ' — Client: ' + (data.client_nom || ''),
+                            reference: 'DOC-' + ref,
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    break;
+
+                // ── CONTRAT PRESTATION → Recette (montant TTC) ──
+                case 'contrat_prestation':
+                    var mt = parseFloat(data.montant_total) || 0;
+                    var tva = parseFloat(data.tva) || 0;
+                    var ttc = mt * (1 + tva / 100);
+                    if (ttc > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: ttc,
+                            categorie: 'vente',
+                            description: 'Contrat prestation ' + ref + ' — ' + (data.objet || 'Service') + ' — Client: ' + (data.client_nom || ''),
+                            reference: 'DOC-' + ref,
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    break;
+
+                // ── LOCATION COURTE → Recette (montant total) ──
+                case 'location_courte':
+                    var montantLC = parseFloat(data.montant_total) || 0;
+                    if (montantLC > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: montantLC,
+                            categorie: 'location',
+                            description: 'Location courte ' + ref + ' — ' + (data.bien_designation || 'Bien') + ' — Locataire: ' + (data.locataire_nom || ''),
+                            reference: 'DOC-' + ref,
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    break;
+
+                // ── LOCATION LONGUE → Recette mensuelle (loyer + charges) ──
+                case 'location_longue':
+                    var loyerLL = (parseFloat(data.loyer_mensuel) || 0) + (parseFloat(data.charges) || 0);
+                    if (loyerLL > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: loyerLL,
+                            categorie: 'location',
+                            description: 'Location longue ' + ref + ' — ' + (data.bien_designation || 'Bien') + ' — Loyer mensuel — Locataire: ' + (data.locataire_nom || ''),
+                            reference: 'DOC-' + ref,
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    // Caution aussi
+                    var cautionLL = parseFloat(data.caution) || 0;
+                    if (cautionLL > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: cautionLL,
+                            categorie: 'location',
+                            description: 'Caution location ' + ref + ' — ' + (data.locataire_nom || ''),
+                            reference: 'DOC-' + ref + '_caution',
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    break;
+
+                // ── BAIL → Recette (loyer + caution + avance) ──
+                case 'contrat_bail':
+                    var loyerBail = (parseFloat(data.loyer_mensuel) || 0) + (parseFloat(data.charges) || 0);
+                    if (loyerBail > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: loyerBail,
+                            categorie: 'location',
+                            description: 'Bail ' + ref + ' — ' + (data.bien_designation || 'Bien') + ' — Loyer mensuel — Preneur: ' + (data.locataire_nom || ''),
+                            reference: 'DOC-' + ref,
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    var cautionBail = parseFloat(data.caution) || 0;
+                    if (cautionBail > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: cautionBail,
+                            categorie: 'location',
+                            description: 'Caution bail ' + ref + ' — ' + (data.locataire_nom || ''),
+                            reference: 'DOC-' + ref + '_caution',
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    break;
+
+                // ── FICHE DE PAIE → Dépense (salaire net + cotisations) ──
+                case 'fiche_paie':
+                    if (data._payslip) {
+                        var netPaie = data._payslip.net || 0;
+                        if (netPaie > 0) {
+                            window.autoAddTransaction({
+                                type: 'depense',
+                                montant: netPaie,
+                                categorie: 'salaires',
+                                description: 'Salaire net ' + (data.mois || '') + ' ' + (data.annee || '') + ' — ' + (data.employe_nom || '') + ' (' + (data.employe_poste || '') + ')',
+                                reference: 'DOC-' + ref,
+                                sourceModule: 'documents',
+                                date: dateDoc
+                            });
+                        }
+                        var cotisations = (data._payslip.ipres_general || 0) + (data._payslip.ipres_cadre || 0) + (data._payslip.css || 0);
+                        if (cotisations > 0) {
+                            window.autoAddTransaction({
+                                type: 'depense',
+                                montant: cotisations,
+                                categorie: 'charges_sociales',
+                                description: 'Cotisations patronales ' + (data.mois || '') + ' ' + (data.annee || '') + ' — ' + (data.employe_nom || ''),
+                                reference: 'DOC-' + ref + '_cotisations',
+                                sourceModule: 'documents',
+                                date: dateDoc
+                            });
+                        }
+                    }
+                    break;
+
+                // contrat_travail et certificat_travail : pas de transaction financière
+                default:
+                    break;
+            }
+        } catch(e) {
+            console.error('[DocEngine] Erreur sync finances:', e);
+        }
+    },
+
+    /** Réinitialiser le formulaire */
     reset: function() {
         if (DocEngine.currentType) {
             DocEngine.selectType(DocEngine.currentType);
