@@ -1,5 +1,5 @@
 // Service Worker pour KFS BTP PWA
-const CACHE_NAME = 'kfs-btp-v6';
+const CACHE_NAME = 'kfs-btp-v7';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
