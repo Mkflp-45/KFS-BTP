@@ -259,6 +259,78 @@
     background: #e2e8f0;
 }
 
+/* ─── Lignes dynamiques fiche de paie (gains + retenues) ─── */
+.doc-payslip-lines-block {
+    grid-column: 1 / -1;
+    border: 2px solid var(--doc-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.doc-payslip-lines-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--doc-dark);
+    background: var(--doc-gray-light);
+    border-bottom: 1px solid var(--doc-border);
+}
+
+.doc-payslip-lines-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 40px;
+    gap: 0;
+    background: var(--doc-success);
+    padding: 8px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+}
+
+.doc-payslip-lines-header--retenue {
+    background: #dc2626;
+}
+
+.doc-payslip-line-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 40px;
+    gap: 0;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--doc-border);
+    align-items: center;
+    transition: background .15s;
+}
+
+.doc-payslip-line-row:hover {
+    background: var(--doc-gray-light);
+}
+
+.doc-payslip-line-row input {
+    padding: 8px 10px;
+    border: 1px solid var(--doc-border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.doc-payslip-line-row input:focus {
+    outline: none;
+    border-color: var(--doc-primary-light);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+
+/* Ligne custom sur le rendu A4 */
+.kfs-payslip-custom-line .label {
+    font-style: italic;
+    color: #1e3a8a;
+}
+
 /* Boutons d'action */
 .doc-actions {
     display: flex;

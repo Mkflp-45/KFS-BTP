@@ -455,6 +455,7 @@ var DOCUMENT_TYPES = {
         hasMentions: true,
         hasArticles: false,
         isPayslip: true,
+        hasPayslipLines: true,
         fields: [
             { section: 'P\u00e9riode', icon: 'calendar_month' },
             { id: 'mois', label: 'Mois', type: 'select', options: ['Janvier', 'F\u00e9vrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Ao\u00fbt', 'Septembre', 'Octobre', 'Novembre', 'D\u00e9cembre'], required: true },
@@ -783,6 +784,11 @@ var FormEngine = {
             html += FormEngine.renderLineItems(config);
         }
 
+        // Lignes dynamiques fiche de paie (gains + retenues)
+        if (config.hasPayslipLines) {
+            html += FormEngine.renderPayslipLines();
+        }
+
         // Boutons d'action
         html += '<div class="doc-actions">';
         html += '<button type="button" class="doc-btn doc-btn-outline" onclick="DocEngine.reset()"><span class="material-icons">refresh</span>R\u00e9initialiser</button>';
@@ -842,6 +848,86 @@ var FormEngine = {
         }
     },
 
+    // ─── Lignes dynamiques fiche de paie ───
+
+    /** Rendu des blocs de lignes dynamiques gains + retenues */
+    renderPayslipLines: function() {
+        var html = '';
+
+        // Bloc gains supplémentaires
+        html += '<div class="doc-payslip-lines-block" id="doc-payslip-gains">';
+        html += '<div class="doc-payslip-lines-title"><span class="material-icons" style="font-size:1.1rem;color:var(--doc-success)">add_circle</span>Gains supplémentaires</div>';
+        html += '<div class="doc-payslip-lines-header">';
+        html += '<span>Désignation</span><span>Montant (FCFA)</span><span></span>';
+        html += '</div>';
+        html += '<div id="doc-payslip-gains-body">';
+        html += FormEngine.renderPayslipLineRow('gain', 0);
+        html += '</div>';
+        html += '<button type="button" class="doc-add-line" onclick="FormEngine.addPayslipLine(\'gain\')">';
+        html += '<span class="material-icons" style="font-size:1rem">add</span>Ajouter un gain</button>';
+        html += '</div>';
+
+        // Bloc retenues supplémentaires
+        html += '<div class="doc-payslip-lines-block" id="doc-payslip-retenues">';
+        html += '<div class="doc-payslip-lines-title"><span class="material-icons" style="font-size:1.1rem;color:#ef4444">remove_circle</span>Retenues supplémentaires</div>';
+        html += '<div class="doc-payslip-lines-header doc-payslip-lines-header--retenue">';
+        html += '<span>Désignation</span><span>Montant (FCFA)</span><span></span>';
+        html += '</div>';
+        html += '<div id="doc-payslip-retenues-body">';
+        html += FormEngine.renderPayslipLineRow('retenue', 0);
+        html += '</div>';
+        html += '<button type="button" class="doc-add-line" onclick="FormEngine.addPayslipLine(\'retenue\')">';
+        html += '<span class="material-icons" style="font-size:1rem">add</span>Ajouter une retenue</button>';
+        html += '</div>';
+
+        return html;
+    },
+
+    /** Une ligne de gain ou retenue */
+    renderPayslipLineRow: function(type, idx) {
+        return '<div class="doc-payslip-line-row" data-payslip-type="' + type + '" data-payslip-idx="' + idx + '">' +
+            '<input type="text" data-pcol="designation" placeholder="Ex: Prime de chantier...">' +
+            '<input type="number" data-pcol="montant" value="0" min="0" placeholder="0">' +
+            '<button type="button" class="doc-line-remove" onclick="FormEngine.removePayslipLine(this)" title="Supprimer">' +
+            '<span class="material-icons" style="font-size:1rem">close</span></button>' +
+            '</div>';
+    },
+
+    /** Ajouter une ligne gain ou retenue */
+    addPayslipLine: function(type) {
+        var bodyId = type === 'gain' ? 'doc-payslip-gains-body' : 'doc-payslip-retenues-body';
+        var body = document.getElementById(bodyId);
+        if (!body) return;
+        var idx = body.children.length;
+        body.insertAdjacentHTML('beforeend', FormEngine.renderPayslipLineRow(type, idx));
+    },
+
+    /** Supprimer une ligne gain/retenue */
+    removePayslipLine: function(btn) {
+        var row = btn.closest('.doc-payslip-line-row');
+        if (row) row.remove();
+    },
+
+    /** Collecter les lignes dynamiques paie */
+    collectPayslipLines: function() {
+        var result = { gains: [], retenues: [] };
+        // Gains
+        var gainRows = document.querySelectorAll('#doc-payslip-gains-body .doc-payslip-line-row');
+        gainRows.forEach(function(row) {
+            var desig = (row.querySelector('[data-pcol="designation"]') || {}).value || '';
+            var montant = parseFloat((row.querySelector('[data-pcol="montant"]') || {}).value) || 0;
+            if (desig && montant > 0) result.gains.push({ designation: desig, montant: montant });
+        });
+        // Retenues
+        var retRows = document.querySelectorAll('#doc-payslip-retenues-body .doc-payslip-line-row');
+        retRows.forEach(function(row) {
+            var desig = (row.querySelector('[data-pcol="designation"]') || {}).value || '';
+            var montant = parseFloat((row.querySelector('[data-pcol="montant"]') || {}).value) || 0;
+            if (desig && montant > 0) result.retenues.push({ designation: desig, montant: montant });
+        });
+        return result;
+    },
+
     /** Lier les calculs des lignes */
     bindLineCalc: function() {
         var rows = document.querySelectorAll('.doc-line-items-row');
@@ -899,6 +985,12 @@ var FormEngine = {
             data._totalTTC = totalHT + data._totalTVA;
         }
 
+        // Lignes dynamiques fiche de paie
+        var payslipGainsBody = document.getElementById('doc-payslip-gains-body');
+        if (payslipGainsBody) {
+            data._payslipLines = FormEngine.collectPayslipLines();
+        }
+
         // Calculs sp\u00e9cifiques fiche de paie
         if (data.salaire_base && document.querySelector('#doc-mois')) {
             data._payslip = FormEngine.calcPayslip(data);
@@ -921,7 +1013,17 @@ var FormEngine = {
         var anciennete = parseFloat(d.prime_anciennete) || 0;
         var autresPrimes = parseFloat(d.autres_primes) || 0;
 
-        var brutTotal = base + heuresSup + transport + logement + anciennete + autresPrimes;
+        // Gains supplémentaires dynamiques
+        var gainsCustom = [];
+        var totalGainsCustom = 0;
+        if (d._payslipLines && d._payslipLines.gains) {
+            gainsCustom = d._payslipLines.gains;
+            for (var g = 0; g < gainsCustom.length; g++) {
+                totalGainsCustom += gainsCustom[g].montant;
+            }
+        }
+
+        var brutTotal = base + heuresSup + transport + logement + anciennete + autresPrimes + totalGainsCustom;
 
         var ipresGen = brutTotal * (parseFloat(d.ipres_general) || 0) / 100;
         var ipresCadre = brutTotal * (parseFloat(d.ipres_cadre) || 0) / 100;
@@ -930,7 +1032,17 @@ var FormEngine = {
         var autresRet = parseFloat(d.autres_retenues) || 0;
         var avance = parseFloat(d.avance_salaire) || 0;
 
-        var totalRetenues = ipresGen + ipresCadre + ir + css + autresRet + avance;
+        // Retenues supplémentaires dynamiques
+        var retenuesCustom = [];
+        var totalRetenuesCustom = 0;
+        if (d._payslipLines && d._payslipLines.retenues) {
+            retenuesCustom = d._payslipLines.retenues;
+            for (var r = 0; r < retenuesCustom.length; r++) {
+                totalRetenuesCustom += retenuesCustom[r].montant;
+            }
+        }
+
+        var totalRetenues = ipresGen + ipresCadre + ir + css + autresRet + avance + totalRetenuesCustom;
         var net = brutTotal - totalRetenues;
 
         return {
@@ -940,6 +1052,8 @@ var FormEngine = {
             prime_logement: logement,
             prime_anciennete: anciennete,
             autres_primes: autresPrimes,
+            gains_custom: gainsCustom,
+            total_gains_custom: totalGainsCustom,
             brut: brutTotal,
             ipres_general: ipresGen,
             ipres_cadre: ipresCadre,
@@ -947,6 +1061,8 @@ var FormEngine = {
             css: css,
             autres_retenues: autresRet,
             avance_salaire: avance,
+            retenues_custom: retenuesCustom,
+            total_retenues_custom: totalRetenuesCustom,
             total_retenues: totalRetenues,
             net: net
         };
@@ -1257,6 +1373,12 @@ var DocRenderer = {
         if (p.prime_logement > 0) html += '<div class="kfs-payslip-row"><span class="label">Indemnit\u00e9 logement</span><span class="value">' + DocUtils.montantFR(p.prime_logement) + '</span></div>';
         if (p.prime_anciennete > 0) html += '<div class="kfs-payslip-row"><span class="label">Prime anciennet\u00e9</span><span class="value">' + DocUtils.montantFR(p.prime_anciennete) + '</span></div>';
         if (p.autres_primes > 0) html += '<div class="kfs-payslip-row"><span class="label">Autres primes</span><span class="value">' + DocUtils.montantFR(p.autres_primes) + '</span></div>';
+        // Gains supplémentaires dynamiques
+        if (p.gains_custom && p.gains_custom.length > 0) {
+            for (var gi = 0; gi < p.gains_custom.length; gi++) {
+                html += '<div class="kfs-payslip-row kfs-payslip-custom-line"><span class="label">' + DocUtils.esc(p.gains_custom[gi].designation) + '</span><span class="value">' + DocUtils.montantFR(p.gains_custom[gi].montant) + '</span></div>';
+            }
+        }
         html += '<div class="kfs-payslip-row" style="font-weight:700;border-top:2px solid var(--doc-primary)"><span class="label">SALAIRE BRUT</span><span class="value">' + DocUtils.montantFR(p.brut) + '</span></div>';
         html += '</div>';
 
@@ -1269,6 +1391,12 @@ var DocRenderer = {
         if (p.css > 0) html += '<div class="kfs-payslip-row"><span class="label">CSS</span><span class="value">- ' + DocUtils.montantFR(p.css) + '</span></div>';
         if (p.autres_retenues > 0) html += '<div class="kfs-payslip-row"><span class="label">Autres retenues</span><span class="value">- ' + DocUtils.montantFR(p.autres_retenues) + '</span></div>';
         if (p.avance_salaire > 0) html += '<div class="kfs-payslip-row"><span class="label">Avance sur salaire</span><span class="value">- ' + DocUtils.montantFR(p.avance_salaire) + '</span></div>';
+        // Retenues supplémentaires dynamiques
+        if (p.retenues_custom && p.retenues_custom.length > 0) {
+            for (var ri = 0; ri < p.retenues_custom.length; ri++) {
+                html += '<div class="kfs-payslip-row kfs-payslip-custom-line"><span class="label">' + DocUtils.esc(p.retenues_custom[ri].designation) + '</span><span class="value">- ' + DocUtils.montantFR(p.retenues_custom[ri].montant) + '</span></div>';
+            }
+        }
         html += '<div class="kfs-payslip-row" style="font-weight:700;border-top:2px solid #ef4444;color:#ef4444"><span class="label">TOTAL RETENUES</span><span class="value">- ' + DocUtils.montantFR(p.total_retenues) + '</span></div>';
         html += '</div>';
 
