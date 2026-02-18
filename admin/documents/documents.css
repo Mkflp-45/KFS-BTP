@@ -1063,6 +1063,14 @@
     font-weight: 800;
     font-family: 'Inter', sans-serif;
     letter-spacing: 0.02em;
+    margin-bottom: 6px;
+}
+
+.bp-salarie-details {
+    font-size: 8pt;
+    opacity: .9;
+    line-height: 1.6;
+    font-weight: 400;
 }
 
 /* Tableau principal bulletin de paie */
