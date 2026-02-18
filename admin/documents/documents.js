@@ -1351,62 +1351,139 @@ var DocRenderer = {
         var p = data._payslip;
         if (!p) return '';
 
-        var html = '<div class="kfs-payslip-grid">';
+        var mF = DocUtils.montantNum;
+        var esc = DocUtils.esc;
 
-        // Infos employ\u00e9
-        html += '<div class="kfs-payslip-section" style="grid-column:1/-1">';
-        html += '<div class="kfs-payslip-section-title">Informations de l\'employ\u00e9</div>';
-        html += '<div class="kfs-payslip-row"><span class="label">Nom complet</span><span class="value">' + DocUtils.esc(data.employe_nom) + '</span></div>';
-        if (data.employe_matricule) html += '<div class="kfs-payslip-row"><span class="label">Matricule</span><span class="value">' + DocUtils.esc(data.employe_matricule) + '</span></div>';
-        html += '<div class="kfs-payslip-row"><span class="label">Poste</span><span class="value">' + DocUtils.esc(data.employe_poste) + '</span></div>';
-        if (data.employe_categorie) html += '<div class="kfs-payslip-row"><span class="label">Cat\u00e9gorie</span><span class="value">' + DocUtils.esc(data.employe_categorie) + '</span></div>';
-        if (data.employe_date_embauche) html += '<div class="kfs-payslip-row"><span class="label">Date d\'embauche</span><span class="value">' + DocUtils.dateFR(data.employe_date_embauche) + '</span></div>';
-        html += '<div class="kfs-payslip-row"><span class="label">P\u00e9riode</span><span class="value">' + DocUtils.esc(data.mois) + ' ' + DocUtils.esc(data.annee) + '</span></div>';
+        var html = '';
+
+        // ── Bloc infos employé / entreprise ──
+        html += '<div class="bp-info-grid">';
+        // Colonne gauche : infos entreprise + employé
+        html += '<div class="bp-info-left">';
+        html += '<div class="bp-info-row"><span class="bp-lbl">NINEA :</span> <span>' + esc(COMPANY.ninea) + '</span></div>';
+        html += '<div class="bp-info-row"><span class="bp-lbl">RCCM :</span> <span>' + esc(COMPANY.rccm) + '</span></div>';
+        html += '<div class="bp-info-spacer"></div>';
+        if (data.employe_matricule) html += '<div class="bp-info-row"><span class="bp-lbl">Matricule :</span> <span>' + esc(data.employe_matricule) + '</span></div>';
+        html += '<div class="bp-info-row"><span class="bp-lbl">Emploi :</span> <span>' + esc(data.employe_poste) + '</span></div>';
+        if (data.employe_categorie) html += '<div class="bp-info-row"><span class="bp-lbl">Cat\u00e9gorie :</span> <span>' + esc(data.employe_categorie) + '</span></div>';
+        if (data.employe_date_embauche) {
+            html += '<div class="bp-info-row"><span class="bp-lbl">Entr\u00e9e :</span> <span>' + DocUtils.dateFR(data.employe_date_embauche) + '</span></div>';
+        }
+        html += '</div>';
+        // Colonne droite : nom salarié dans un encadré
+        html += '<div class="bp-info-right">';
+        html += '<div class="bp-salarie-box">';
+        html += '<div class="bp-salarie-nom">' + esc(data.employe_nom) + '</div>';
+        html += '</div>';
+        html += '</div>';
         html += '</div>';
 
-        // R\u00e9mun\u00e9ration
-        html += '<div class="kfs-payslip-section">';
-        html += '<div class="kfs-payslip-section-title">R\u00e9mun\u00e9ration</div>';
-        html += '<div class="kfs-payslip-row"><span class="label">Salaire de base</span><span class="value">' + DocUtils.montantFR(p.salaire_base) + '</span></div>';
-        if (p.heures_sup > 0) html += '<div class="kfs-payslip-row"><span class="label">Heures suppl.</span><span class="value">' + DocUtils.montantFR(p.heures_sup) + '</span></div>';
-        if (p.prime_transport > 0) html += '<div class="kfs-payslip-row"><span class="label">Prime de transport</span><span class="value">' + DocUtils.montantFR(p.prime_transport) + '</span></div>';
-        if (p.prime_logement > 0) html += '<div class="kfs-payslip-row"><span class="label">Indemnit\u00e9 logement</span><span class="value">' + DocUtils.montantFR(p.prime_logement) + '</span></div>';
-        if (p.prime_anciennete > 0) html += '<div class="kfs-payslip-row"><span class="label">Prime anciennet\u00e9</span><span class="value">' + DocUtils.montantFR(p.prime_anciennete) + '</span></div>';
-        if (p.autres_primes > 0) html += '<div class="kfs-payslip-row"><span class="label">Autres primes</span><span class="value">' + DocUtils.montantFR(p.autres_primes) + '</span></div>';
+        // ── Tableau principal des éléments de paie ──
+        html += '<table class="bp-table">';
+        html += '<thead><tr>';
+        html += '<th class="bp-col-element">\u00c9l\u00e9ments de paie</th>';
+        html += '<th class="bp-col-base">Base</th>';
+        html += '<th class="bp-col-taux">Taux</th>';
+        html += '<th class="bp-col-deduire">\u00c0 d\u00e9duire</th>';
+        html += '<th class="bp-col-payer">\u00c0 payer</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+
+        // ── Section Rémunération ──
+        // Salaire de base
+        html += '<tr><td class="bp-el">Salaire de base</td><td class="bp-num">' + mF(p.salaire_base) + '</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.salaire_base) + '</td></tr>';
+
+        // Heures supplémentaires
+        if (p.heures_sup > 0) {
+            html += '<tr><td class="bp-el">Heures suppl\u00e9mentaires</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.heures_sup) + '</td></tr>';
+        }
+
+        // Prime de transport
+        if (p.prime_transport > 0) {
+            html += '<tr><td class="bp-el">Prime de transport</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.prime_transport) + '</td></tr>';
+        }
+
+        // Indemnité logement
+        if (p.prime_logement > 0) {
+            html += '<tr><td class="bp-el">Indemnit\u00e9 de logement</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.prime_logement) + '</td></tr>';
+        }
+
+        // Prime ancienneté
+        if (p.prime_anciennete > 0) {
+            html += '<tr><td class="bp-el">Prime d\'anciennet\u00e9</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.prime_anciennete) + '</td></tr>';
+        }
+
+        // Autres primes
+        if (p.autres_primes > 0) {
+            html += '<tr><td class="bp-el">Autres primes</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.autres_primes) + '</td></tr>';
+        }
+
         // Gains supplémentaires dynamiques
         if (p.gains_custom && p.gains_custom.length > 0) {
             for (var gi = 0; gi < p.gains_custom.length; gi++) {
-                html += '<div class="kfs-payslip-row kfs-payslip-custom-line"><span class="label">' + DocUtils.esc(p.gains_custom[gi].designation) + '</span><span class="value">' + DocUtils.montantFR(p.gains_custom[gi].montant) + '</span></div>';
+                html += '<tr><td class="bp-el">' + esc(p.gains_custom[gi].designation) + '</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer">' + mF(p.gains_custom[gi].montant) + '</td></tr>';
             }
         }
-        html += '<div class="kfs-payslip-row" style="font-weight:700;border-top:2px solid var(--doc-primary)"><span class="label">SALAIRE BRUT</span><span class="value">' + DocUtils.montantFR(p.brut) + '</span></div>';
-        html += '</div>';
 
-        // Retenues
-        html += '<div class="kfs-payslip-section">';
-        html += '<div class="kfs-payslip-section-title">Retenues</div>';
-        if (p.ipres_general > 0) html += '<div class="kfs-payslip-row"><span class="label">IPRES R\u00e9g. g\u00e9n\u00e9ral</span><span class="value">- ' + DocUtils.montantFR(p.ipres_general) + '</span></div>';
-        if (p.ipres_cadre > 0) html += '<div class="kfs-payslip-row"><span class="label">IPRES R\u00e9g. cadre</span><span class="value">- ' + DocUtils.montantFR(p.ipres_cadre) + '</span></div>';
-        if (p.ir > 0) html += '<div class="kfs-payslip-row"><span class="label">Imp\u00f4t sur le revenu</span><span class="value">- ' + DocUtils.montantFR(p.ir) + '</span></div>';
-        if (p.css > 0) html += '<div class="kfs-payslip-row"><span class="label">CSS</span><span class="value">- ' + DocUtils.montantFR(p.css) + '</span></div>';
-        if (p.autres_retenues > 0) html += '<div class="kfs-payslip-row"><span class="label">Autres retenues</span><span class="value">- ' + DocUtils.montantFR(p.autres_retenues) + '</span></div>';
-        if (p.avance_salaire > 0) html += '<div class="kfs-payslip-row"><span class="label">Avance sur salaire</span><span class="value">- ' + DocUtils.montantFR(p.avance_salaire) + '</span></div>';
+        // Ligne SALAIRE BRUT
+        html += '<tr class="bp-row-brut"><td class="bp-el bp-bold">Salaire brut</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-payer bp-bold">' + mF(p.brut) + '</td></tr>';
+
+        // ── Ligne séparatrice ──
+        html += '<tr class="bp-separator"><td colspan="5"></td></tr>';
+
+        // ── Section Retenues ──
+        if (p.ipres_general > 0) {
+            html += '<tr><td class="bp-el">IPRES R\u00e9gime g\u00e9n\u00e9ral</td><td class="bp-num">' + mF(p.brut) + '</td><td class="bp-num">' + (parseFloat(data.ipres_general) || 0) + '%</td><td class="bp-num bp-deduire">' + mF(p.ipres_general) + '</td><td class="bp-num"></td></tr>';
+        }
+        if (p.ipres_cadre > 0) {
+            html += '<tr><td class="bp-el">IPRES R\u00e9gime cadre</td><td class="bp-num">' + mF(p.brut) + '</td><td class="bp-num">' + (parseFloat(data.ipres_cadre) || 0) + '%</td><td class="bp-num bp-deduire">' + mF(p.ipres_cadre) + '</td><td class="bp-num"></td></tr>';
+        }
+        if (p.css > 0) {
+            html += '<tr><td class="bp-el">CSS (Contribution Sociale)</td><td class="bp-num">' + mF(p.brut) + '</td><td class="bp-num">' + (parseFloat(data.css) || 0) + '%</td><td class="bp-num bp-deduire">' + mF(p.css) + '</td><td class="bp-num"></td></tr>';
+        }
+        if (p.ir > 0) {
+            html += '<tr><td class="bp-el">Imp\u00f4t sur le revenu</td><td class="bp-num">' + mF(p.brut) + '</td><td class="bp-num">' + (parseFloat(data.ir) || 0) + '%</td><td class="bp-num bp-deduire">' + mF(p.ir) + '</td><td class="bp-num"></td></tr>';
+        }
+        if (p.autres_retenues > 0) {
+            html += '<tr><td class="bp-el">Autres retenues</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-deduire">' + mF(p.autres_retenues) + '</td><td class="bp-num"></td></tr>';
+        }
+        if (p.avance_salaire > 0) {
+            html += '<tr><td class="bp-el">Avance sur salaire</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-deduire">' + mF(p.avance_salaire) + '</td><td class="bp-num"></td></tr>';
+        }
+
         // Retenues supplémentaires dynamiques
         if (p.retenues_custom && p.retenues_custom.length > 0) {
             for (var ri = 0; ri < p.retenues_custom.length; ri++) {
-                html += '<div class="kfs-payslip-row kfs-payslip-custom-line"><span class="label">' + DocUtils.esc(p.retenues_custom[ri].designation) + '</span><span class="value">- ' + DocUtils.montantFR(p.retenues_custom[ri].montant) + '</span></div>';
+                html += '<tr><td class="bp-el">' + esc(p.retenues_custom[ri].designation) + '</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-deduire">' + mF(p.retenues_custom[ri].montant) + '</td><td class="bp-num"></td></tr>';
             }
         }
-        html += '<div class="kfs-payslip-row" style="font-weight:700;border-top:2px solid #ef4444;color:#ef4444"><span class="label">TOTAL RETENUES</span><span class="value">- ' + DocUtils.montantFR(p.total_retenues) + '</span></div>';
+
+        // Ligne TOTAL RETENUES
+        html += '<tr class="bp-row-retenues"><td class="bp-el bp-bold">Total des retenues</td><td class="bp-num"></td><td class="bp-num"></td><td class="bp-num bp-deduire bp-bold">' + mF(p.total_retenues) + '</td><td class="bp-num"></td></tr>';
+
+        html += '</tbody></table>';
+
+        // ── Tableau récapitulatif bas ──
+        html += '<table class="bp-summary-table">';
+        html += '<thead><tr>';
+        html += '<th>Salaire brut</th>';
+        html += '<th>Total retenues</th>';
+        html += '<th>Net \u00e0 payer</th>';
+        html += '</tr></thead>';
+        html += '<tbody><tr>';
+        html += '<td>' + DocUtils.montantFR(p.brut) + '</td>';
+        html += '<td>' + DocUtils.montantFR(p.total_retenues) + '</td>';
+        html += '<td class="bp-bold">' + DocUtils.montantFR(p.net) + '</td>';
+        html += '</tr></tbody></table>';
+
+        // ── Encadré NET À PAYER ──
+        html += '<div class="bp-net-box">';
+        html += '<span class="bp-net-label">Net pay\u00e9 :</span>';
+        html += '<span class="bp-net-amount">' + DocUtils.montantFR(p.net) + '</span>';
         html += '</div>';
 
-        html += '</div>';
-
-        // Net \u00e0 payer
-        html += '<div class="kfs-net-box">';
-        html += '<div class="label">NET \u00c0 PAYER</div>';
-        html += '<div class="amount">' + DocUtils.montantFR(p.net) + '</div>';
-        html += '</div>';
+        // ── Paiement info ──
+        html += '<div class="bp-paiement-info">Paiement le ' + (data.date ? DocUtils.dateLongueFR(data.date) : DocUtils.dateLongueFR(DocUtils.today())) + '</div>';
 
         return html;
     },
