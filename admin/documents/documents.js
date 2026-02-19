@@ -499,6 +499,189 @@ var DOCUMENT_TYPES = {
             { label: 'L\'employeur', name: COMPANY.nom, fonction: COMPANY.gerant },
             { label: 'L\'employ\u00e9', name: '', fonction: 'Re\u00e7u pour solde' }
         ]
+    },
+
+    // ─── CONTRAT DE GESTION LOCATIVE ───
+    contrat_gestion_locative: {
+        label: 'Contrat de gestion locative',
+        icon: 'real_estate_agent',
+        category: 'immobilier',
+        watermark: 'KFS BTP',
+        titleText: 'CONTRAT DE GESTION LOCATIVE',
+        hasLineItems: false,
+        hasParties: true,
+        hasMentions: true,
+        hasArticles: true,
+        fields: [
+            { section: 'Informations du contrat', icon: 'info' },
+            { id: 'numero', label: 'N\u00b0 du contrat', type: 'text', placeholder: 'GL-2026-001', required: true },
+            { id: 'date', label: 'Date du contrat', type: 'date', required: true },
+            { section: 'Propri\u00e9taire (Mandant)', icon: 'person' },
+            { id: 'proprietaire_nom', label: 'Nom / Raison sociale', type: 'text', required: true },
+            { id: 'proprietaire_cni', label: 'N\u00b0 CNI / Passeport', type: 'text' },
+            { id: 'proprietaire_adresse', label: 'Adresse', type: 'text' },
+            { id: 'proprietaire_telephone', label: 'T\u00e9l\u00e9phone', type: 'tel', required: true },
+            { id: 'proprietaire_email', label: 'Email', type: 'email' },
+            { section: 'Bien \u00e0 g\u00e9rer', icon: 'home' },
+            { id: 'bien_designation', label: 'D\u00e9signation du bien', type: 'text', required: true, placeholder: 'Villa 4 pi\u00e8ces, r\u00e9f. V-001' },
+            { id: 'bien_adresse', label: 'Adresse du bien', type: 'text', required: true },
+            { id: 'bien_surface', label: 'Surface (m\u00b2)', type: 'number' },
+            { id: 'bien_description', label: 'Description d\u00e9taill\u00e9e', type: 'textarea', fullWidth: true, placeholder: 'Nombre de pi\u00e8ces, \u00e9quipements, \u00e9tat...' },
+            { id: 'bien_type_location', label: 'Type de location pr\u00e9vu', type: 'select', options: ['Location longue dur\u00e9e', 'Location courte dur\u00e9e', 'Les deux'] },
+            { section: 'Conditions financi\u00e8res', icon: 'payments' },
+            { id: 'loyer_prevu', label: 'Loyer mensuel pr\u00e9vu (FCFA)', type: 'number', required: true },
+            { id: 'commission_pourcentage', label: 'Commission de gestion (%)', type: 'number', value: '10', required: true },
+            { id: 'frais_mise_location', label: 'Frais de mise en location (FCFA)', type: 'number', value: '0' },
+            { id: 'mode_reversement', label: 'Mode de reversement', type: 'select', options: ['Virement bancaire', 'Esp\u00e8ces', 'Mobile Money', 'Ch\u00e8que'] },
+            { id: 'periodicite_reversement', label: 'P\u00e9riodicit\u00e9 du reversement', type: 'select', options: ['Mensuel', 'Trimestriel'] },
+            { section: 'Dur\u00e9e du mandat', icon: 'event' },
+            { id: 'date_debut', label: 'Date de d\u00e9but', type: 'date', required: true },
+            { id: 'duree', label: 'Dur\u00e9e (ann\u00e9es)', type: 'number', value: '1' },
+            { id: 'renouvelable', label: 'Renouvelable', type: 'select', options: ['Par tacite reconduction', 'Non'] },
+            { id: 'preavis', label: 'Pr\u00e9avis de r\u00e9siliation (mois)', type: 'number', value: '3' }
+        ],
+        articles: [
+            { title: 'Objet du mandat', content: 'Le propri\u00e9taire (ci-apr\u00e8s le \u00ab Mandant \u00bb) confie \u00e0 ' + COMPANY.nom + ' (ci-apr\u00e8s le \u00ab Mandataire \u00bb) la gestion locative du bien immobilier d\u00e9sign\u00e9 ci-dessus.\n\nLe Mandataire est autoris\u00e9 \u00e0 accomplir tous les actes de gestion courante relatifs \u00e0 la location du bien.' },
+            { title: 'Dur\u00e9e du mandat', content: 'Le pr\u00e9sent mandat est consenti pour une dur\u00e9e de {duree} an(s) \u00e0 compter du {date_debut}.\n\nRenouvellement : {renouvelable}.\nPr\u00e9avis de r\u00e9siliation : {preavis} mois.' },
+            { title: 'Missions du Mandataire', content: 'Le Mandataire s\'engage \u00e0 :\n\u2022 Rechercher des locataires solvables\n\u2022 R\u00e9diger et signer les baux au nom du Mandant\n\u2022 \u00c9tablir les \u00e9tats des lieux d\'entr\u00e9e et de sortie\n\u2022 Encaisser les loyers et charges\n\u2022 Reverser les sommes dues au Mandant, d\u00e9duction faite de la commission\n\u2022 Assurer le suivi des r\u00e9parations courantes\n\u2022 G\u00e9rer les imp\u00e9ratifs locatifs (cong\u00e9s, renouvellements, \u00e9ventuels contentieux)' },
+            { title: 'Obligations du Mandant', content: 'Le Mandant s\'engage \u00e0 :\n\u2022 Fournir un bien en bon \u00e9tat de location\n\u2022 Remettre les cl\u00e9s et documents n\u00e9cessaires\n\u2022 Informer le Mandataire de toute modification concernant le bien\n\u2022 Prendre en charge les grosses r\u00e9parations (article 606 du COCC)\n\u2022 Ne pas conclure de bail directement sans en informer le Mandataire' },
+            { title: 'R\u00e9mun\u00e9ration du Mandataire', content: 'En contrepartie de ses services, le Mandataire percevra :\n\u2022 Une commission de gestion de {commission_pourcentage}% sur les loyers encaiss\u00e9s\n\u2022 Des frais de mise en location de {frais_mise_location} FCFA par nouveau locataire trouv\u00e9\n\nLa commission est pr\u00e9lev\u00e9e directement sur les loyers avant reversement au Mandant.' },
+            { title: 'Reversement des loyers', content: 'Les loyers encaiss\u00e9s, d\u00e9duction faite de la commission et des frais \u00e9ventuels, seront revers\u00e9s au Mandant selon la p\u00e9riodicit\u00e9 convenue ({periodicite_reversement}) par {mode_reversement}.\n\nLe Mandataire fournira un relev\u00e9 de gestion d\u00e9taill\u00e9 accompagnant chaque reversement.' },
+            { title: 'Assurance et responsabilit\u00e9', content: 'Le Mandant s\'engage \u00e0 souscrire une assurance propri\u00e9taire non-occupant couvrant le bien. Le Mandataire ne saurait \u00eatre tenu responsable des d\u00e9g\u00e2ts caus\u00e9s par le locataire au-del\u00e0 de la caution d\u00e9tenue.' },
+            { title: 'Compte rendu de gestion', content: 'Le Mandataire rendra compte de sa gestion au Mandant de mani\u00e8re {periodicite_reversement} et fournira un bilan annuel complet comprenant :\n\u2022 R\u00e9capitulatif des loyers per\u00e7us\n\u2022 D\u00e9tail des charges et frais\n\u2022 \u00c9tat des lieux et travaux \u00e9ventuels\n\u2022 Situation des locataires' },
+            { title: 'R\u00e9siliation', content: 'Le mandat peut \u00eatre r\u00e9sili\u00e9 :\n\u2022 Par accord amiable entre les parties\n\u2022 Par l\'une ou l\'autre partie moyennant un pr\u00e9avis de {preavis} mois\n\u2022 De plein droit en cas de manquement grave d\'une partie apr\u00e8s mise en demeure rest\u00e9e sans effet pendant 30 jours\n\nEn cas de r\u00e9siliation, le Mandataire remettra au Mandant l\'ensemble des documents, cl\u00e9s et fonds d\u00e9tenus.' },
+            { title: 'Loi applicable', content: 'Le pr\u00e9sent contrat est r\u00e9gi par le Code des Obligations Civiles et Commerciales du S\u00e9n\u00e9gal et les dispositions l\u00e9gales relatives au mandat de gestion immobili\u00e8re.' }
+        ],
+        mentions: [
+            'Contrat \u00e9tabli en deux exemplaires originaux, un pour chaque partie.',
+            'Les annexes (inventaire du bien, \u00e9tat des lieux) font partie int\u00e9grante du contrat.'
+        ],
+        signatures: [
+            { label: 'Le Mandataire (Gestionnaire)', name: COMPANY.nom, fonction: COMPANY.gerant },
+            { label: 'Le Mandant (Propri\u00e9taire)', name: '', fonction: 'Lu et approuv\u00e9' }
+        ]
+    },
+
+    // ─── QUITTANCE DE LOYER ───
+    quittance_loyer: {
+        label: 'Quittance de loyer',
+        icon: 'receipt_long',
+        category: 'immobilier',
+        watermark: 'QUITTANCE',
+        titleText: 'QUITTANCE DE LOYER',
+        hasLineItems: false,
+        hasParties: false,
+        hasMentions: true,
+        hasArticles: false,
+        isFreeform: true,
+        fields: [
+            { section: 'Informations de la quittance', icon: 'info' },
+            { id: 'numero', label: 'N\u00b0 quittance', type: 'text', placeholder: 'QTL-2026-001', required: true },
+            { id: 'date', label: 'Date d\'\u00e9mission', type: 'date', required: true },
+            { id: 'type_bail', label: 'Type de bail', type: 'select', options: ['Location longue dur\u00e9e', 'Location courte dur\u00e9e', 'Contrat de bail', 'Gestion locative'], required: true },
+            { section: 'Locataire', icon: 'person' },
+            { id: 'locataire_nom', label: 'Nom complet du locataire', type: 'text', required: true },
+            { id: 'locataire_adresse', label: 'Adresse du locataire', type: 'text' },
+            { id: 'locataire_telephone', label: 'T\u00e9l\u00e9phone', type: 'tel' },
+            { section: 'Bien lou\u00e9', icon: 'home' },
+            { id: 'bien_designation', label: 'D\u00e9signation du bien', type: 'text', required: true },
+            { id: 'bien_adresse', label: 'Adresse du bien', type: 'text', required: true },
+            { section: 'P\u00e9riode et montants', icon: 'payments' },
+            { id: 'periode_debut', label: 'P\u00e9riode du', type: 'date', required: true },
+            { id: 'periode_fin', label: 'Au', type: 'date', required: true },
+            { id: 'loyer', label: 'Loyer (FCFA)', type: 'number', required: true },
+            { id: 'charges', label: 'Charges (FCFA)', type: 'number', value: '0' },
+            { id: 'taxe_ordures', label: 'Taxe d\'ordures (FCFA)', type: 'number', value: '0' },
+            { id: 'eau', label: 'Eau (FCFA)', type: 'number', value: '0' },
+            { id: 'electricite', label: '\u00c9lectricit\u00e9 (FCFA)', type: 'number', value: '0' },
+            { id: 'autres_frais', label: 'Autres frais (FCFA)', type: 'number', value: '0' },
+            { id: 'autres_frais_label', label: 'Libell\u00e9 autres frais', type: 'text', placeholder: 'Ex: Entretien parties communes' },
+            { section: 'Paiement', icon: 'account_balance' },
+            { id: 'mode_paiement', label: 'Mode de paiement', type: 'select', options: ['Esp\u00e8ces', 'Virement bancaire', 'Ch\u00e8que', 'Mobile Money'] },
+            { id: 'date_paiement', label: 'Date de paiement', type: 'date' },
+            { id: 'reference_paiement', label: 'R\u00e9f\u00e9rence du paiement', type: 'text', placeholder: 'N\u00b0 virement, ch\u00e8que...' }
+        ],
+        renderBody: function(data) {
+            var esc = DocUtils.esc;
+            var mF = DocUtils.montantFR;
+            var mN = DocUtils.montantNum;
+            var html = '';
+
+            // Infos bailleur / locataire en 2 colonnes
+            html += '<div class="kfs-parties">';
+            html += '<div class="kfs-party employer">';
+            html += '<div class="kfs-party-label">Bailleur</div>';
+            html += '<div class="kfs-party-name">' + esc(COMPANY.nom) + '</div>';
+            html += '<div class="kfs-party-details">';
+            html += esc(COMPANY.adresse) + '<br>';
+            html += 'T\u00e9l : ' + esc(COMPANY.telephone) + '<br>';
+            html += 'NINEA : ' + esc(COMPANY.ninea);
+            html += '</div></div>';
+            html += '<div class="kfs-party client">';
+            html += '<div class="kfs-party-label">Locataire</div>';
+            html += '<div class="kfs-party-name">' + esc(data.locataire_nom || '') + '</div>';
+            html += '<div class="kfs-party-details">';
+            if (data.locataire_adresse) html += esc(data.locataire_adresse) + '<br>';
+            if (data.locataire_telephone) html += 'T\u00e9l : ' + esc(data.locataire_telephone);
+            html += '</div></div></div>';
+
+            // Infos du bien
+            html += '<div class="qtl-bien-box">';
+            html += '<strong>Bien concern\u00e9 :</strong> ' + esc(data.bien_designation || '') + '<br>';
+            html += '<strong>Adresse :</strong> ' + esc(data.bien_adresse || '') + '<br>';
+            html += '<strong>Type :</strong> ' + esc(data.type_bail || '');
+            html += '</div>';
+
+            // Période
+            var pDeb = data.periode_debut ? DocUtils.dateLongueFR(data.periode_debut) : '';
+            var pFin = data.periode_fin ? DocUtils.dateLongueFR(data.periode_fin) : '';
+            html += '<div class="qtl-periode">P\u00e9riode : du <strong>' + pDeb + '</strong> au <strong>' + pFin + '</strong></div>';
+
+            // Tableau facture
+            var loyer = parseFloat(data.loyer) || 0;
+            var charges = parseFloat(data.charges) || 0;
+            var taxe = parseFloat(data.taxe_ordures) || 0;
+            var eau = parseFloat(data.eau) || 0;
+            var elec = parseFloat(data.electricite) || 0;
+            var autres = parseFloat(data.autres_frais) || 0;
+            var total = loyer + charges + taxe + eau + elec + autres;
+
+            html += '<table class="qtl-table">';
+            html += '<thead><tr><th class="qtl-col-design">D\u00e9signation</th><th class="qtl-col-montant">Montant (FCFA)</th></tr></thead>';
+            html += '<tbody>';
+            html += '<tr><td>Loyer</td><td class="qtl-num">' + mN(loyer) + '</td></tr>';
+            if (charges > 0) html += '<tr><td>Charges locatives</td><td class="qtl-num">' + mN(charges) + '</td></tr>';
+            if (taxe > 0) html += '<tr><td>Taxe d\'ordures m\u00e9nag\u00e8res</td><td class="qtl-num">' + mN(taxe) + '</td></tr>';
+            if (eau > 0) html += '<tr><td>Eau</td><td class="qtl-num">' + mN(eau) + '</td></tr>';
+            if (elec > 0) html += '<tr><td>\u00c9lectricit\u00e9</td><td class="qtl-num">' + mN(elec) + '</td></tr>';
+            if (autres > 0) html += '<tr><td>' + esc(data.autres_frais_label || 'Autres frais') + '</td><td class="qtl-num">' + mN(autres) + '</td></tr>';
+            html += '</tbody>';
+            html += '<tfoot><tr class="qtl-total"><td><strong>TOTAL</strong></td><td class="qtl-num"><strong>' + mN(total) + '</strong></td></tr></tfoot>';
+            html += '</table>';
+
+            // Encadré total
+            html += '<div class="qtl-total-box">';
+            html += '<span class="qtl-total-label">Total re\u00e7u :</span>';
+            html += '<span class="qtl-total-amount">' + mF(total) + '</span>';
+            html += '</div>';
+
+            // Infos paiement
+            html += '<div class="qtl-paiement-info">';
+            if (data.mode_paiement) html += '<div><strong>Mode de paiement :</strong> ' + esc(data.mode_paiement) + '</div>';
+            if (data.date_paiement) html += '<div><strong>Date de paiement :</strong> ' + DocUtils.dateFR(data.date_paiement) + '</div>';
+            if (data.reference_paiement) html += '<div><strong>R\u00e9f\u00e9rence :</strong> ' + esc(data.reference_paiement) + '</div>';
+            html += '</div>';
+
+            return html;
+        },
+        mentions: [
+            'La pr\u00e9sente quittance fait foi du paiement effectu\u00e9 et vaut re\u00e7u.',
+            'Conform\u00e9ment \u00e0 la loi, le bailleur est tenu de transmettre gratuitement la quittance au locataire qui en fait la demande.',
+            'Cette quittance ne pr\u00e9juge pas du paiement des termes ant\u00e9rieurs.'
+        ],
+        signatures: [
+            { label: 'Le bailleur', name: COMPANY.nom, fonction: COMPANY.gerant }
+        ]
     }
 };
 
@@ -595,7 +778,9 @@ var AutoFill = {
         contrat_prestation: { source: 'clients', label: 'un client', icon: 'groups' },
         location_courte:    { source: 'clients', label: 'un client / locataire', icon: 'groups' },
         location_longue:    { source: 'clients', label: 'un client / locataire', icon: 'groups' },
-        contrat_bail:       { source: 'clients', label: 'un client / locataire', icon: 'groups' }
+        contrat_bail:       { source: 'clients', label: 'un client / locataire', icon: 'groups' },
+        contrat_gestion_locative: { source: 'clients', label: 'un propriétaire', icon: 'groups' },
+        quittance_loyer:    { source: 'clients', label: 'un locataire', icon: 'groups' }
     },
 
     /** Mapping champ document ← champ employé */
@@ -1262,12 +1447,20 @@ var DocRenderer = {
             if (data.employe_cni) html += 'CNI : ' + DocUtils.esc(data.employe_cni) + '<br>';
             if (data.employe_nationalite) html += 'Nationalit\u00e9 : ' + DocUtils.esc(data.employe_nationalite);
             html += '</div>';
-        } else if (typeKey.indexOf('location') !== -1 || typeKey === 'contrat_bail') {
+        } else if (typeKey.indexOf('location') !== -1 || typeKey === 'contrat_bail' || typeKey === 'quittance_loyer') {
             html += '<div class="kfs-party-name">' + DocUtils.esc(data.locataire_nom || '') + '</div>';
             html += '<div class="kfs-party-details">';
             if (data.locataire_adresse) html += DocUtils.esc(data.locataire_adresse) + '<br>';
             if (data.locataire_cni) html += 'CNI/Passeport : ' + DocUtils.esc(data.locataire_cni) + '<br>';
             if (data.locataire_telephone) html += 'T\u00e9l : ' + DocUtils.esc(data.locataire_telephone);
+            html += '</div>';
+        } else if (typeKey === 'contrat_gestion_locative') {
+            html += '<div class="kfs-party-name">' + DocUtils.esc(data.proprietaire_nom || '') + '</div>';
+            html += '<div class="kfs-party-details">';
+            if (data.proprietaire_adresse) html += DocUtils.esc(data.proprietaire_adresse) + '<br>';
+            if (data.proprietaire_cni) html += 'CNI/Passeport : ' + DocUtils.esc(data.proprietaire_cni) + '<br>';
+            if (data.proprietaire_telephone) html += 'T\u00e9l : ' + DocUtils.esc(data.proprietaire_telephone) + '<br>';
+            if (data.proprietaire_email) html += 'Email : ' + DocUtils.esc(data.proprietaire_email);
             html += '</div>';
         } else {
             html += '<div class="kfs-party-name">' + DocUtils.esc(data.client_nom || '') + '</div>';
@@ -1295,7 +1488,7 @@ var DocRenderer = {
             content = content.replace(/\{(\w+)\}/g, function(match, key) {
                 if (data[key] !== undefined && data[key] !== '') {
                     // Formater les montants
-                    if (key.indexOf('montant') !== -1 || key === 'loyer_mensuel' || key === 'caution' || key === 'charges' || key === 'salaire_base' || key === 'prime_transport' || key === 'prime_logement') {
+                    if (key.indexOf('montant') !== -1 || key === 'loyer_mensuel' || key === 'loyer_prevu' || key === 'caution' || key === 'charges' || key === 'salaire_base' || key === 'prime_transport' || key === 'prime_logement' || key === 'frais_mise_location') {
                         return DocUtils.montantFR(data[key]);
                     }
                     // Formater les dates
@@ -2224,6 +2417,33 @@ var DocEngine = {
                     break;
 
                 // contrat_travail et certificat_travail : pas de transaction financière
+
+                // ── GESTION LOCATIVE → Pas de transaction immédiate (c'est un mandat) ──
+                case 'contrat_gestion_locative':
+                    break;
+
+                // ── QUITTANCE DE LOYER → Recette (total quittance) ──
+                case 'quittance_loyer':
+                    var loyerQ = parseFloat(data.loyer) || 0;
+                    var chargesQ = parseFloat(data.charges) || 0;
+                    var taxeQ = parseFloat(data.taxe_ordures) || 0;
+                    var eauQ = parseFloat(data.eau) || 0;
+                    var elecQ = parseFloat(data.electricite) || 0;
+                    var autresQ = parseFloat(data.autres_frais) || 0;
+                    var totalQ = loyerQ + chargesQ + taxeQ + eauQ + elecQ + autresQ;
+                    if (totalQ > 0) {
+                        window.autoAddTransaction({
+                            type: 'recette',
+                            montant: totalQ,
+                            categorie: 'location',
+                            description: 'Quittance ' + ref + ' — ' + (data.type_bail || 'Location') + ' — ' + (data.bien_designation || 'Bien') + ' — ' + (data.locataire_nom || ''),
+                            reference: 'DOC-' + ref,
+                            sourceModule: 'documents',
+                            date: dateDoc
+                        });
+                    }
+                    break;
+
                 default:
                     break;
             }

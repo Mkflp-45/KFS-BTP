@@ -1008,6 +1008,143 @@
     margin: 4px 0;
 }
 
+/* ─── Quittance de loyer : style facture ─── */
+.qtl-bien-box {
+    background: #f8fafc;
+    border: 1px solid var(--doc-border);
+    border-left: 4px solid var(--doc-primary);
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    font-size: 9pt;
+    color: #333;
+    line-height: 1.8;
+    margin: 14px 0;
+    position: relative;
+    z-index: 1;
+}
+
+.qtl-periode {
+    text-align: center;
+    font-size: 10pt;
+    color: var(--doc-primary);
+    padding: 10px 0;
+    margin: 6px 0 14px;
+    border-top: 1px solid var(--doc-border);
+    border-bottom: 1px solid var(--doc-border);
+    position: relative;
+    z-index: 1;
+}
+
+.qtl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin: 0 0 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.qtl-table thead th {
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid #c5cfe0;
+    font-family: 'Inter', sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.qtl-col-design {
+    background: var(--doc-primary) !important;
+    color: #fff !important;
+    text-align: left !important;
+    width: 65%;
+}
+
+.qtl-col-montant {
+    background: var(--doc-accent) !important;
+    color: var(--doc-dark) !important;
+    text-align: right !important;
+    width: 35%;
+}
+
+.qtl-table tbody td {
+    padding: 8px 14px;
+    border: 1px solid #e2e8f0;
+    font-size: 9pt;
+    color: #333;
+}
+
+.qtl-num {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.qtl-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.qtl-total td {
+    background: var(--doc-primary) !important;
+    color: #fff !important;
+    padding: 10px 14px;
+    font-size: 10pt;
+    border: 1px solid var(--doc-primary) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.qtl-total .qtl-num {
+    color: #fff !important;
+}
+
+.qtl-total-box {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin: 12px 0;
+    padding: 14px 22px;
+    background: linear-gradient(135deg, var(--doc-primary) 0%, var(--doc-primary-light) 100%);
+    color: #fff;
+    border-radius: 8px;
+    position: relative;
+    z-index: 1;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.qtl-total-label {
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.qtl-total-amount {
+    font-size: 18pt;
+    font-weight: 900;
+    font-family: 'Inter', sans-serif;
+}
+
+.qtl-paiement-info {
+    font-size: 8.5pt;
+    color: #555;
+    margin: 10px 0;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid var(--doc-border);
+    border-radius: 6px;
+    line-height: 1.8;
+    position: relative;
+    z-index: 1;
+}
+
 /* ─── Fiche de paie : design bulletin professionnel ─── */
 
 /* Bloc infos employé / entreprise */
