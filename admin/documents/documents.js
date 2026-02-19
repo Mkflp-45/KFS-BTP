@@ -503,11 +503,11 @@ var DOCUMENT_TYPES = {
 
     // ─── CONTRAT DE GESTION LOCATIVE ───
     contrat_gestion_locative: {
-        label: 'Contrat de gestion locative',
+        label: 'Mandat de gestion locative',
         icon: 'real_estate_agent',
         category: 'immobilier',
-        watermark: 'KFS BTP',
-        titleText: 'CONTRAT DE GESTION LOCATIVE',
+        watermark: 'MANDAT',
+        titleText: 'MANDAT DE GESTION LOCATIVE',
         hasLineItems: false,
         hasParties: true,
         hasMentions: true,
@@ -541,7 +541,7 @@ var DOCUMENT_TYPES = {
             { id: 'preavis', label: 'Pr\u00e9avis de r\u00e9siliation (mois)', type: 'number', value: '3' }
         ],
         articles: [
-            { title: 'Objet du mandat', content: 'Le propri\u00e9taire (ci-apr\u00e8s le \u00ab Mandant \u00bb) confie \u00e0 ' + COMPANY.nom + ' (ci-apr\u00e8s le \u00ab Mandataire \u00bb) la gestion locative du bien immobilier d\u00e9sign\u00e9 ci-dessus.\n\nLe Mandataire est autoris\u00e9 \u00e0 accomplir tous les actes de gestion courante relatifs \u00e0 la location du bien.' },
+            { title: 'Objet du mandat', content: 'Par le présent mandat, le propriétaire (ci-après le \u00ab Mandant \u00bb) autorise expressément ' + COMPANY.nom + ' (ci-après le \u00ab Mandataire \u00bb) \u00e0 exploiter, gérer et mettre en location le bien immobilier désigné ci-dessus, en son nom et pour son compte.\n\nLe Mandant conf\u00e8re au Mandataire tous les pouvoirs nécessaires pour accomplir les actes de gestion courante liés \u00e0 la mise en location du bien, y compris la recherche de locataires, la fixation du loyer, la signature des baux, l\'encaissement des loyers et la gestion des entrées/sorties.\n\nLe présent mandat constitue la preuve que le Mandant a confié au Mandataire l\'exploitation et la mise en location de son bien immobilier.' },
             { title: 'Dur\u00e9e du mandat', content: 'Le pr\u00e9sent mandat est consenti pour une dur\u00e9e de {duree} an(s) \u00e0 compter du {date_debut}.\n\nRenouvellement : {renouvelable}.\nPr\u00e9avis de r\u00e9siliation : {preavis} mois.' },
             { title: 'Missions du Mandataire', content: 'Le Mandataire s\'engage \u00e0 :\n\u2022 Rechercher des locataires solvables\n\u2022 R\u00e9diger et signer les baux au nom du Mandant\n\u2022 \u00c9tablir les \u00e9tats des lieux d\'entr\u00e9e et de sortie\n\u2022 Encaisser les loyers et charges\n\u2022 Reverser les sommes dues au Mandant, d\u00e9duction faite de la commission\n\u2022 Assurer le suivi des r\u00e9parations courantes\n\u2022 G\u00e9rer les imp\u00e9ratifs locatifs (cong\u00e9s, renouvellements, \u00e9ventuels contentieux)' },
             { title: 'Obligations du Mandant', content: 'Le Mandant s\'engage \u00e0 :\n\u2022 Fournir un bien en bon \u00e9tat de location\n\u2022 Remettre les cl\u00e9s et documents n\u00e9cessaires\n\u2022 Informer le Mandataire de toute modification concernant le bien\n\u2022 Prendre en charge les grosses r\u00e9parations (article 606 du COCC)\n\u2022 Ne pas conclure de bail directement sans en informer le Mandataire' },
@@ -567,7 +567,7 @@ var DOCUMENT_TYPES = {
         label: 'Quittance de loyer',
         icon: 'receipt_long',
         category: 'immobilier',
-        watermark: 'QUITTANCE',
+        watermark: 'PAYÉ',
         titleText: 'QUITTANCE DE LOYER',
         hasLineItems: false,
         hasParties: false,
@@ -607,37 +607,39 @@ var DOCUMENT_TYPES = {
             var mN = DocUtils.montantNum;
             var html = '';
 
-            // Infos bailleur / locataire en 2 colonnes
-            html += '<div class="kfs-parties">';
-            html += '<div class="kfs-party employer">';
-            html += '<div class="kfs-party-label">Bailleur</div>';
-            html += '<div class="kfs-party-name">' + esc(COMPANY.nom) + '</div>';
-            html += '<div class="kfs-party-details">';
-            html += esc(COMPANY.adresse) + '<br>';
-            html += 'T\u00e9l : ' + esc(COMPANY.telephone) + '<br>';
-            html += 'NINEA : ' + esc(COMPANY.ninea);
-            html += '</div></div>';
-            html += '<div class="kfs-party client">';
-            html += '<div class="kfs-party-label">Locataire</div>';
-            html += '<div class="kfs-party-name">' + esc(data.locataire_nom || '') + '</div>';
-            html += '<div class="kfs-party-details">';
-            if (data.locataire_adresse) html += esc(data.locataire_adresse) + '<br>';
-            if (data.locataire_telephone) html += 'T\u00e9l : ' + esc(data.locataire_telephone);
-            html += '</div></div></div>';
-
-            // Infos du bien
-            html += '<div class="qtl-bien-box">';
-            html += '<strong>Bien concern\u00e9 :</strong> ' + esc(data.bien_designation || '') + '<br>';
-            html += '<strong>Adresse :</strong> ' + esc(data.bien_adresse || '') + '<br>';
-            html += '<strong>Type :</strong> ' + esc(data.type_bail || '');
+            // Bandeau numéro et date
+            html += '<div class="qtl-receipt-header">';
+            html += '<div class="qtl-receipt-num"><span class="qtl-label-small">N° Quittance</span><span class="qtl-value-big">' + esc(data.numero || 'QTL-000') + '</span></div>';
+            html += '<div class="qtl-receipt-date"><span class="qtl-label-small">Date d\'\u00e9mission</span><span class="qtl-value-big">' + (data.date ? DocUtils.dateFR(data.date) : '') + '</span></div>';
             html += '</div>';
 
-            // Période
+            // Bailleur / Locataire
+            html += '<div class="qtl-parties-grid">';
+            html += '<div class="qtl-party-block qtl-bailleur">';
+            html += '<div class="qtl-party-title">BAILLEUR</div>';
+            html += '<div class="qtl-party-name">' + esc(COMPANY.nom) + '</div>';
+            html += '<div class="qtl-party-detail">' + esc(COMPANY.adresse) + '</div>';
+            html += '<div class="qtl-party-detail">T\u00e9l : ' + esc(COMPANY.telephone) + '</div>';
+            html += '<div class="qtl-party-detail">NINEA : ' + esc(COMPANY.ninea) + '</div>';
+            html += '</div>';
+            html += '<div class="qtl-party-block qtl-locataire">';
+            html += '<div class="qtl-party-title">LOCATAIRE</div>';
+            html += '<div class="qtl-party-name">' + esc(data.locataire_nom || '') + '</div>';
+            if (data.locataire_adresse) html += '<div class="qtl-party-detail">' + esc(data.locataire_adresse) + '</div>';
+            if (data.locataire_telephone) html += '<div class="qtl-party-detail">T\u00e9l : ' + esc(data.locataire_telephone) + '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            // Bien et période
+            html += '<div class="qtl-bien-periode">';
+            html += '<div class="qtl-bp-row"><span class="qtl-bp-label">Bien lou\u00e9 :</span><span class="qtl-bp-value">' + esc(data.bien_designation || '') + ' \u2014 ' + esc(data.bien_adresse || '') + '</span></div>';
+            html += '<div class="qtl-bp-row"><span class="qtl-bp-label">Type de bail :</span><span class="qtl-bp-value">' + esc(data.type_bail || '') + '</span></div>';
             var pDeb = data.periode_debut ? DocUtils.dateLongueFR(data.periode_debut) : '';
             var pFin = data.periode_fin ? DocUtils.dateLongueFR(data.periode_fin) : '';
-            html += '<div class="qtl-periode">P\u00e9riode : du <strong>' + pDeb + '</strong> au <strong>' + pFin + '</strong></div>';
+            html += '<div class="qtl-bp-row"><span class="qtl-bp-label">P\u00e9riode :</span><span class="qtl-bp-value">Du ' + pDeb + ' au ' + pFin + '</span></div>';
+            html += '</div>';
 
-            // Tableau facture
+            // Tableau détaillé façon facture
             var loyer = parseFloat(data.loyer) || 0;
             var charges = parseFloat(data.charges) || 0;
             var taxe = parseFloat(data.taxe_ordures) || 0;
@@ -646,31 +648,44 @@ var DOCUMENT_TYPES = {
             var autres = parseFloat(data.autres_frais) || 0;
             var total = loyer + charges + taxe + eau + elec + autres;
 
-            html += '<table class="qtl-table">';
-            html += '<thead><tr><th class="qtl-col-design">D\u00e9signation</th><th class="qtl-col-montant">Montant (FCFA)</th></tr></thead>';
+            html += '<table class="qtl-invoice-table">';
+            html += '<thead><tr>';
+            html += '<th class="qtl-inv-col-ref">#</th>';
+            html += '<th class="qtl-inv-col-desc">D\u00e9signation</th>';
+            html += '<th class="qtl-inv-col-amount">Montant (FCFA)</th>';
+            html += '</tr></thead>';
             html += '<tbody>';
-            html += '<tr><td>Loyer</td><td class="qtl-num">' + mN(loyer) + '</td></tr>';
-            if (charges > 0) html += '<tr><td>Charges locatives</td><td class="qtl-num">' + mN(charges) + '</td></tr>';
-            if (taxe > 0) html += '<tr><td>Taxe d\'ordures m\u00e9nag\u00e8res</td><td class="qtl-num">' + mN(taxe) + '</td></tr>';
-            if (eau > 0) html += '<tr><td>Eau</td><td class="qtl-num">' + mN(eau) + '</td></tr>';
-            if (elec > 0) html += '<tr><td>\u00c9lectricit\u00e9</td><td class="qtl-num">' + mN(elec) + '</td></tr>';
-            if (autres > 0) html += '<tr><td>' + esc(data.autres_frais_label || 'Autres frais') + '</td><td class="qtl-num">' + mN(autres) + '</td></tr>';
+            var rowNum = 1;
+            html += '<tr><td class="qtl-inv-ref">' + rowNum++ + '</td><td>Loyer</td><td class="qtl-inv-num">' + mN(loyer) + '</td></tr>';
+            if (charges > 0) html += '<tr><td class="qtl-inv-ref">' + rowNum++ + '</td><td>Charges locatives</td><td class="qtl-inv-num">' + mN(charges) + '</td></tr>';
+            if (taxe > 0) html += '<tr><td class="qtl-inv-ref">' + rowNum++ + '</td><td>Taxe d\'ordures m\u00e9nag\u00e8res</td><td class="qtl-inv-num">' + mN(taxe) + '</td></tr>';
+            if (eau > 0) html += '<tr><td class="qtl-inv-ref">' + rowNum++ + '</td><td>Eau</td><td class="qtl-inv-num">' + mN(eau) + '</td></tr>';
+            if (elec > 0) html += '<tr><td class="qtl-inv-ref">' + rowNum++ + '</td><td>\u00c9lectricit\u00e9</td><td class="qtl-inv-num">' + mN(elec) + '</td></tr>';
+            if (autres > 0) html += '<tr><td class="qtl-inv-ref">' + rowNum++ + '</td><td>' + esc(data.autres_frais_label || 'Autres frais') + '</td><td class="qtl-inv-num">' + mN(autres) + '</td></tr>';
             html += '</tbody>';
-            html += '<tfoot><tr class="qtl-total"><td><strong>TOTAL</strong></td><td class="qtl-num"><strong>' + mN(total) + '</strong></td></tr></tfoot>';
+            html += '<tfoot>';
+            html += '<tr class="qtl-inv-total"><td colspan="2"><strong>TOTAL \u00c0 PAYER</strong></td><td class="qtl-inv-num"><strong>' + mN(total) + '</strong></td></tr>';
+            html += '</tfoot>';
             html += '</table>';
 
-            // Encadré total
-            html += '<div class="qtl-total-box">';
-            html += '<span class="qtl-total-label">Total re\u00e7u :</span>';
-            html += '<span class="qtl-total-amount">' + mF(total) + '</span>';
+            // Encadré montant total (style reçu)
+            html += '<div class="qtl-receipt-total">';
+            html += '<div class="qtl-receipt-total-inner">';
+            html += '<div class="qtl-receipt-total-label">MONTANT ACQUITT\u00c9</div>';
+            html += '<div class="qtl-receipt-total-amount">' + mF(total) + '</div>';
+            html += '<div class="qtl-receipt-total-lettres">Arr\u00eat\u00e9e la pr\u00e9sente quittance \u00e0 la somme de :<br><em>' + DocUtils.montantEnLettres(total) + '</em></div>';
+            html += '</div>';
+            html += '<div class="qtl-stamp">PAY\u00c9</div>';
             html += '</div>';
 
             // Infos paiement
-            html += '<div class="qtl-paiement-info">';
-            if (data.mode_paiement) html += '<div><strong>Mode de paiement :</strong> ' + esc(data.mode_paiement) + '</div>';
-            if (data.date_paiement) html += '<div><strong>Date de paiement :</strong> ' + DocUtils.dateFR(data.date_paiement) + '</div>';
-            if (data.reference_paiement) html += '<div><strong>R\u00e9f\u00e9rence :</strong> ' + esc(data.reference_paiement) + '</div>';
-            html += '</div>';
+            html += '<div class="qtl-paiement-section">';
+            html += '<div class="qtl-paiement-title">D\u00c9TAILS DU PAIEMENT</div>';
+            html += '<div class="qtl-paiement-grid">';
+            if (data.mode_paiement) html += '<div class="qtl-pay-item"><span class="qtl-pay-label">Mode :</span><span class="qtl-pay-value">' + esc(data.mode_paiement) + '</span></div>';
+            if (data.date_paiement) html += '<div class="qtl-pay-item"><span class="qtl-pay-label">Date :</span><span class="qtl-pay-value">' + DocUtils.dateFR(data.date_paiement) + '</span></div>';
+            if (data.reference_paiement) html += '<div class="qtl-pay-item"><span class="qtl-pay-label">R\u00e9f. :</span><span class="qtl-pay-value">' + esc(data.reference_paiement) + '</span></div>';
+            html += '</div></div>';
 
             return html;
         },
@@ -743,6 +758,42 @@ var DocUtils = {
     today: function() {
         var d = new Date();
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+
+    /** Convertit un montant en lettres (français) */
+    montantEnLettres: function(n) {
+        if (isNaN(n) || n === 0) return 'zéro franc CFA';
+        var unite = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
+            'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+        var dizaine = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+        function convertGroupe(num) {
+            if (num === 0) return '';
+            if (num < 20) return unite[num];
+            if (num < 100) {
+                var d = Math.floor(num / 10);
+                var u = num % 10;
+                if (d === 7 || d === 9) return dizaine[d] + '-' + unite[10 + u];
+                if (d === 8 && u === 0) return 'quatre-vingts';
+                return dizaine[d] + (u > 0 ? '-' + unite[u] : '');
+            }
+            var c = Math.floor(num / 100);
+            var r = num % 100;
+            var prefix = (c === 1) ? 'cent' : unite[c] + ' cent';
+            if (r === 0 && c > 1) return prefix + 's';
+            return prefix + (r > 0 ? ' ' + convertGroupe(r) : '');
+        }
+        n = Math.floor(n);
+        if (n < 1000) return convertGroupe(n) + ' francs CFA';
+        var result = '';
+        var milliard = Math.floor(n / 1000000000);
+        var million = Math.floor((n % 1000000000) / 1000000);
+        var mille = Math.floor((n % 1000000) / 1000);
+        var reste = n % 1000;
+        if (milliard > 0) result += convertGroupe(milliard) + ' milliard' + (milliard > 1 ? 's' : '') + ' ';
+        if (million > 0) result += convertGroupe(million) + ' million' + (million > 1 ? 's' : '') + ' ';
+        if (mille > 0) result += (mille === 1 ? 'mille' : convertGroupe(mille) + ' mille') + ' ';
+        if (reste > 0) result += convertGroupe(reste);
+        return result.trim() + ' francs CFA';
     },
 
     /** Toast notification */
