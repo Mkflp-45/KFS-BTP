@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    KFS BTP IMMO — Moteur Documentaire Professionnel
    documents.js — Moteur unique, dynamique, scalable
    
@@ -697,6 +697,266 @@ var DOCUMENT_TYPES = {
         signatures: [
             { label: 'Le bailleur', name: COMPANY.nom, fonction: COMPANY.gerant }
         ]
+    },
+
+    // ─── ÉTAT DES LIEUX ───
+    etat_des_lieux: {
+        label: '\u00c9tat des lieux',
+        icon: 'fact_check',
+        category: 'immobilier',
+        watermark: 'KFS BTP',
+        titleText: '\u00c9TAT DES LIEUX',
+        hasLineItems: false,
+        hasParties: true,
+        hasMentions: true,
+        hasArticles: false,
+        isFreeform: true,
+        fields: [
+            { section: 'Informations g\u00e9n\u00e9rales', icon: 'info' },
+            { id: 'numero', label: 'N\u00b0 du document', type: 'text', placeholder: 'EDL-2026-001', required: true },
+            { id: 'date', label: 'Date de l\'\u00e9tat des lieux', type: 'date', required: true },
+            { id: 'type_edl', label: 'Type d\'\u00e9tat des lieux', type: 'select', options: ['\u00c9tat des lieux d\'entr\u00e9e', '\u00c9tat des lieux de sortie'], required: true },
+            { id: 'ref_bail', label: 'R\u00e9f\u00e9rence du bail / contrat', type: 'text', placeholder: 'LL-2026-001' },
+            { section: 'Locataire', icon: 'person' },
+            { id: 'locataire_nom', label: 'Nom complet', type: 'text', required: true },
+            { id: 'locataire_cni', label: 'N\u00b0 CNI / Passeport', type: 'text' },
+            { id: 'locataire_telephone', label: 'T\u00e9l\u00e9phone', type: 'tel' },
+            { id: 'locataire_adresse', label: 'Adresse du locataire', type: 'text' },
+            { section: 'Bien concern\u00e9', icon: 'home' },
+            { id: 'bien_designation', label: 'D\u00e9signation du bien', type: 'text', required: true, placeholder: 'Appartement T3, Villa...' },
+            { id: 'bien_adresse', label: 'Adresse du bien', type: 'text', required: true },
+            { id: 'bien_surface', label: 'Surface (m\u00b2)', type: 'number' },
+            { section: '\u00c9tat des pi\u00e8ces', icon: 'room_preferences' },
+            { id: 'etat_salon', label: 'Salon \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_salon', label: 'Salon \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire les d\u00e9g\u00e2ts \u00e9ventuels...' },
+            { id: 'etat_cuisine', label: 'Cuisine \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_cuisine', label: 'Cuisine \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire les d\u00e9g\u00e2ts \u00e9ventuels...' },
+            { id: 'etat_chambre1', label: 'Chambre 1 \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_chambre1', label: 'Chambre 1 \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire les d\u00e9g\u00e2ts \u00e9ventuels...' },
+            { id: 'etat_chambre2', label: 'Chambre 2 \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_chambre2', label: 'Chambre 2 \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire si applicable...' },
+            { id: 'etat_chambre3', label: 'Chambre 3 \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_chambre3', label: 'Chambre 3 \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire si applicable...' },
+            { id: 'etat_sdb', label: 'Salle de bain / Toilettes \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_sdb', label: 'Salle de bain \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire les d\u00e9g\u00e2ts \u00e9ventuels...' },
+            { id: 'etat_exterieur', label: 'Ext\u00e9rieur / Terrasse \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9', 'N/A'] },
+            { id: 'obs_exterieur', label: 'Ext\u00e9rieur \u2014 Observations', type: 'text', placeholder: 'D\u00e9crire si applicable...' },
+            { section: '\u00c9l\u00e9ments g\u00e9n\u00e9raux', icon: 'build' },
+            { id: 'etat_electricite', label: '\u00c9lectricit\u00e9 \u2014 \u00c9tat', type: 'select', options: ['Fonctionnel', 'Partiellement d\u00e9faillant', 'D\u00e9faillant', 'N/A'] },
+            { id: 'obs_electricite', label: '\u00c9lectricit\u00e9 \u2014 Observations', type: 'text' },
+            { id: 'etat_plomberie', label: 'Plomberie \u2014 \u00c9tat', type: 'select', options: ['Fonctionnel', 'Partiellement d\u00e9faillant', 'D\u00e9faillant', 'N/A'] },
+            { id: 'obs_plomberie', label: 'Plomberie \u2014 Observations', type: 'text' },
+            { id: 'etat_peinture', label: 'Peinture g\u00e9n\u00e9rale \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9'] },
+            { id: 'obs_peinture', label: 'Peinture \u2014 Observations', type: 'text' },
+            { id: 'etat_menuiseries', label: 'Portes / Fen\u00eatres \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9'] },
+            { id: 'obs_menuiseries', label: 'Portes / Fen\u00eatres \u2014 Observations', type: 'text' },
+            { id: 'etat_sols', label: 'Carrelage / Sols \u2014 \u00c9tat', type: 'select', options: ['Neuf', 'Bon \u00e9tat', 'Usure normale', 'D\u00e9grad\u00e9', 'Tr\u00e8s d\u00e9grad\u00e9'] },
+            { id: 'obs_sols', label: 'Sols \u2014 Observations', type: 'text' },
+            { id: 'releve_compteur_eau', label: 'Relev\u00e9 compteur eau', type: 'text', placeholder: 'Ex: 12345' },
+            { id: 'releve_compteur_elec', label: 'Relev\u00e9 compteur \u00e9lectricit\u00e9', type: 'text', placeholder: 'Ex: 67890' },
+            { id: 'nombre_cles', label: 'Nombre de cl\u00e9s remises', type: 'number', placeholder: '3' },
+            { section: 'D\u00e9gâts constat\u00e9s et r\u00e9parations', icon: 'construction' },
+            { id: 'degat1_desc', label: 'D\u00e9g\u00e2t 1 \u2014 Description', type: 'text', placeholder: 'Ex: Vitre cass\u00e9e chambre 1' },
+            { id: 'degat1_cout', label: 'D\u00e9g\u00e2t 1 \u2014 Co\u00fbt r\u00e9paration (FCFA)', type: 'number', placeholder: '0' },
+            { id: 'degat2_desc', label: 'D\u00e9g\u00e2t 2 \u2014 Description', type: 'text', placeholder: 'Ex: Porte endommag\u00e9e cuisine' },
+            { id: 'degat2_cout', label: 'D\u00e9g\u00e2t 2 \u2014 Co\u00fbt r\u00e9paration (FCFA)', type: 'number', placeholder: '0' },
+            { id: 'degat3_desc', label: 'D\u00e9g\u00e2t 3 \u2014 Description', type: 'text', placeholder: 'Ex: Peinture tr\u00e8s ab\u00eem\u00e9e' },
+            { id: 'degat3_cout', label: 'D\u00e9g\u00e2t 3 \u2014 Co\u00fbt r\u00e9paration (FCFA)', type: 'number', placeholder: '0' },
+            { id: 'degat4_desc', label: 'D\u00e9g\u00e2t 4 \u2014 Description', type: 'text' },
+            { id: 'degat4_cout', label: 'D\u00e9g\u00e2t 4 \u2014 Co\u00fbt r\u00e9paration (FCFA)', type: 'number' },
+            { id: 'degat5_desc', label: 'D\u00e9g\u00e2t 5 \u2014 Description', type: 'text' },
+            { id: 'degat5_cout', label: 'D\u00e9g\u00e2t 5 \u2014 Co\u00fbt r\u00e9paration (FCFA)', type: 'number' },
+            { section: 'Caution et bilan financier', icon: 'account_balance_wallet' },
+            { id: 'caution_versee', label: 'Caution vers\u00e9e (FCFA)', type: 'number', required: true },
+            { id: 'autres_deductions', label: 'Autres d\u00e9ductions (FCFA)', type: 'number', value: '0', placeholder: 'Loyers impay\u00e9s, nettoyage...' },
+            { id: 'autres_deductions_motif', label: 'Motif autres d\u00e9ductions', type: 'text', placeholder: 'Ex: Nettoyage profond n\u00e9cessaire' },
+            { section: 'Observations g\u00e9n\u00e9rales', icon: 'notes' },
+            { id: 'observation_generale', label: 'Observations / Commentaires', type: 'textarea', fullWidth: true, placeholder: '\u00c9tat g\u00e9n\u00e9ral du bien, remarques particuli\u00e8res...' },
+            { id: 'conclusion', label: 'Conclusion', type: 'select', options: ['Caution int\u00e9gralement remboursable', 'Caution partiellement remboursable (d\u00e9ductions)', 'Caution non remboursable (d\u00e9g\u00e2ts sup\u00e9rieurs)', 'Compl\u00e9ment \u00e0 r\u00e9clamer au locataire'] }
+        ],
+        renderBody: function(data) {
+            var esc = DocUtils.esc;
+            var mF = DocUtils.montantFR;
+            var mN = DocUtils.montantNum;
+            var html = '';
+
+            // ── Type d'état des lieux + infos bien ──
+            html += '<div class="edl-type-banner edl-type-' + (data.type_edl === '\u00c9tat des lieux de sortie' ? 'sortie' : 'entree') + '">';
+            html += '<span class="material-icons" style="font-size:1.6rem">' + (data.type_edl === '\u00c9tat des lieux de sortie' ? 'logout' : 'login') + '</span>';
+            html += '<strong>' + esc(data.type_edl || '\u00c9tat des lieux') + '</strong>';
+            if (data.ref_bail) html += '<span style="margin-left:auto;font-size:0.85rem;opacity:0.8">R\u00e9f. bail : ' + esc(data.ref_bail) + '</span>';
+            html += '</div>';
+
+            // ── Infos du bien ──
+            html += '<div class="edl-bien-info">';
+            html += '<div class="edl-bien-row"><span class="edl-bien-label">Bien :</span><span>' + esc(data.bien_designation || '') + '</span></div>';
+            html += '<div class="edl-bien-row"><span class="edl-bien-label">Adresse :</span><span>' + esc(data.bien_adresse || '') + '</span></div>';
+            if (data.bien_surface) html += '<div class="edl-bien-row"><span class="edl-bien-label">Surface :</span><span>' + esc(data.bien_surface) + ' m\u00b2</span></div>';
+            html += '<div class="edl-bien-row"><span class="edl-bien-label">Date :</span><span>' + DocUtils.dateLongueFR(data.date) + '</span></div>';
+            html += '</div>';
+
+            // ── Tableau état des pièces ──
+            var pieces = [
+                { key: 'salon', label: 'Salon' },
+                { key: 'cuisine', label: 'Cuisine' },
+                { key: 'chambre1', label: 'Chambre 1' },
+                { key: 'chambre2', label: 'Chambre 2' },
+                { key: 'chambre3', label: 'Chambre 3' },
+                { key: 'sdb', label: 'Salle de bain / WC' },
+                { key: 'exterieur', label: 'Ext\u00e9rieur / Terrasse' }
+            ];
+
+            html += '<div class="edl-section-title"><span class="material-icons">room_preferences</span> \u00c9TAT DES PI\u00c8CES</div>';
+            html += '<table class="edl-table">';
+            html += '<thead><tr><th style="width:25%">Pi\u00e8ce</th><th style="width:25%">\u00c9tat</th><th>Observations</th></tr></thead>';
+            html += '<tbody>';
+            for (var i = 0; i < pieces.length; i++) {
+                var p = pieces[i];
+                var etat = data['etat_' + p.key] || '';
+                var obs = data['obs_' + p.key] || '';
+                if (etat && etat !== 'N/A') {
+                    var badgeClass = 'edl-etat-bon';
+                    if (etat === 'D\u00e9grad\u00e9') badgeClass = 'edl-etat-degrade';
+                    else if (etat === 'Tr\u00e8s d\u00e9grad\u00e9') badgeClass = 'edl-etat-tres-degrade';
+                    else if (etat === 'Usure normale') badgeClass = 'edl-etat-usure';
+                    else if (etat === 'Neuf') badgeClass = 'edl-etat-neuf';
+
+                    html += '<tr>';
+                    html += '<td class="edl-piece-name">' + esc(p.label) + '</td>';
+                    html += '<td><span class="edl-etat-badge ' + badgeClass + '">' + esc(etat) + '</span></td>';
+                    html += '<td class="edl-obs">' + esc(obs) + '</td>';
+                    html += '</tr>';
+                }
+            }
+            html += '</tbody></table>';
+
+            // ── Éléments techniques ──
+            var elems = [
+                { key: 'electricite', label: '\u00c9lectricit\u00e9' },
+                { key: 'plomberie', label: 'Plomberie' },
+                { key: 'peinture', label: 'Peinture g\u00e9n\u00e9rale' },
+                { key: 'menuiseries', label: 'Portes / Fen\u00eatres' },
+                { key: 'sols', label: 'Carrelage / Sols' }
+            ];
+
+            html += '<div class="edl-section-title"><span class="material-icons">build</span> \u00c9L\u00c9MENTS TECHNIQUES</div>';
+            html += '<table class="edl-table">';
+            html += '<thead><tr><th style="width:25%">\u00c9l\u00e9ment</th><th style="width:25%">\u00c9tat</th><th>Observations</th></tr></thead>';
+            html += '<tbody>';
+            for (var j = 0; j < elems.length; j++) {
+                var el = elems[j];
+                var etatEl = data['etat_' + el.key] || '';
+                var obsEl = data['obs_' + el.key] || '';
+                if (etatEl) {
+                    var badgeClassEl = 'edl-etat-bon';
+                    if (etatEl === 'D\u00e9grad\u00e9' || etatEl === 'Partiellement d\u00e9faillant') badgeClassEl = 'edl-etat-degrade';
+                    else if (etatEl === 'Tr\u00e8s d\u00e9grad\u00e9' || etatEl === 'D\u00e9faillant') badgeClassEl = 'edl-etat-tres-degrade';
+                    else if (etatEl === 'Usure normale') badgeClassEl = 'edl-etat-usure';
+                    else if (etatEl === 'Neuf' || etatEl === 'Fonctionnel') badgeClassEl = 'edl-etat-neuf';
+
+                    html += '<tr>';
+                    html += '<td class="edl-piece-name">' + esc(el.label) + '</td>';
+                    html += '<td><span class="edl-etat-badge ' + badgeClassEl + '">' + esc(etatEl) + '</span></td>';
+                    html += '<td class="edl-obs">' + esc(obsEl) + '</td>';
+                    html += '</tr>';
+                }
+            }
+            html += '</tbody></table>';
+
+            // ── Relevés compteurs + clés ──
+            if (data.releve_compteur_eau || data.releve_compteur_elec || data.nombre_cles) {
+                html += '<div class="edl-compteurs">';
+                if (data.releve_compteur_eau) html += '<div class="edl-compteur-item"><span class="material-icons">water_drop</span>Compteur eau : <strong>' + esc(data.releve_compteur_eau) + '</strong></div>';
+                if (data.releve_compteur_elec) html += '<div class="edl-compteur-item"><span class="material-icons">electrical_services</span>Compteur \u00e9lectricit\u00e9 : <strong>' + esc(data.releve_compteur_elec) + '</strong></div>';
+                if (data.nombre_cles) html += '<div class="edl-compteur-item"><span class="material-icons">key</span>Cl\u00e9s remises : <strong>' + esc(data.nombre_cles) + '</strong></div>';
+                html += '</div>';
+            }
+
+            // ── Tableau des dégâts et coûts ──
+            var degats = [];
+            for (var d = 1; d <= 5; d++) {
+                var desc = data['degat' + d + '_desc'] || '';
+                var cout = parseFloat(data['degat' + d + '_cout']) || 0;
+                if (desc) degats.push({ desc: desc, cout: cout });
+            }
+            var totalDegats = 0;
+
+            if (degats.length > 0) {
+                html += '<div class="edl-section-title"><span class="material-icons">construction</span> D\u00c9G\u00c2TS CONSTAT\u00c9S & CO\u00dbTS DE R\u00c9PARATION</div>';
+                html += '<table class="edl-table edl-degats-table">';
+                html += '<thead><tr><th style="width:8%">#</th><th>Description du d\u00e9g\u00e2t</th><th style="width:25%">Co\u00fbt r\u00e9paration (FCFA)</th></tr></thead>';
+                html += '<tbody>';
+                for (var k = 0; k < degats.length; k++) {
+                    totalDegats += degats[k].cout;
+                    html += '<tr>';
+                    html += '<td style="text-align:center;font-weight:600">' + (k + 1) + '</td>';
+                    html += '<td>' + esc(degats[k].desc) + '</td>';
+                    html += '<td style="text-align:right;font-weight:600">' + mN(degats[k].cout) + '</td>';
+                    html += '</tr>';
+                }
+                html += '</tbody>';
+                html += '<tfoot><tr class="edl-total-row"><td colspan="2"><strong>TOTAL R\u00c9PARATIONS</strong></td><td style="text-align:right"><strong>' + mN(totalDegats) + '</strong></td></tr></tfoot>';
+                html += '</table>';
+            }
+
+            // ── Bilan financier caution ──
+            var cautionVersee = parseFloat(data.caution_versee) || 0;
+            var autresDeductions = parseFloat(data.autres_deductions) || 0;
+            var totalDeductions = totalDegats + autresDeductions;
+            var solde = cautionVersee - totalDeductions;
+
+            html += '<div class="edl-section-title"><span class="material-icons">account_balance_wallet</span> BILAN FINANCIER \u2014 CAUTION</div>';
+            html += '<div class="edl-bilan-box">';
+            html += '<table class="edl-bilan-table">';
+            html += '<tr><td>Caution vers\u00e9e</td><td class="edl-bilan-amount">' + mF(cautionVersee) + '</td></tr>';
+            if (totalDegats > 0) html += '<tr class="edl-bilan-deduction"><td>\u2212 R\u00e9parations d\u00e9g\u00e2ts</td><td class="edl-bilan-amount">\u2212 ' + mF(totalDegats) + '</td></tr>';
+            if (autresDeductions > 0) html += '<tr class="edl-bilan-deduction"><td>\u2212 ' + esc(data.autres_deductions_motif || 'Autres d\u00e9ductions') + '</td><td class="edl-bilan-amount">\u2212 ' + mF(autresDeductions) + '</td></tr>';
+            html += '<tr class="edl-bilan-separateur"><td colspan="2"></td></tr>';
+            
+            var soldeClass = solde >= 0 ? 'edl-solde-positif' : 'edl-solde-negatif';
+            var soldeLabel = solde >= 0 ? 'MONTANT \u00c0 RESTITUER AU LOCATAIRE' : 'COMPL\u00c9MENT \u00c0 R\u00c9CLAMER AU LOCATAIRE';
+            html += '<tr class="edl-bilan-solde ' + soldeClass + '"><td><strong>' + soldeLabel + '</strong></td><td class="edl-bilan-amount"><strong>' + mF(Math.abs(solde)) + '</strong></td></tr>';
+            html += '</table>';
+
+            // Montant en lettres
+            html += '<div class="edl-montant-lettres">Arr\u00eat\u00e9 \u00e0 la somme de : <em>' + DocUtils.montantEnLettres(Math.abs(solde)) + '</em></div>';
+            html += '</div>';
+
+            // ── Conclusion ──
+            if (data.conclusion) {
+                var conclusionIcon = 'info';
+                var conclusionClass = 'edl-conclusion-info';
+                if (data.conclusion.indexOf('int\u00e9gralement') !== -1) { conclusionIcon = 'check_circle'; conclusionClass = 'edl-conclusion-ok'; }
+                else if (data.conclusion.indexOf('partiellement') !== -1) { conclusionIcon = 'warning'; conclusionClass = 'edl-conclusion-warn'; }
+                else if (data.conclusion.indexOf('non remboursable') !== -1 || data.conclusion.indexOf('Compl\u00e9ment') !== -1) { conclusionIcon = 'error'; conclusionClass = 'edl-conclusion-danger'; }
+
+                html += '<div class="edl-conclusion ' + conclusionClass + '">';
+                html += '<span class="material-icons">' + conclusionIcon + '</span>';
+                html += '<strong>Conclusion : </strong>' + esc(data.conclusion);
+                html += '</div>';
+            }
+
+            // ── Observations ──
+            if (data.observation_generale) {
+                html += '<div class="edl-observations">';
+                html += '<div class="edl-obs-title">OBSERVATIONS G\u00c9N\u00c9RALES</div>';
+                html += '<p>' + esc(data.observation_generale) + '</p>';
+                html += '</div>';
+            }
+
+            return html;
+        },
+        mentions: [
+            'Le pr\u00e9sent \u00e9tat des lieux a \u00e9t\u00e9 \u00e9tabli contradictoirement entre les parties.',
+            'Il constitue une pi\u00e8ce annexe au contrat de bail et en fait partie int\u00e9grante.',
+            'Les d\u00e9gradations constat\u00e9es, hors usure normale, sont \u00e0 la charge du locataire.',
+            'Le montant des r\u00e9parations sera d\u00e9duit de la caution conform\u00e9ment au Code des Obligations Civiles et Commerciales du S\u00e9n\u00e9gal.',
+            'En cas de d\u00e9saccord sur l\'\u00e9tat des lieux, les parties pourront recourir \u00e0 un expert ind\u00e9pendant.'
+        ],
+        signatures: [
+            { label: 'Le bailleur', name: COMPANY.nom, fonction: COMPANY.gerant },
+            { label: 'Le locataire', name: '', fonction: 'Lu et approuv\u00e9' }
+        ]
     }
 };
 
@@ -831,7 +1091,8 @@ var AutoFill = {
         location_longue:    { source: 'clients', label: 'un client / locataire', icon: 'groups' },
         contrat_bail:       { source: 'clients', label: 'un client / locataire', icon: 'groups' },
         contrat_gestion_locative: { source: 'clients', label: 'un propriétaire', icon: 'groups' },
-        quittance_loyer:    { source: 'clients', label: 'un locataire', icon: 'groups' }
+        quittance_loyer:    { source: 'clients', label: 'un locataire', icon: 'groups' },
+        etat_des_lieux:     { source: 'clients', label: 'un locataire', icon: 'groups' }
     },
 
     /** Mapping champ document ← champ employé */
@@ -1498,7 +1759,7 @@ var DocRenderer = {
             if (data.employe_cni) html += 'CNI : ' + DocUtils.esc(data.employe_cni) + '<br>';
             if (data.employe_nationalite) html += 'Nationalit\u00e9 : ' + DocUtils.esc(data.employe_nationalite);
             html += '</div>';
-        } else if (typeKey.indexOf('location') !== -1 || typeKey === 'contrat_bail' || typeKey === 'quittance_loyer') {
+        } else if (typeKey.indexOf('location') !== -1 || typeKey === 'contrat_bail' || typeKey === 'quittance_loyer' || typeKey === 'etat_des_lieux') {
             html += '<div class="kfs-party-name">' + DocUtils.esc(data.locataire_nom || '') + '</div>';
             html += '<div class="kfs-party-details">';
             if (data.locataire_adresse) html += DocUtils.esc(data.locataire_adresse) + '<br>';
@@ -1798,16 +2059,59 @@ var DocRenderer = {
 };
 
 // ═══════════════════════════════════════════════════
-// 6. HISTORIQUE DES DOCUMENTS (localStorage)
+// 6. HISTORIQUE DES DOCUMENTS (localStorage + Firebase)
 // ═══════════════════════════════════════════════════
 
 var DocHistory = {
     STORAGE_KEY: 'kfs_documents_v2',
+    _firebaseLoaded: false,
 
     getAll: function() {
         try {
             return JSON.parse(localStorage.getItem(DocHistory.STORAGE_KEY) || '[]');
         } catch (e) { return []; }
+    },
+
+    /** Charger les documents depuis Firebase */
+    loadFromFirebase: function(callback) {
+        if (typeof DataStore === 'undefined' || !window.isFirebaseConfigured || !window.isFirebaseConfigured()) {
+            if (callback) callback();
+            return;
+        }
+        DataStore.getAll(DocHistory.STORAGE_KEY).then(function(firebaseDocs) {
+            if (firebaseDocs && firebaseDocs.length > 0) {
+                var localDocs = DocHistory.getAll();
+                var firebaseIds = {};
+                for (var i = 0; i < firebaseDocs.length; i++) {
+                    firebaseIds[firebaseDocs[i].id] = true;
+                }
+                for (var j = 0; j < localDocs.length; j++) {
+                    if (!firebaseIds[localDocs[j].id]) {
+                        firebaseDocs.push(localDocs[j]);
+                        DocHistory._syncToFirebase(localDocs[j]);
+                    }
+                }
+                firebaseDocs.sort(function(a, b) {
+                    return (b.createdAt || '').localeCompare(a.createdAt || '');
+                });
+                localStorage.setItem(DocHistory.STORAGE_KEY, JSON.stringify(firebaseDocs));
+                console.log('Documents Firebase: ' + firebaseDocs.length + ' docs');
+            } else {
+                var localOnly = DocHistory.getAll();
+                if (localOnly.length > 0) {
+                    console.log('Upload initial de ' + localOnly.length + ' documents vers Firebase...');
+                    for (var k = 0; k < localOnly.length; k++) {
+                        DocHistory._syncToFirebase(localOnly[k]);
+                    }
+                }
+            }
+            DocHistory._firebaseLoaded = true;
+            if (callback) callback();
+        }).catch(function(e) {
+            console.warn('Erreur chargement documents Firebase:', e);
+            DocHistory._firebaseLoaded = true;
+            if (callback) callback();
+        });
     },
 
     save: function(doc) {
@@ -1818,12 +2122,33 @@ var DocHistory = {
         // Limiter \u00e0 200 documents
         if (docs.length > 200) docs = docs.slice(0, 200);
         localStorage.setItem(DocHistory.STORAGE_KEY, JSON.stringify(docs));
+        DocHistory._syncToFirebase(doc);
         return doc;
+    },
+
+    _syncToFirebase: function(doc) {
+        if (typeof DataStore === 'undefined' || !window.isFirebaseConfigured || !window.isFirebaseConfigured()) return;
+        try {
+            DataStore.add(DocHistory.STORAGE_KEY, doc).then(function() {
+                console.log('Document sync Firebase: ' + (doc.title || doc.id));
+            }).catch(function(e) {
+                console.warn('Erreur sync document Firebase:', e);
+            });
+        } catch(e) {
+            console.warn('Erreur sync Firebase:', e);
+        }
     },
 
     remove: function(id) {
         var docs = DocHistory.getAll().filter(function(d) { return d.id !== id; });
         localStorage.setItem(DocHistory.STORAGE_KEY, JSON.stringify(docs));
+        if (typeof DataStore !== 'undefined' && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+            DataStore.delete(DocHistory.STORAGE_KEY, id).then(function() {
+                console.log('Document supprime de Firebase: ' + id);
+            }).catch(function(e) {
+                console.warn('Erreur suppression Firebase:', e);
+            });
+        }
     },
 
     getStats: function() {
@@ -2182,8 +2507,11 @@ var DocEngine = {
         DocEngine._initialized = true;
 
         // Initialiser le rendu
-        DocHistory.renderStats();
-        DocHistory.renderList();
+        // Charger depuis Firebase puis rendre
+        DocHistory.loadFromFirebase(function() {
+            DocHistory.renderStats();
+            DocHistory.renderList();
+        });
 
         // Pr\u00e9-s\u00e9lectionner depuis URL hash
         var hash = window.location.hash.replace('#doc-', '');
@@ -2268,7 +2596,24 @@ var DocEngine = {
             var html = DocRenderer.render(DocEngine.currentType, data);
             var filename = (config.label || 'document').replace(/\s+/g, '_') + '_' + (data.numero || DocUtils.uid()) + '.pdf';
             
+            // Sauvegarder dans l'historique + Firebase
+            var doc = {
+                type: DocEngine.currentType,
+                title: config.label + (data.numero ? ' - ' + data.numero : ''),
+                numero: data.numero || '',
+                date: data.date || DocUtils.today(),
+                data: data,
+                html: html
+            };
+            var savedDoc = DocHistory.save(doc);
+            DocHistory.renderStats();
+            DocHistory.renderList();
+
+            // Sync finances
+            DocEngine.syncToFinances(DocEngine.currentType, data, savedDoc);
+
             DocExport.downloadPDF(html, filename);
+            DocUtils.toast('Document enregistr\u00e9 & PDF t\u00e9l\u00e9charg\u00e9', 'success');
         } catch(e) {
             console.error('[DocEngine] Erreur PDF:', e);
             DocUtils.toast('Erreur : ' + e.message, 'error');

@@ -1760,3 +1760,306 @@
         display: none;
     }
 }
+
+/* ═══════════════════════════════════════════════════
+   ÉTAT DES LIEUX — Styles spécifiques
+   ═══════════════════════════════════════════════════ */
+
+/* Bannière type entrée/sortie */
+.edl-type-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    margin: 20px 0 16px;
+    font-size: 1.05rem;
+    color: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.edl-type-entree {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+.edl-type-sortie {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+/* Infos du bien */
+.edl-bien-info {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+}
+.edl-bien-row {
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 0.92rem;
+}
+.edl-bien-label {
+    font-weight: 700;
+    color: #1e3a8a;
+    min-width: 80px;
+}
+
+/* Titres de sections */
+.edl-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #1e3a8a;
+    padding: 10px 0 6px;
+    margin-top: 18px;
+    border-bottom: 2px solid #1e3a8a;
+    margin-bottom: 0;
+}
+.edl-section-title .material-icons {
+    font-size: 1.2rem;
+    color: #2563eb;
+}
+
+/* Tableau état des lieux */
+.edl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+}
+.edl-table thead th {
+    background: #1e3a8a;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.edl-table thead th:first-child {
+    border-radius: 6px 0 0 0;
+}
+.edl-table thead th:last-child {
+    border-radius: 0 6px 0 0;
+}
+.edl-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+}
+.edl-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.edl-table tbody td {
+    padding: 10px 14px;
+    vertical-align: middle;
+}
+.edl-piece-name {
+    font-weight: 600;
+    color: #0f172a;
+}
+.edl-obs {
+    font-style: italic;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+/* Badges état */
+.edl-etat-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.edl-etat-neuf {
+    background: #d1fae5;
+    color: #065f46;
+}
+.edl-etat-bon {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.edl-etat-usure {
+    background: #fef3c7;
+    color: #92400e;
+}
+.edl-etat-degrade {
+    background: #fed7aa;
+    color: #c2410c;
+}
+.edl-etat-tres-degrade {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+/* Compteurs et clés */
+.edl-compteurs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 12px 0 16px;
+    padding: 12px 16px;
+    background: #eff6ff;
+    border-radius: 8px;
+    border: 1px solid #bfdbfe;
+}
+.edl-compteur-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #1e3a8a;
+}
+.edl-compteur-item .material-icons {
+    font-size: 1.1rem;
+    color: #2563eb;
+}
+
+/* Tableau dégâts */
+.edl-degats-table tfoot .edl-total-row {
+    background: #fef2f2;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.edl-degats-table tfoot .edl-total-row td {
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    color: #991b1b;
+    border-top: 2px solid #991b1b;
+}
+
+/* Bilan financier caution */
+.edl-bilan-box {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 12px 0 20px;
+}
+.edl-bilan-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.edl-bilan-table td {
+    padding: 10px 8px;
+}
+.edl-bilan-amount {
+    text-align: right;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    width: 40%;
+}
+.edl-bilan-deduction td {
+    color: #dc2626;
+}
+.edl-bilan-separateur td {
+    padding: 2px;
+    border-bottom: 2px dashed #cbd5e1;
+}
+.edl-bilan-solde td {
+    padding: 14px 8px;
+    font-size: 1.1rem;
+}
+.edl-solde-positif td {
+    color: #059669;
+}
+.edl-solde-negatif td {
+    color: #dc2626;
+}
+.edl-montant-lettres {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.88rem;
+    color: #64748b;
+}
+.edl-montant-lettres em {
+    color: #1e3a8a;
+    font-weight: 600;
+}
+
+/* Conclusion */
+.edl-conclusion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    margin: 16px 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.edl-conclusion .material-icons {
+    font-size: 1.4rem;
+}
+.edl-conclusion-ok {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+.edl-conclusion-warn {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+.edl-conclusion-danger {
+    background: #fecaca;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+.edl-conclusion-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+/* Observations */
+.edl-observations {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+}
+.edl-obs-title {
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #92400e;
+    margin-bottom: 6px;
+}
+.edl-observations p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: #78350f;
+    line-height: 1.6;
+}
+
+/* Responsive print */
+@media print {
+    .edl-type-banner,
+    .edl-etat-badge,
+    .edl-conclusion,
+    .edl-compteurs,
+    .edl-bilan-box,
+    .edl-degats-table tfoot .edl-total-row {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

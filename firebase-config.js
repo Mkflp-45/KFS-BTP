@@ -383,7 +383,8 @@ window.FIREBASE_CONFIG = FIREBASE_CONFIG;
 const SYNC_COLLECTIONS = [
     'annonces', 'messages', 'temoignages', 'clients', 'factures', 
     'rdv', 'employes', 'fichesPaie', 'documents', 'companyInfo',
-    'projects', 'comptabilite', 'depenses', 'revenus', 'apporteurs'
+    'projects', 'comptabilite', 'depenses', 'revenus', 'apporteurs',
+    'kfs_documents_v2'
 ];
 
 // Sauvegarder la fonction originale
