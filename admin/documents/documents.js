@@ -460,6 +460,7 @@ var DOCUMENT_TYPES = {
             { section: 'P\u00e9riode', icon: 'calendar_month' },
             { id: 'mois', label: 'Mois', type: 'select', options: ['Janvier', 'F\u00e9vrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Ao\u00fbt', 'Septembre', 'Octobre', 'Novembre', 'D\u00e9cembre'], required: true },
             { id: 'annee', label: 'Ann\u00e9e', type: 'number', value: new Date().getFullYear().toString(), required: true },
+            { id: 'date_paiement', label: 'Date de paiement', type: 'date', required: true },
             { id: 'numero', label: 'N\u00b0 bulletin', type: 'text', placeholder: 'BP-2026-001' },
             { section: 'Employ\u00e9', icon: 'person' },
             { id: 'employe_nom', label: 'Nom complet', type: 'text', required: true },
@@ -1724,6 +1725,10 @@ var DocRenderer = {
         var html = '<div class="kfs-doc-title">';
         html += '<h2>' + DocUtils.esc(config.titleText) + '</h2>';
         html += '<div class="kfs-title-line"></div>';
+        // Sous-titre p\u00e9riode pour fiche de paie
+        if (config.isPayslip && data.mois && data.annee) {
+            html += '<div class="kfs-doc-subtitle bp-periode">P\u00e9riode : ' + DocUtils.esc(data.mois) + ' ' + DocUtils.esc(data.annee) + '</div>';
+        }
         if (data.type_contrat) {
             html += '<div class="kfs-doc-subtitle">' + DocUtils.esc(data.type_contrat) + '</div>';
         }
@@ -1870,37 +1875,51 @@ var DocRenderer = {
 
         var html = '';
 
+        // ── Bandeau période de paie ──
+        html += '<div class="bp-periode-band">';
+        html += '<span class="bp-periode-label">P\u00e9riode de paie :</span> ';
+        html += '<span class="bp-periode-value">' + esc(data.mois || '') + ' ' + esc(data.annee || '') + '</span>';
+        if (data.date_paiement) {
+            html += ' &mdash; <span class="bp-date-paiement">Pay\u00e9 le ' + DocUtils.dateLongueFR(data.date_paiement) + '</span>';
+        }
+        html += '</div>';
+
         // ── Bloc infos employé / entreprise ──
         html += '<div class="bp-info-grid">';
-        // Colonne gauche : infos entreprise + employé
+        // Colonne gauche : infos entreprise + employé professionnel
         html += '<div class="bp-info-left">';
+        html += '<div class="bp-section-title">EMPLOYEUR</div>';
+        html += '<div class="bp-info-row"><span class="bp-lbl">Soci\u00e9t\u00e9 :</span> <span>' + esc(COMPANY.nom) + '</span></div>';
+        html += '<div class="bp-info-row"><span class="bp-lbl">Adresse :</span> <span>' + esc(COMPANY.adresse) + '</span></div>';
         html += '<div class="bp-info-row"><span class="bp-lbl">NINEA :</span> <span>' + esc(COMPANY.ninea) + '</span></div>';
         html += '<div class="bp-info-row"><span class="bp-lbl">RCCM :</span> <span>' + esc(COMPANY.rccm) + '</span></div>';
         html += '<div class="bp-info-spacer"></div>';
-        if (data.employe_matricule) html += '<div class="bp-info-row"><span class="bp-lbl">Matricule :</span> <span>' + esc(data.employe_matricule) + '</span></div>';
-        if (data.employe_num_ss) html += '<div class="bp-info-row"><span class="bp-lbl">N\u00b0 SS :</span> <span>' + esc(data.employe_num_ss) + '</span></div>';
-        html += '<div class="bp-info-spacer"></div>';
+        html += '<div class="bp-section-title">CLASSIFICATION</div>';
         html += '<div class="bp-info-row"><span class="bp-lbl">Emploi :</span> <span>' + esc(data.employe_poste) + '</span></div>';
         if (data.employe_statut) html += '<div class="bp-info-row"><span class="bp-lbl">Statut prof. :</span> <span>' + esc(data.employe_statut) + '</span></div>';
-        if (data.employe_categorie) html += '<div class="bp-info-row"><span class="bp-lbl">Niveau :</span> <span>' + esc(data.employe_categorie) + '</span></div>';
+        if (data.employe_categorie) html += '<div class="bp-info-row"><span class="bp-lbl">Cat\u00e9gorie / Niveau :</span> <span>' + esc(data.employe_categorie) + '</span></div>';
         if (data.employe_coefficient) html += '<div class="bp-info-row"><span class="bp-lbl">Coefficient :</span> <span>' + esc(data.employe_coefficient) + '</span></div>';
         if (data.employe_date_embauche) {
-            html += '<div class="bp-info-row"><span class="bp-lbl">Entr\u00e9e :</span> <span>' + DocUtils.dateFR(data.employe_date_embauche) + '</span></div>';
+            html += '<div class="bp-info-row"><span class="bp-lbl">Date d\'embauche :</span> <span>' + DocUtils.dateFR(data.employe_date_embauche) + '</span></div>';
         }
         if (data.employe_anciennete) html += '<div class="bp-info-row"><span class="bp-lbl">Anciennet\u00e9 :</span> <span>' + esc(data.employe_anciennete) + '</span></div>';
         html += '</div>';
         // Colonne droite : infos personnelles salarié
         html += '<div class="bp-info-right">';
         html += '<div class="bp-salarie-box">';
+        html += '<div class="bp-section-title">SALARI\u00c9</div>';
         html += '<div class="bp-salarie-nom">' + esc(data.employe_nom) + '</div>';
-        // Infos personnelles sous le nom
-        var personalInfo = [];
-        if (data.employe_date_naissance) personalInfo.push('N\u00e9(e) le ' + DocUtils.dateFR(data.employe_date_naissance));
-        if (data.employe_lieu_naissance) personalInfo.push('\u00e0 ' + esc(data.employe_lieu_naissance));
-        if (data.employe_nationalite) personalInfo.push(esc(data.employe_nationalite));
-        if (personalInfo.length > 0) html += '<div class="bp-salarie-details">' + personalInfo.join(' \u2014 ') + '</div>';
-        if (data.employe_adresse) html += '<div class="bp-salarie-details">' + esc(data.employe_adresse) + '</div>';
-        if (data.employe_telephone) html += '<div class="bp-salarie-details">T\u00e9l : ' + esc(data.employe_telephone) + '</div>';
+        if (data.employe_matricule) html += '<div class="bp-salarie-details"><strong>Matricule :</strong> ' + esc(data.employe_matricule) + '</div>';
+        if (data.employe_num_ss) html += '<div class="bp-salarie-details"><strong>N\u00b0 S\u00e9curit\u00e9 Sociale :</strong> ' + esc(data.employe_num_ss) + '</div>';
+        // Infos personnelles
+        if (data.employe_date_naissance) {
+            var naissance = 'N\u00e9(e) le ' + DocUtils.dateFR(data.employe_date_naissance);
+            if (data.employe_lieu_naissance) naissance += ' \u00e0 ' + esc(data.employe_lieu_naissance);
+            html += '<div class="bp-salarie-details">' + naissance + '</div>';
+        }
+        if (data.employe_nationalite) html += '<div class="bp-salarie-details"><strong>Nationalit\u00e9 :</strong> ' + esc(data.employe_nationalite) + '</div>';
+        if (data.employe_adresse) html += '<div class="bp-salarie-details"><strong>Adresse :</strong> ' + esc(data.employe_adresse) + '</div>';
+        if (data.employe_telephone) html += '<div class="bp-salarie-details"><strong>T\u00e9l :</strong> ' + esc(data.employe_telephone) + '</div>';
         html += '</div>';
         html += '</div>';
         html += '</div>';
@@ -2010,7 +2029,16 @@ var DocRenderer = {
         html += '</div>';
 
         // ── Paiement info ──
-        html += '<div class="bp-paiement-info">Paiement le ' + (data.date ? DocUtils.dateLongueFR(data.date) : DocUtils.dateLongueFR(DocUtils.today())) + '</div>';
+        var datePaie = data.date_paiement ? DocUtils.dateLongueFR(data.date_paiement) : (data.date ? DocUtils.dateLongueFR(data.date) : DocUtils.dateLongueFR(DocUtils.today()));
+        html += '<div class="bp-paiement-info">';
+        html += '<strong>Mode de paiement :</strong> Virement / Esp\u00e8ces';
+        html += ' &mdash; <strong>Pay\u00e9 le :</strong> ' + datePaie;
+        html += '</div>';
+
+        // ── Période rappel ──
+        html += '<div class="bp-paiement-info bp-periode-rappel">';
+        html += 'Bulletin correspondant \u00e0 la p\u00e9riode : <strong>' + DocUtils.esc(data.mois || '') + ' ' + DocUtils.esc(data.annee || '') + '</strong>';
+        html += '</div>';
 
         return html;
     },

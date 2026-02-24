@@ -1586,9 +1586,69 @@
     font-size: 8pt;
     color: #666;
     font-style: italic;
-    margin: 6px 0 10px;
+    margin: 6px 0 4px;
     position: relative;
     z-index: 1;
+}
+
+.bp-periode-rappel {
+    text-align: center;
+    font-style: normal;
+    color: #333;
+    margin-top: 2px;
+    margin-bottom: 10px;
+}
+
+/* Bandeau période de paie */
+.bp-periode-band {
+    background: #f0f4ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 10pt;
+    position: relative;
+    z-index: 1;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+.bp-periode-label {
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.bp-periode-value {
+    font-weight: 800;
+    color: #1e3a8a;
+    text-transform: uppercase;
+    font-size: 11pt;
+}
+
+.bp-date-paiement {
+    color: #555;
+    font-size: 9pt;
+}
+
+/* Titres de section dans la fiche de paie */
+.bp-section-title {
+    font-size: 8pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #1e3a8a;
+    border-bottom: 1.5px solid #1e3a8a;
+    padding-bottom: 2px;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+}
+
+/* Sous-titre période dans le titre */
+.bp-periode.kfs-doc-subtitle {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-top: 4px;
 }
 
 /* Anciens styles conservés pour compatibilité - masqués */
