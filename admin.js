@@ -6089,7 +6089,7 @@ function renderComptabilite() {
     const filterType = document.getElementById('compta-filter-type')?.value || 'all';
     const filterMois = document.getElementById('compta-filter-mois')?.value || 'all';
     
-    let filtered = transactions;
+    let filtered = transactions.slice();
     
     if (filterType !== 'all') {
         filtered = filtered.filter(t => t.type === filterType);
@@ -6340,7 +6340,7 @@ function renderFactures() {
     const filterType = document.getElementById('facture-filter-type')?.value || 'all';
     const filterStatus = document.getElementById('facture-filter-status')?.value || 'all';
     
-    let filtered = factures;
+    let filtered = factures.slice();
     
     if (filterType !== 'all') {
         filtered = filtered.filter(f => f.type === filterType);
@@ -7369,7 +7369,7 @@ function renderClients() {
     const search = document.getElementById('client-search')?.value?.toLowerCase() || '';
     const filterStatut = document.getElementById('client-filter-statut')?.value || 'all';
     
-    let filtered = clients;
+    let filtered = clients.slice();
     
     if (search) {
         filtered = filtered.filter(c => 
@@ -7757,7 +7757,7 @@ function renderProjets() {
     const filterStatut = document.getElementById('projet-filter-statut')?.value || 'all';
     const filterType = document.getElementById('projet-filter-type')?.value || 'all';
     
-    let filtered = projets;
+    let filtered = projets.slice();
     
     if (filterStatut !== 'all') {
         filtered = filtered.filter(p => p.statut === filterStatut);
@@ -8234,7 +8234,7 @@ function renderEmployes() {
     const filterDept = document.getElementById('employe-filter-departement')?.value || 'all';
     const filterStatut = document.getElementById('employe-filter-statut')?.value || 'all';
     
-    let filtered = employes;
+    let filtered = employes.slice();
     
     if (search) {
         filtered = filtered.filter(e => 
@@ -8691,7 +8691,7 @@ function renderStocks() {
     const filterCat = document.getElementById('stock-filter-categorie')?.value || 'all';
     const filterAlerte = document.getElementById('stock-filter-alerte')?.value || 'all';
     
-    let filtered = stocks;
+    let filtered = stocks.slice();
     
     if (search) {
         filtered = filtered.filter(s => 
