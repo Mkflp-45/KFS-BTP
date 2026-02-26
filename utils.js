@@ -148,7 +148,8 @@
         }
         
         function highlightMatch(text, query) {
-            const regex = new RegExp(`(${query})`, 'gi');
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escaped})`, 'gi');
             return text.replace(regex, '<mark class="bg-yellow-200 rounded px-0.5">$1</mark>');
         }
     });
@@ -660,6 +661,11 @@
             
             // Réinitialiser Swiper si disponible
             if (typeof Swiper !== 'undefined') {
+                // Détruire l'instance précédente si elle existe
+                var swiperEl = document.querySelector('.mySwiper');
+                if (swiperEl && swiperEl.swiper) {
+                    swiperEl.swiper.destroy(true, true);
+                }
                 new Swiper('.mySwiper', {
                     loop: true,
                     autoplay: { delay: 3000, disableOnInteraction: false },

@@ -28,6 +28,7 @@ const ErrorHandler = (function() {
         window.onerror = function(message, source, lineno, colno, error) {
             logError({
                 type: 'javascript',
+                errorName: error ? error.name : '',
                 message: message,
                 source: source,
                 line: lineno,
@@ -81,7 +82,7 @@ const ErrorHandler = (function() {
         }
         
         // Notification pour erreurs critiques
-        if (CONFIG.criticalErrors.includes(errorData.type)) {
+        if (CONFIG.criticalErrors.includes(errorData.errorName || errorData.type)) {
             notifyCriticalError(error);
         }
         

@@ -2517,7 +2517,7 @@ function initRdv() {
             service: document.getElementById('rdv-service').value,
             notes: document.getElementById('rdv-notes').value,
             status: document.getElementById('rdv-status').value,
-            createdAt: new Date().toISOString()
+            createdAt: editIndex !== '' ? (rdvs[parseInt(editIndex)]?.createdAt || new Date().toISOString()) : new Date().toISOString()
         };
         
         if (editIndex !== '') {
@@ -2722,6 +2722,7 @@ window.deleteRdv = function(index) {
     if (confirm('Supprimer ce rendez-vous ?')) {
         const rdvs = JSON.parse(localStorage.getItem('rdvs') || '[]');
         const rdv = rdvs[index];
+        if (!rdv) return;
         rdvs.splice(index, 1);
         localSave('rdvs', rdvs);
         
@@ -5703,13 +5704,23 @@ window.editFinTransaction = function(index) {
     openTransactionModal(t.type);
     
     setTimeout(() => {
-        document.getElementById('compta-edit-index').value = index;
-        document.getElementById('compta-type').value = t.type;
-        document.getElementById('compta-categorie').value = t.categorie || '';
-        document.getElementById('compta-montant').value = t.montant;
-        document.getElementById('compta-description').value = t.description || '';
-        document.getElementById('compta-date').value = t.date;
-    }, 100);
+        document.getElementById('trans-edit-id').value = index;
+        document.getElementById('trans-type').value = t.type === 'recette' ? 'recette' : 'depense';
+        document.getElementById('trans-categorie').value = t.categorie || '';
+        document.getElementById('trans-montant').value = t.montant;
+        document.getElementById('trans-desc').value = t.description || '';
+        document.getElementById('trans-date').value = t.date;
+        if (document.getElementById('trans-reference')) document.getElementById('trans-reference').value = t.reference || '';
+        if (document.getElementById('trans-tiers')) document.getElementById('trans-tiers').value = t.tiers || '';
+        if (document.getElementById('trans-tva')) document.getElementById('trans-tva').value = t.tva || '0';
+        if (document.getElementById('trans-statut')) document.getElementById('trans-statut').value = t.statut || 'effectue';
+        if (document.getElementById('trans-notes')) document.getElementById('trans-notes').value = t.notes || '';
+        // Mode de paiement
+        if (t.modePaiement) {
+            const radio = document.querySelector('input[name="trans-mode-paiement"][value="' + t.modePaiement + '"]');
+            if (radio) radio.checked = true;
+        }
+    }, 150);
 };
 
 window.deleteFinTransaction = function(index) {
@@ -6040,7 +6051,7 @@ function initComptabilite() {
             montant: parseFloat(document.getElementById('compta-montant').value),
             description: document.getElementById('compta-description').value,
             date: document.getElementById('compta-date').value,
-            createdAt: new Date().toISOString()
+            createdAt: editIndex !== '' ? (transactions[parseInt(editIndex)]?.createdAt || new Date().toISOString()) : new Date().toISOString()
         };
         
         if (editIndex !== '') {
@@ -6160,6 +6171,7 @@ function renderComptabilite() {
 window.editCompta = function(index) {
     const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
     const t = transactions[index];
+    if (!t) return;
     
     document.getElementById('compta-edit-index').value = index;
     document.getElementById('compta-type').value = t.type;
@@ -6416,6 +6428,7 @@ function renderFactures() {
 window.viewFacture = function(index) {
     const factures = JSON.parse(localStorage.getItem('factures') || '[]');
     const f = factures[index];
+    if (!f) return;
     
     const modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
@@ -6624,6 +6637,7 @@ window.deleteFacture = function(index) {
     if (confirm('Supprimer cette facture/devis ?\n\n⚠️ Les transactions financières associées seront également supprimées.')) {
         const factures = JSON.parse(localStorage.getItem('factures') || '[]');
         const f = factures[index];
+        if (!f) return;
         
         // 🔗 LIAISON FINANCES: Supprimer les transactions associées
         if (f.status === 'payee') {
@@ -7480,6 +7494,7 @@ window.deleteClient = function(index) {
     if (confirm('Supprimer ce client ?')) {
         const clients = JSON.parse(localStorage.getItem('clients') || '[]');
         const c = clients[index];
+        if (!c) return;
         clients.splice(index, 1);
         localStorage.setItem('clients', JSON.stringify(clients));
         renderClients();
@@ -7496,6 +7511,7 @@ window.addClientInteraction = function(index) {
     if (note === null) return;
     
     const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+    if (!clients[index]) return;
     
     if (!clients[index].historique) {
         clients[index].historique = [];
@@ -7517,6 +7533,7 @@ window.addClientInteraction = function(index) {
 window.viewClientHistory = function(index) {
     const clients = JSON.parse(localStorage.getItem('clients') || '[]');
     const c = clients[index];
+    if (!c) return;
     const historique = c.historique || [];
     
     const typeIcons = {
@@ -7914,6 +7931,7 @@ window.deleteProjet = function(index) {
     if (confirm('Supprimer ce projet ?')) {
         const projets = JSON.parse(localStorage.getItem('projets') || '[]');
         const p = projets[index];
+        if (!p) return;
         projets.splice(index, 1);
         localStorage.setItem('projets', JSON.stringify(projets));
         renderProjets();
@@ -7929,6 +7947,7 @@ window.addProjetDepense = function(index) {
     const description = prompt('Description de la dépense:') || 'Dépense projet';
     
     const projets = JSON.parse(localStorage.getItem('projets') || '[]');
+    if (!projets[index]) return;
     projets[index].depenses = (projets[index].depenses || 0) + parseFloat(montant);
     projets[index].updatedAt = new Date().toISOString();
     
@@ -8371,6 +8390,7 @@ window.deleteEmploye = function(index) {
     if (confirm('Supprimer cet employé ?')) {
         const employes = JSON.parse(localStorage.getItem('employes') || '[]');
         const e = employes[index];
+        if (!e) return;
         employes.splice(index, 1);
         localStorage.setItem('employes', JSON.stringify(employes));
         renderEmployes();
@@ -8382,6 +8402,7 @@ window.deleteEmploye = function(index) {
 window.payerSalaire = function(index) {
     const employes = JSON.parse(localStorage.getItem('employes') || '[]');
     const e = employes[index];
+    if (!e) return;
     
     const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     const now = new Date();
@@ -8819,6 +8840,7 @@ window.deleteStock = function(index) {
     if (confirm('Supprimer cet article du stock ?')) {
         const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
         const s = stocks[index];
+        if (!s) return;
         stocks.splice(index, 1);
         localStorage.setItem('stocks', JSON.stringify(stocks));
         renderStocks();
@@ -8874,6 +8896,7 @@ window.ajouterStock = function(index) {
 window.retirerStock = function(index) {
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const s = stocks[index];
+    if (!s) return;
     
     const quantite = prompt(`Quantité à retirer (disponible: ${s.quantite} ${s.unite}):`);
     if (!quantite || isNaN(quantite) || parseInt(quantite) <= 0) return;
@@ -8910,6 +8933,7 @@ window.retirerStock = function(index) {
 window.viewStockHistory = function(index) {
     const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
     const s = stocks[index];
+    if (!s) return;
     const mouvements = s.mouvements || [];
     
     const modal = document.createElement('div');
@@ -9048,14 +9072,15 @@ window.openTransactionModal = function(type) {
     
     modal.classList.remove('hidden');
     
-    // Gérer affichage détails chèque
-    document.querySelectorAll('input[name="trans-mode-paiement"]').forEach(radio => {
-        radio.addEventListener('change', function() {
+    // Gérer affichage détails chèque (utilise event delegation pour éviter fuite de listeners)
+    const radios = document.querySelectorAll('input[name="trans-mode-paiement"]');
+    radios.forEach(radio => {
+        radio.onchange = function() {
             const chequeDetails = document.getElementById('trans-cheque-details');
             if (chequeDetails) {
                 chequeDetails.classList.toggle('hidden', this.value !== 'cheque');
             }
-        });
+        };
     });
 };
 
@@ -9312,7 +9337,7 @@ window.openClientModal = function(index = null) {
         const c = clients[index];
         
         if (c) {
-            document.getElementById('client-edit-id').value = index;
+            document.getElementById('client-edit-id').value = c.id || index;
             
             // Type client
             const type = c.type || 'particulier';
@@ -10204,7 +10229,7 @@ window.generateBilan = function() {
     const dateFin = document.getElementById('bilan-date-fin')?.value;
     
     const transactions = JSON.parse(localStorage.getItem('comptabilite') || '[]');
-    let filtered = transactions;
+    let filtered = transactions.slice();
     
     const now = new Date();
     

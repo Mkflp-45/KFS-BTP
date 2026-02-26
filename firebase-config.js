@@ -83,7 +83,8 @@ let isFirebaseConfigured = false;
 
 function initFirebase() {
     try {
-        firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+        // Éviter d'initialiser deux fois
+        firebaseApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
         firebaseDb = firebase.database();
         firebaseAuth = firebase.auth();
         isFirebaseConfigured = true;
@@ -405,16 +406,16 @@ localStorage.setItem = function(key, value) {
             if (Array.isArray(data)) {
                 // Pour les tableaux, synchroniser chaque élément
                 const updates = {};
-                data.forEach(item => {
-                    const itemId = item.id || Date.now();
-                    updates[`${key}/${itemId}`] = { ...item, id: itemId };
+                data.forEach(function(item, idx) {
+                    var itemId = item.id || (Date.now() + '_' + idx);
+                    updates[key + '/' + itemId] = Object.assign({}, item, { id: itemId });
                 });
                 
                 // Remplacer toute la collection
                 firebaseDb.ref(key).set(
-                    data.reduce((acc, item) => {
-                        const itemId = item.id || Date.now();
-                        acc[itemId] = { ...item, id: itemId, syncedAt: new Date().toISOString() };
+                    data.reduce(function(acc, item, idx) {
+                        var itemId = item.id || (Date.now() + '_' + idx);
+                        acc[itemId] = Object.assign({}, item, { id: itemId, syncedAt: new Date().toISOString() });
                         return acc;
                     }, {})
                 ).then(() => {

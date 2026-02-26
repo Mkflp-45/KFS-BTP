@@ -1,24 +1,32 @@
 // Service Worker pour KFS BTP PWA
-const CACHE_NAME = 'kfs-btp-v7';
+const CACHE_NAME = 'kfs-btp-v8';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/vente.html',
     '/location-courte.html',
     '/location-longue.html',
+    '/gestion-locative.html',
+    '/renovation-interieur.html',
+    '/apporteur-affaire.html',
     '/contact.html',
     '/about.html',
+    '/mentions-legales.html',
+    '/politique-confidentialite.html',
     '/404.html',
     '/maintenance.html',
     '/admin.html',
     '/admin.js',
     '/utils.js',
+    '/firebase-config.js',
     '/firebase-public.js',
     '/fragments.js',
     '/script.js',
     '/performance.js',
     '/error-handler.js',
     '/site-config.js',
+    '/emailjs-config.js',
+    '/logo-base64.js',
     '/style.css',
     '/manifest.json',
     '/health-check.json',
@@ -61,16 +69,28 @@ self.addEventListener('activate', event => {
 });
 
 // Stratégie de cache : Network First, puis Cache
+// Exclure Firebase et API du cache
 self.addEventListener('fetch', event => {
+    // Ne pas cacher les requêtes Firebase, API, et non-GET
+    if (event.request.method !== 'GET' ||
+        event.request.url.includes('firebasedatabase.app') ||
+        event.request.url.includes('firebaseio.com') ||
+        event.request.url.includes('googleapis.com/identitytoolkit') ||
+        event.request.url.includes('securetoken.googleapis.com')) {
+        return;
+    }
+
     event.respondWith(
         fetch(event.request)
             .then(response => {
-                // Clone la réponse pour la mettre en cache
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME)
-                    .then(cache => {
-                        cache.put(event.request, responseClone);
-                    });
+                // Ne cacher que les réponses valides
+                if (response.status === 200 || response.type === 'opaque') {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME)
+                        .then(cache => {
+                            cache.put(event.request, responseClone);
+                        });
+                }
                 return response;
             })
             .catch(() => {
